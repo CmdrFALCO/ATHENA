@@ -1,4 +1,4 @@
-# ATHENA
+# ΛTHENΛ
 
 A "Second Brain" knowledge management system built with React, TypeScript, and SQLite WASM.
 
