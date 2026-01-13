@@ -1,5 +1,33 @@
 # ATHENA Changelog
 
+## [1.2.0] - 2026-01-13
+
+### Added
+- **Entity List**: Functional note list in sidebar
+  - `EntityList.tsx` - Container component with loading/empty states
+  - `EntityListItem.tsx` - Single note item with title, icon, timestamp
+  - Sorted by `updated_at` descending (most recent first)
+  - Single selection support with visual highlight (blue left border)
+- **Sophia Module**: First module implementation
+  - `src/modules/sophia/` - Knowledge workspace module structure
+  - Barrel exports for components
+- **Utilities**: Shared utility functions
+  - `formatRelativeTime()` - Relative time formatting (e.g., "5 minutes ago", "yesterday")
+  - `src/shared/utils/` - Utility module structure
+- **Sample Data**: Auto-generated test notes on first run
+  - 3 sample notes created when database is empty
+  - Enables testing without note creation UI
+
+### Changed
+- `Sidebar.tsx` - Replaced placeholder with `EntityList` component
+- `useInitializeStore.ts` - Added sample data generation for testing
+- Navigation section no longer uses `flex-1` to allow entity list to fill space
+
+### Technical
+- EntityList uses `appState$.initialized` to determine loading state
+- Selection managed via `uiActions.selectEntity()` (single selection mode)
+- Notes retrieved via `useNotes()` hook from Legend-State store
+
 ## [1.1.0] - 2026-01-13
 
 ### Added

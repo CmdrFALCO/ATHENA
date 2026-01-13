@@ -1,6 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useSidebarOpen, uiActions } from '@/store';
+import { EntityList } from '@/modules/sophia';
 
 const navItems = [
   { path: '/sophia', label: 'Sophia', icon: Bird },
@@ -22,7 +23,7 @@ export function Sidebar() {
       `}
     >
       {/* Navigation */}
-      <nav className="flex-1 py-4">
+      <nav className="py-4 shrink-0">
         <ul className="space-y-1 px-2">
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path;
@@ -34,8 +35,8 @@ export function Sidebar() {
                     flex items-center gap-3 px-3 py-2 rounded-md
                     transition-colors
                     ${isActive
-                      ? 'bg-athena-border text-athena-text'
-                      : 'text-athena-muted hover:bg-athena-border hover:text-athena-text'
+                      ? 'bg-athena-bg text-white'
+                      : 'text-athena-muted hover:text-athena-text hover:bg-athena-bg/50'
                     }
                   `}
                 >
@@ -48,10 +49,10 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Entity list placeholder */}
+      {/* Entity list */}
       {isOpen && (
-        <div className="px-4 py-3 border-t border-athena-border">
-          <p className="text-sm text-athena-muted">Notes will appear here</p>
+        <div className="flex-1 min-h-0 border-t border-athena-border flex flex-col">
+          <EntityList />
         </div>
       )}
 
@@ -61,7 +62,7 @@ export function Sidebar() {
           onClick={() => uiActions.toggleSidebar()}
           className={`
             flex items-center gap-3 px-3 py-2 rounded-md w-full
-            text-athena-muted hover:bg-athena-border hover:text-athena-text
+            text-athena-muted hover:text-athena-text hover:bg-athena-bg/50
             transition-colors
           `}
           aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}

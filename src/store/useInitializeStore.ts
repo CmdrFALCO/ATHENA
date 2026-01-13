@@ -23,7 +23,48 @@ export function useInitializeStore({
         entityActions.setLoading(true);
 
         // Load notes from SQLite
-        const notes = await noteAdapter.getAll();
+        let notes = await noteAdapter.getAll();
+
+        // Create sample notes for testing if database is empty
+        if (notes.length === 0) {
+          const sampleNotes = [
+            {
+              title: 'Welcome to ATHENA',
+              type: 'note' as const,
+              subtype: 'zettel',
+              content: [],
+              metadata: {},
+              position_x: 0,
+              position_y: 0,
+            },
+            {
+              title: 'Research on Battery Safety',
+              type: 'note' as const,
+              subtype: 'literature',
+              content: [],
+              metadata: {},
+              position_x: 100,
+              position_y: 0,
+            },
+            {
+              title: 'Project Planning Ideas',
+              type: 'note' as const,
+              subtype: 'fleeting',
+              content: [],
+              metadata: {},
+              position_x: 200,
+              position_y: 0,
+            },
+          ];
+
+          for (const noteData of sampleNotes) {
+            await noteAdapter.create(noteData);
+          }
+
+          // Reload notes after creating samples
+          notes = await noteAdapter.getAll();
+        }
+
         entityActions.setNotes(notes);
 
         // Load connections from SQLite

@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 1.1 (App Shell + Routing) |
+| **Last WP Completed** | 1.2 (Entity List) |
 | **Last Updated** | January 2026 |
 | **Phase** | 1 (Core UI) |
 
@@ -43,7 +43,9 @@ athena/
 │   ├── shared/
 │   │   ├── components/           # ⏳ Empty - Generic UI components
 │   │   ├── hooks/                # ⏳ Empty - Shared React hooks
-│   │   ├── utils/                # ⏳ Empty - Utility functions
+│   │   ├── utils/                # ✅ WP 1.2 - Utility functions
+│   │   │   ├── index.ts          # Barrel export
+│   │   │   └── formatTime.ts     # Relative time formatting
 │   │   └── types/                # ✅ WP 0.3/0.5 - TypeScript types
 │   │       ├── index.ts          # Barrel export
 │   │       ├── entities.ts       # Entity, Note, Plan, Document, Block
@@ -62,14 +64,19 @@ athena/
 │   │   ├── devSettings.ts        # devSettings$ observable (feature flags)
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
-│   ├── modules/                  # ⏳ Empty - future phases
-│   │   ├── sophia/               # Phase 1+ (notes, connections)
-│   │   ├── pronoia/              # Phase 6 (plans, decisions)
-│   │   ├── ergane/               # Phase 6 (documents, export)
-│   │   ├── canvas/               # Phase 2 (React Flow graph)
-│   │   ├── validation/           # Phase 5 (CPN engine)
-│   │   ├── ai/                   # Phase 3 (AI backends)
-│   │   └── search/               # Phase 4 (FTS + vector)
+│   ├── modules/
+│   │   ├── sophia/               # ✅ WP 1.2 - Knowledge workspace
+│   │   │   ├── index.ts          # Module barrel export
+│   │   │   └── components/
+│   │   │       ├── index.ts      # Component exports
+│   │   │       ├── EntityList.tsx      # Note list container
+│   │   │       └── EntityListItem.tsx  # Single note item
+│   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
+│   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
+│   │   ├── canvas/               # ⏳ Phase 2 (React Flow graph)
+│   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
+│   │   ├── ai/                   # ⏳ Phase 3 (AI backends)
+│   │   └── search/               # ⏳ Phase 4 (FTS + vector)
 │   │
 │   ├── app/                      # ✅ WP 1.1 - App shell
 │   │   ├── index.ts              # Barrel export
@@ -121,6 +128,8 @@ athena/
 | `src/database/index.ts` | Database initialization |
 | `src/adapters/index.ts` | Adapter exports |
 | `src/store/index.ts` | State management exports |
+| `src/modules/sophia/index.ts` | Sophia module exports |
+| `src/shared/utils/index.ts` | Utility function exports |
 
 ---
 
@@ -274,6 +283,57 @@ const isOpen = useSidebarOpen();
 - Sidebar width: 240px (expanded), 64px (collapsed)
 - Header height: 48px
 - Smooth transitions: `transition-all duration-200`
+
+---
+
+### Sophia Module (`src/modules/sophia/`)
+
+**Status:** ✅ Implemented in WP 1.2
+
+**Components:**
+- `EntityList` - Note list container with loading/empty states
+- `EntityListItem` - Single note item with title, icon, and timestamp
+
+**Exports:**
+```typescript
+// src/modules/sophia/index.ts
+export { EntityList, EntityListItem } from './components';
+```
+
+**Usage:**
+```typescript
+import { EntityList } from '@/modules/sophia';
+
+// In Sidebar
+<EntityList />  // Displays all notes with selection support
+```
+
+**Features:**
+- Displays notes sorted by `updated_at` descending
+- Loading state while store initializes
+- Empty state when no notes exist
+- Single selection with visual highlight
+- Relative time display (e.g., "5 minutes ago")
+
+---
+
+### Utilities (`src/shared/utils/`)
+
+**Status:** ✅ Implemented in WP 1.2
+
+**Exports:**
+```typescript
+// src/shared/utils/index.ts
+export { formatRelativeTime } from './formatTime';
+```
+
+**Usage:**
+```typescript
+import { formatRelativeTime } from '@/shared/utils';
+
+formatRelativeTime('2026-01-13T12:00:00Z');
+// Returns: "5 minutes ago", "yesterday", "Jan 13", etc.
+```
 
 ---
 
@@ -455,6 +515,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
 
 - **Phase 1** (Core UI): In Progress
   - WP 1.1: App shell + routing (Complete)
+  - WP 1.2: Entity list in sidebar (Complete)
 
 ## Known Issues
 
@@ -466,7 +527,9 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **1.2** | Entity list in sidebar |
+| **1.3** | Note editor panel |
+| **1.4** | Note persistence (create/update/delete) |
+| **1.5** | Note creation UI |
 | **2.x** | React Flow canvas integration |
 
 ---
