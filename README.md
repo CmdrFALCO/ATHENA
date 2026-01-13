@@ -10,7 +10,9 @@ ATHENA is a local-first web application for managing interconnected knowledge th
 
 - **Frontend**: React 19 + TypeScript
 - **Build**: Vite
+- **Routing**: TanStack Router
 - **Styling**: Tailwind CSS
+- **Icons**: lucide-react
 - **State**: Legend-State (reactive observables)
 - **Database**: sql.js (SQLite WASM, in-memory)
 - **Linting**: ESLint + Prettier
@@ -36,11 +38,14 @@ npm run preview
 ```
 src/
 ├── adapters/           # Data access layer (adapter pattern)
+├── app/                # App shell, layout, and routing
+│   ├── layout/         # AppLayout, Header, Sidebar components
+│   └── routes/         # TanStack Router setup + page components
 ├── config/             # Feature flags and DevSettings
 ├── database/           # SQLite WASM initialization
 ├── shared/types/       # TypeScript type definitions
 ├── store/              # Legend-State observables and hooks
-├── App.tsx             # Main application component
+├── App.tsx             # Root component (RouterProvider wrapper)
 └── main.tsx            # React entry point
 ```
 

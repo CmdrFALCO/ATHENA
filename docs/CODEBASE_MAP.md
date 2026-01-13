@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 0.5 (Cluster Schema + Types) |
+| **Last WP Completed** | 1.1 (App Shell + Routing) |
 | **Last Updated** | January 2026 |
-| **Phase** | 0 (Foundation) |
+| **Phase** | 1 (Core UI) |
 
 ---
 
@@ -71,11 +71,21 @@ athena/
 │   │   ├── ai/                   # Phase 3 (AI backends)
 │   │   └── search/               # Phase 4 (FTS + vector)
 │   │
-│   ├── app/
-│   │   ├── layout/               # ⏳ Phase 1 - App shell
-│   │   └── routes/               # ⏳ Phase 1 - Routing
+│   ├── app/                      # ✅ WP 1.1 - App shell
+│   │   ├── index.ts              # Barrel export
+│   │   ├── layout/               # ✅ WP 1.1 - Layout components
+│   │   │   ├── index.ts          # Barrel export
+│   │   │   ├── AppLayout.tsx     # Main layout wrapper (Header, Sidebar, content)
+│   │   │   ├── Header.tsx        # Top header bar (title, sidebar toggle)
+│   │   │   ├── Sidebar.tsx       # Collapsible sidebar (240px/64px)
+│   │   │   └── StoreInitializer.tsx # Store initialization wrapper
+│   │   └── routes/               # ✅ WP 1.1 - TanStack Router
+│   │       ├── index.tsx         # Router configuration + route tree
+│   │       ├── SophiaPage.tsx    # Knowledge workspace placeholder
+│   │       ├── PronoiaPage.tsx   # Planning workspace placeholder
+│   │       └── ErganePage.tsx    # Creation workspace placeholder
 │   │
-│   ├── App.tsx                   # ✅ Main app component (adapter test UI)
+│   ├── App.tsx                   # ✅ Root component (RouterProvider wrapper)
 │   ├── main.tsx                  # ✅ Entry point
 │   └── index.css                 # ✅ Tailwind imports
 │
@@ -106,7 +116,8 @@ athena/
 | File | Purpose |
 |------|---------|
 | `src/main.tsx` | React app bootstrap |
-| `src/App.tsx` | Root component (adapter test UI) |
+| `src/App.tsx` | Root component (RouterProvider wrapper) |
+| `src/app/routes/index.tsx` | Router configuration + route tree |
 | `src/database/index.ts` | Database initialization |
 | `src/adapters/index.ts` | Adapter exports |
 | `src/store/index.ts` | State management exports |
@@ -221,6 +232,51 @@ function MyComponent() {
 
 ---
 
+### App Shell (`src/app/`)
+
+**Status:** ✅ Implemented in WP 1.1
+
+**Components:**
+- `AppLayout` - Main layout wrapper with Header, Sidebar, and content area
+- `Header` - Top header with app title and sidebar toggle
+- `Sidebar` - Collapsible navigation (240px expanded, 64px collapsed)
+- `StoreInitializer` - Wraps content to ensure store is initialized
+
+**Routes:**
+| Path | Component | Description |
+|------|-----------|-------------|
+| `/` | Redirect | Redirects to `/sophia` |
+| `/sophia` | SophiaPage | Knowledge workspace (Bird icon) |
+| `/pronoia` | PronoiaPage | Planning workspace (Swords icon) |
+| `/ergane` | ErganePage | Creation workspace (Hammer icon) |
+
+**Usage:**
+```typescript
+import { Link, useLocation } from '@tanstack/react-router';
+
+// Navigation link with active state
+<Link
+  to="/sophia"
+  className={location.pathname === '/sophia' ? 'active' : ''}
+>
+  Sophia
+</Link>
+
+// Sidebar toggle
+import { useSidebarOpen, uiActions } from '@/store';
+
+const isOpen = useSidebarOpen();
+<button onClick={() => uiActions.toggleSidebar()}>Toggle</button>
+```
+
+**Styling:**
+- Dark theme colors: `athena-bg`, `athena-surface`, `athena-border`, `athena-text`, `athena-muted`
+- Sidebar width: 240px (expanded), 64px (collapsed)
+- Header height: 48px
+- Smooth transitions: `transition-all duration-200`
+
+---
+
 ## Data Models
 
 ### Entity (`src/shared/types/entities.ts`)
@@ -323,6 +379,8 @@ interface Embedding {
 |---------|---------|---------|
 | react | 19.x | UI framework |
 | react-dom | 19.x | React DOM renderer |
+| @tanstack/react-router | 1.x | Client-side routing |
+| lucide-react | 0.x | Icon library |
 | sql.js | 1.x | SQLite WASM |
 | @legendapp/state | 3.x | State management |
 
@@ -395,11 +453,20 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 0.4: State layer + DevSettings
   - WP 0.5: Cluster schema and types
 
+- **Phase 1** (Core UI): In Progress
+  - WP 1.1: App shell + routing (Complete)
+
+## Known Issues
+
+Pre-existing lint errors to address:
+- `src/adapters/sqlite/SQLiteClusterAdapter.ts:190` - `'_reason' is defined but never used`
+- `src/store/hooks.ts:124,150,205` - `'_' is assigned a value but never used`
+
 ## Coming Next
 
 | WP | What's Added |
 |----|--------------|
-| **1.1** | `src/app/layout/`, routing, app shell |
+| **1.2** | Entity list in sidebar |
 | **2.x** | React Flow canvas integration |
 
 ---

@@ -1,5 +1,59 @@
 # ATHENA Changelog
 
+## [1.1.0] - 2026-01-13
+
+### Added
+- **App Shell**: Complete layout structure with Header, Sidebar, and main content area
+  - `AppLayout.tsx` - Main layout wrapper with responsive design
+  - `Header.tsx` - Top header bar with app title and sidebar toggle
+  - `Sidebar.tsx` - Collapsible navigation (240px expanded, 64px collapsed)
+  - `StoreInitializer.tsx` - Store initialization wrapper component
+- **TanStack Router**: Client-side routing with manual route tree
+  - Routes: `/sophia`, `/pronoia`, `/ergane`
+  - Index route (`/`) redirects to `/sophia`
+  - Type-safe routing with TypeScript registration
+- **Placeholder Pages**: Initial aspect pages with icons
+  - `SophiaPage.tsx` - Knowledge workspace (Bird icon)
+  - `PronoiaPage.tsx` - Planning workspace (Swords icon)
+  - `ErganePage.tsx` - Creation workspace (Hammer icon)
+- **Athena Color Palette**: Dark theme colors in Tailwind config
+  - `athena-bg`, `athena-surface`, `athena-border`, `athena-text`, `athena-muted`
+- **Dependencies**: `@tanstack/react-router`, `lucide-react`
+
+### Changed
+- `App.tsx` - Now renders `RouterProvider` instead of test UI
+- `main.tsx` - Structure unchanged (App handles adapter initialization)
+
+### Known Issues
+Pre-existing lint errors to address:
+- `src/adapters/sqlite/SQLiteClusterAdapter.ts:190` - `'_reason' is defined but never used`
+- `src/store/hooks.ts:124,150,205` - `'_' is assigned a value but never used`
+
+## [0.5.0] - 2026-01-13
+
+### Added
+- **Cluster Schema**: N-way relationship support via clusters and cluster_members tables
+- **Cluster Types**: TypeScript definitions for cluster concepts
+- **Cluster Adapter**: `IClusterAdapter` interface with full CRUD + queries
+- **SQLite Implementation**: `SQLiteClusterAdapter` following existing patterns
+- **Store Integration**: Cluster state management hooks and actions
+
+### Changed
+- Updated `AdapterProvider` to include cluster adapter
+- Updated `useInitializeStore` to load clusters on init
+
+## [0.4.0] - 2026-01-13
+
+### Added
+- **State Management**: Legend-State for reactive state management
+- **DevSettings Panel**: Feature flag management UI (Ctrl+Shift+D)
+- **Store Initialization**: `useInitializeStore()` hook
+
+### Changed
+- **SQLite Library Migration**: Replaced wa-sqlite with sql.js
+  - wa-sqlite exhibited unstable behavior in browser environment
+  - sql.js provides stable synchronous API
+
 ## [0.3.0] - 2026-01-13
 
 ### Added

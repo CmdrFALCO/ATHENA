@@ -23,6 +23,20 @@ src/
 │       ├── SQLiteEmbeddingAdapter.ts
 │       └── SQLiteClusterAdapter.ts
 │
+├── app/                         # App shell (WP 1.1)
+│   ├── index.ts                 # Barrel export
+│   ├── layout/                  # Layout components
+│   │   ├── index.ts             # Barrel export
+│   │   ├── AppLayout.tsx        # Main layout wrapper
+│   │   ├── Header.tsx           # Top header bar
+│   │   ├── Sidebar.tsx          # Collapsible sidebar navigation
+│   │   └── StoreInitializer.tsx # Store initialization wrapper
+│   └── routes/                  # TanStack Router setup
+│       ├── index.tsx            # Router configuration + exports
+│       ├── SophiaPage.tsx       # Knowledge workspace placeholder
+│       ├── PronoiaPage.tsx      # Planning workspace placeholder
+│       └── ErganePage.tsx       # Creation workspace placeholder
+│
 ├── config/                      # Configuration & feature flags
 │   ├── index.ts                 # Barrel export
 │   ├── devSettings.ts           # DevSettings store (feature flags)
@@ -47,7 +61,7 @@ src/
 │   ├── hooks.ts                 # React hooks + actions
 │   └── useInitializeStore.ts    # Store initialization hook
 │
-├── App.tsx                      # Main application component
+├── App.tsx                      # Root component (RouterProvider wrapper)
 ├── main.tsx                     # React entry point
 └── index.css                    # Global styles (Tailwind)
 ```
@@ -88,6 +102,16 @@ src/
   - WP 0.3: Data models and adapters
   - WP 0.4: State layer + DevSettings
   - WP 0.5: Cluster schema and types
+
+- **Phase 1** (Core UI): In Progress
+  - WP 1.1: App shell + routing (Complete)
+
+### App Shell (`src/app/`)
+
+- **Layout**: Header, Sidebar (collapsible 240px/64px), main content area
+- **Routing**: TanStack Router with `/sophia`, `/pronoia`, `/ergane` routes
+- **Components**: AppLayout, Header, Sidebar, StoreInitializer
+- **Icons**: lucide-react (Bird, Swords, Hammer for aspects)
 
 ## Console Debugging
 

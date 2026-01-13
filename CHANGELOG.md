@@ -2,6 +2,35 @@
 
 All notable changes to ATHENA will be documented in this file.
 
+## [1.1.0] - 2026-01-13
+
+### Added
+- **App Shell**: Complete layout structure with Header, Sidebar, and main content area
+  - `AppLayout.tsx` - Main layout wrapper with responsive design
+  - `Header.tsx` - Top header bar with app title and sidebar toggle
+  - `Sidebar.tsx` - Collapsible navigation (240px expanded, 64px collapsed)
+  - `StoreInitializer.tsx` - Store initialization wrapper component
+- **TanStack Router**: Client-side routing with manual route tree
+  - Routes: `/sophia`, `/pronoia`, `/ergane`
+  - Index route (`/`) redirects to `/sophia`
+  - Type-safe routing with TypeScript registration
+- **Placeholder Pages**: Initial aspect pages with icons
+  - `SophiaPage.tsx` - Knowledge workspace (Bird icon)
+  - `PronoiaPage.tsx` - Planning workspace (Swords icon)
+  - `ErganePage.tsx` - Creation workspace (Hammer icon)
+- **Athena Color Palette**: Dark theme colors in Tailwind config
+  - `athena-bg`, `athena-surface`, `athena-border`, `athena-text`, `athena-muted`
+- **Dependencies**: `@tanstack/react-router`, `lucide-react`
+
+### Changed
+- `App.tsx` - Now renders `RouterProvider` instead of test UI
+- `main.tsx` - Structure unchanged (App handles adapter initialization)
+
+### Known Issues
+Pre-existing lint errors to address:
+- `src/adapters/sqlite/SQLiteClusterAdapter.ts:190` - `'_reason' is defined but never used`
+- `src/store/hooks.ts:124,150,205` - `'_' is assigned a value but never used`
+
 ## [0.5.0] - 2026-01-13
 
 ### Added
