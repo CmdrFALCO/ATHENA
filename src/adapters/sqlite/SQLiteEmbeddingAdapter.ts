@@ -3,7 +3,11 @@ import type { IEmbeddingAdapter } from '../IEmbeddingAdapter';
 import type { DatabaseConnection } from '@/database';
 
 export class SQLiteEmbeddingAdapter implements IEmbeddingAdapter {
-  constructor(private db: DatabaseConnection) {}
+  private db: DatabaseConnection;
+
+  constructor(db: DatabaseConnection) {
+    this.db = db;
+  }
 
   async getForEntity(entityId: string): Promise<Embedding | undefined> {
     const results = await this.db.exec<Record<string, unknown>>(

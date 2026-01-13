@@ -3,7 +3,11 @@ import type { INoteAdapter } from '../INoteAdapter';
 import type { DatabaseConnection } from '@/database';
 
 export class SQLiteNoteAdapter implements INoteAdapter {
-  constructor(private db: DatabaseConnection) {}
+  private db: DatabaseConnection;
+
+  constructor(db: DatabaseConnection) {
+    this.db = db;
+  }
 
   async getById(id: string): Promise<Note | undefined> {
     const results = await this.db.exec<Record<string, unknown>>(

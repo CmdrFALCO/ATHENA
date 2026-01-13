@@ -3,7 +3,11 @@ import type { IConnectionAdapter } from '../IConnectionAdapter';
 import type { DatabaseConnection } from '@/database';
 
 export class SQLiteConnectionAdapter implements IConnectionAdapter {
-  constructor(private db: DatabaseConnection) {}
+  private db: DatabaseConnection;
+
+  constructor(db: DatabaseConnection) {
+    this.db = db;
+  }
 
   async getById(id: string): Promise<Connection | undefined> {
     const results = await this.db.exec<Record<string, unknown>>(

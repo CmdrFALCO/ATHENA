@@ -1,73 +1,87 @@
-# React + TypeScript + Vite
+# ATHENA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A "Second Brain" knowledge management system built with React, TypeScript, and SQLite WASM.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+ATHENA is a local-first web application for managing interconnected knowledge through notes, connections, and semantic search. It uses sql.js (SQLite compiled to WebAssembly) for data persistence and Legend-State for reactive state management.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 + TypeScript
+- **Build**: Vite
+- **Styling**: Tailwind CSS
+- **State**: Legend-State (reactive observables)
+- **Database**: sql.js (SQLite WASM, in-memory)
+- **Linting**: ESLint + Prettier
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Install dependencies
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Start development server
+npm run dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Build for production
+npm run build
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── adapters/           # Data access layer (adapter pattern)
+├── config/             # Feature flags and DevSettings
+├── database/           # SQLite WASM initialization
+├── shared/types/       # TypeScript type definitions
+├── store/              # Legend-State observables and hooks
+├── App.tsx             # Main application component
+└── main.tsx            # React entry point
+```
+
+## Development
+
+### DevSettings Panel
+
+Press **Ctrl+Shift+D** to open the DevSettings panel for feature flag management.
+
+### Console Debugging
+
+```javascript
+window.__ATHENA_STATE__        // Main app state
+window.__ATHENA_DEV_SETTINGS__ // Feature flags
+```
+
+## Architecture Decisions
+
+### SQLite Library: sql.js
+
+ATHENA uses [sql.js](https://sql.js.org/) for SQLite WASM. This was chosen after encountering stability issues with wa-sqlite:
+
+- wa-sqlite's IDBBatchAtomicVFS failed with "unable to open database file"
+- MemoryAsyncVFS caused "RuntimeError: unreachable" WASM errors
+- The sync module unexpectedly returned Promises, causing invalid database handles
+
+sql.js provides a stable, well-tested synchronous API that works reliably in browser environments.
+
+### State Management: Legend-State
+
+Legend-State was chosen for its:
+- Fine-grained reactivity (minimal re-renders)
+- Built-in persistence plugins
+- Simple observable API
+- TypeScript support
+
+## Documentation
+
+- [CODEBASE_MAP.md](CODEBASE_MAP.md) - Detailed codebase structure
+- [CHANGELOG.md](CHANGELOG.md) - Version history
+
+## License
+
+Private project.

@@ -1,6 +1,4 @@
-import SQLiteAsyncESMFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
-import * as SQLite from 'wa-sqlite';
-import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
+import initSqlJs, { type Database, type SqlValue } from 'sql.js';
 import { CREATE_TABLES } from './schema';
 
 export interface DatabaseConnection {
@@ -29,64 +27,54 @@ export async function initDatabase(): Promise<DatabaseConnection> {
 }
 
 async function createDatabase(): Promise<DatabaseConnection> {
-  // Load the async SQLite WASM module
-  const module = await SQLiteAsyncESMFactory();
-  const sqlite3 = SQLite.Factory(module);
+  // Initialize sql.js - load WASM from CDN
+  const SQL = await initSqlJs({
+    locateFile: (file) => `https://sql.js.org/dist/${file}`,
+  });
 
-  // Register IndexedDB VFS for persistence
-  const vfs = new IDBBatchAtomicVFS('athena-vfs');
-  sqlite3.vfs_register(vfs, true);
-
-  // Open database with the registered VFS
-  const db = await sqlite3.open_v2('athena.db');
+  // Create in-memory database
+  // TODO: Implement persistence with IndexedDB in a future WP
+  const db: Database = new SQL.Database();
 
   const connection: DatabaseConnection = {
     async exec<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
       const results: T[] = [];
 
-      if (params && params.length > 0) {
-        // Use prepared statement for parameterized queries
-        for await (const stmt of sqlite3.statements(db, sql)) {
-          sqlite3.bind_collection(stmt, params as SQLite.SQLiteCompatibleType[]);
-          while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-            const row = sqlite3.row(stmt);
-            const columns = sqlite3.column_names(stmt);
-            const obj = {} as Record<string, unknown>;
-            columns.forEach((col, i) => {
-              obj[col] = row[i];
-            });
-            results.push(obj as T);
-          }
+      try {
+        const stmt = db.prepare(sql);
+        if (params && params.length > 0) {
+          stmt.bind(params as SqlValue[]);
         }
-      } else {
-        await sqlite3.exec(db, sql, (row, columns) => {
-          const obj = {} as Record<string, unknown>;
-          columns.forEach((col, i) => {
-            obj[col] = row[i];
-          });
-          results.push(obj as T);
-        });
+
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          results.push(row as T);
+        }
+
+        stmt.free();
+      } catch (error) {
+        console.error('SQL exec error:', error, sql, params);
+        throw error;
       }
 
       return results;
     },
 
     async run(sql: string, params?: unknown[]): Promise<void> {
-      if (params && params.length > 0) {
-        // Use prepared statement for parameterized queries
-        for await (const stmt of sqlite3.statements(db, sql)) {
-          sqlite3.bind_collection(stmt, params as SQLite.SQLiteCompatibleType[]);
-          while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
-            // Execute statement
-          }
+      try {
+        if (params && params.length > 0) {
+          db.run(sql, params as SqlValue[]);
+        } else {
+          db.run(sql);
         }
-      } else {
-        await sqlite3.exec(db, sql);
+      } catch (error) {
+        console.error('SQL run error:', error, sql, params);
+        throw error;
       }
     },
 
     async close(): Promise<void> {
-      await sqlite3.close(db);
+      db.close();
       dbInstance = null;
       initPromise = null;
     },

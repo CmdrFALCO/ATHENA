@@ -1,7 +1,7 @@
 {
   "name": "athena",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,15 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@legendapp/state": "^2.1.15",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "wa-sqlite": "^1.0.0"
+    "sql.js": "^1.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/sql.js": "^1.4.9",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.1",
