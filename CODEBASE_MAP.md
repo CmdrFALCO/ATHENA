@@ -13,13 +13,15 @@ src/
 │   ├── INoteAdapter.ts          # Note adapter interface
 │   ├── IConnectionAdapter.ts    # Connection adapter interface
 │   ├── IEmbeddingAdapter.ts     # Embedding adapter interface
+│   ├── IClusterAdapter.ts       # Cluster adapter interface
 │   ├── context.ts               # Adapter context definition
 │   ├── AdapterProvider.tsx      # React context provider
-│   ├── hooks.ts                 # useNoteAdapter, useConnectionAdapter, etc.
+│   ├── hooks.ts                 # useNoteAdapter, useConnectionAdapter, useClusterAdapter, etc.
 │   └── sqlite/                  # SQLite implementations
 │       ├── SQLiteNoteAdapter.ts
 │       ├── SQLiteConnectionAdapter.ts
-│       └── SQLiteEmbeddingAdapter.ts
+│       ├── SQLiteEmbeddingAdapter.ts
+│       └── SQLiteClusterAdapter.ts
 │
 ├── config/                      # Configuration & feature flags
 │   ├── index.ts                 # Barrel export
@@ -36,7 +38,8 @@ src/
 │       ├── index.ts             # Barrel export
 │       ├── entities.ts          # Entity, Note, Plan, Document types
 │       ├── connections.ts       # Connection types
-│       └── embeddings.ts        # Embedding types
+│       ├── embeddings.ts        # Embedding types
+│       └── clusters.ts          # Cluster and ClusterMember types
 │
 ├── store/                       # State management (Legend-State)
 │   ├── index.ts                 # Barrel export
@@ -53,10 +56,10 @@ src/
 
 ### State Management (`src/store/`)
 
-- **appState$**: Main observable containing UI state, entity cache, and connection cache
+- **appState$**: Main observable containing UI state, entity cache, connection cache, and cluster cache
 - **devSettings$**: Observable for feature flags and debug settings
-- **Hooks**: `useNotes()`, `useConnections()`, `useFeatureFlag()`, etc.
-- **Actions**: `uiActions`, `entityActions`, `connectionActions`
+- **Hooks**: `useNotes()`, `useConnections()`, `useClusters()`, `useClustersForEntity()`, `useFeatureFlag()`, etc.
+- **Actions**: `uiActions`, `entityActions`, `connectionActions`, `clusterActions`
 
 ### Data Adapters (`src/adapters/`)
 
@@ -74,7 +77,7 @@ src/
 
 - **Technology**: sql.js (SQLite WASM)
 - **Persistence**: In-memory (IndexedDB persistence planned for future WP)
-- **Schema**: Entities table, Connections table, Embeddings table
+- **Schema**: Entities table, Connections table, Embeddings table, Clusters table, ClusterMembers table
 - **Note**: Migrated from wa-sqlite due to API stability issues (see CHANGELOG)
 
 ## Phase Status
@@ -84,6 +87,7 @@ src/
   - WP 0.2: SQLite WASM integration
   - WP 0.3: Data models and adapters
   - WP 0.4: State layer + DevSettings
+  - WP 0.5: Cluster schema and types
 
 ## Console Debugging
 

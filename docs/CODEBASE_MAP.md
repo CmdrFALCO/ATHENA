@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 0.3 (Data Models + Adapters) |
+| **Last WP Completed** | 0.5 (Cluster Schema + Types) |
 | **Last Updated** | January 2026 |
 | **Phase** | 0 (Foundation) |
 
@@ -22,31 +22,45 @@ athena/
 ├── src/
 │   ├── database/                 # ✅ WP 0.2 - SQLite WASM
 │   │   ├── index.ts              # Main export (initDatabase)
-│   │   ├── init.ts               # Database initialization + schema
-│   │   └── schema.ts             # ✅ WP 0.3 - Table definitions
+│   │   ├── init.ts               # Database initialization
+│   │   └── schema.ts             # ✅ WP 0.5 - Table definitions (entities, connections, embeddings, clusters, cluster_members)
 │   │
-│   ├── adapters/                 # ✅ WP 0.3 - Database adapters
+│   ├── adapters/                 # ✅ WP 0.3/0.5 - Database adapters
 │   │   ├── index.ts              # Barrel exports
 │   │   ├── context.ts            # React context + Adapters type
-│   │   ├── hooks.ts              # useAdapters, useNoteAdapter, etc.
+│   │   ├── hooks.ts              # useAdapters, useNoteAdapter, useClusterAdapter, etc.
 │   │   ├── AdapterProvider.tsx   # Provider component
 │   │   ├── INoteAdapter.ts       # Note adapter interface
 │   │   ├── IConnectionAdapter.ts # Connection adapter interface
 │   │   ├── IEmbeddingAdapter.ts  # Embedding adapter interface
+│   │   ├── IClusterAdapter.ts    # ✅ WP 0.5 - Cluster adapter interface
 │   │   └── sqlite/
 │   │       ├── SQLiteNoteAdapter.ts
 │   │       ├── SQLiteConnectionAdapter.ts
-│   │       └── SQLiteEmbeddingAdapter.ts
+│   │       ├── SQLiteEmbeddingAdapter.ts
+│   │       └── SQLiteClusterAdapter.ts  # ✅ WP 0.5
 │   │
 │   ├── shared/
 │   │   ├── components/           # ⏳ Empty - Generic UI components
 │   │   ├── hooks/                # ⏳ Empty - Shared React hooks
 │   │   ├── utils/                # ⏳ Empty - Utility functions
-│   │   └── types/                # ✅ WP 0.3 - TypeScript types
+│   │   └── types/                # ✅ WP 0.3/0.5 - TypeScript types
 │   │       ├── index.ts          # Barrel export
 │   │       ├── entities.ts       # Entity, Note, Plan, Document, Block
 │   │       ├── connections.ts    # Connection, ConnectionType, ConnectionColor
-│   │       └── embeddings.ts     # Embedding, SimilarityResult
+│   │       ├── embeddings.ts     # Embedding, SimilarityResult
+│   │       └── clusters.ts       # ✅ WP 0.5 - Cluster, ClusterMember, ClusterType, MemberRole
+│   │
+│   ├── store/                    # ✅ WP 0.4/0.5 - Legend-State
+│   │   ├── index.ts              # Barrel export
+│   │   ├── state.ts              # appState$ observable (entities, connections, clusters)
+│   │   ├── hooks.ts              # React hooks + actions (incl. clusterActions)
+│   │   └── useInitializeStore.ts # Store initialization (loads all data from SQLite)
+│   │
+│   ├── config/                   # ✅ WP 0.4 - DevSettings
+│   │   ├── index.ts              # Barrel export
+│   │   ├── devSettings.ts        # devSettings$ observable (feature flags)
+│   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/                  # ⏳ Empty - future phases
 │   │   ├── sophia/               # Phase 1+ (notes, connections)
@@ -56,9 +70,6 @@ athena/
 │   │   ├── validation/           # Phase 5 (CPN engine)
 │   │   ├── ai/                   # Phase 3 (AI backends)
 │   │   └── search/               # Phase 4 (FTS + vector)
-│   │
-│   ├── store/                    # ⏳ WP 0.4 - Legend-State
-│   ├── config/                   # ⏳ WP 0.4 - DevSettings
 │   │
 │   ├── app/
 │   │   ├── layout/               # ⏳ Phase 1 - App shell
@@ -70,11 +81,12 @@ athena/
 │
 ├── docs/
 │   ├── ARCHITECTURE.md           # System design
-│   ├── DECISIONS.md              # ADRs (4 recorded)
+│   ├── DECISIONS.md              # ADRs
 │   ├── LESSONS_LEARNED.md        # Gotchas
-│   ├── CHANGELOG.md              # What changed per WP
 │   └── CODEBASE_MAP.md           # This file
 │
+├── CHANGELOG.md                  # What changed per WP
+├── CODEBASE_MAP.md               # Root-level codebase map
 ├── public/                       # Static assets
 ├── index.html                    # HTML entry
 ├── package.json
@@ -97,6 +109,7 @@ athena/
 | `src/App.tsx` | Root component (adapter test UI) |
 | `src/database/index.ts` | Database initialization |
 | `src/adapters/index.ts` | Adapter exports |
+| `src/store/index.ts` | State management exports |
 
 ---
 
@@ -104,7 +117,7 @@ athena/
 
 ### Database (`src/database/`)
 
-**Status:** ✅ Implemented in WP 0.2, enhanced in WP 0.3
+**Status:** ✅ Implemented in WP 0.2, enhanced in WP 0.3/0.5
 
 **Exports:**
 ```typescript
@@ -122,29 +135,29 @@ await db.run('INSERT INTO entities ...', [params]);
 const results = await db.exec<Entity>('SELECT * FROM entities', []);
 ```
 
-**Storage:** IndexedDB via IDBBatchAtomicVFS
+**Storage:** In-memory (sql.js). IndexedDB persistence planned for future WP.
 
 ---
 
 ### Adapters (`src/adapters/`)
 
-**Status:** ✅ Implemented in WP 0.3
+**Status:** ✅ Implemented in WP 0.3, extended in WP 0.5
 
 **Exports:**
 ```typescript
 // Interfaces
-export type { INoteAdapter, IConnectionAdapter, IEmbeddingAdapter } from './adapters';
+export type { INoteAdapter, IConnectionAdapter, IEmbeddingAdapter, IClusterAdapter } from './adapters';
 
 // SQLite implementations
-export { SQLiteNoteAdapter, SQLiteConnectionAdapter, SQLiteEmbeddingAdapter } from './adapters';
+export { SQLiteNoteAdapter, SQLiteConnectionAdapter, SQLiteEmbeddingAdapter, SQLiteClusterAdapter } from './adapters';
 
 // Provider and hooks
-export { AdapterProvider, useAdapters, useNoteAdapter, useConnectionAdapter, useEmbeddingAdapter } from './adapters';
+export { AdapterProvider, useAdapters, useNoteAdapter, useConnectionAdapter, useEmbeddingAdapter, useClusterAdapter } from './adapters';
 ```
 
 **Usage:**
 ```typescript
-import { AdapterProvider, useNoteAdapter } from '@/adapters';
+import { AdapterProvider, useNoteAdapter, useClusterAdapter } from '@/adapters';
 
 // In App.tsx
 <AdapterProvider adapters={adapters}>
@@ -153,15 +166,62 @@ import { AdapterProvider, useNoteAdapter } from '@/adapters';
 
 // In component
 const noteAdapter = useNoteAdapter();
+const clusterAdapter = useClusterAdapter();
+
 const notes = await noteAdapter.getAll();
-await noteAdapter.create({ type: 'note', title: '...', ... });
+const cluster = await clusterAdapter.create({
+  label: 'Thermal Runaway Discussion',
+  type: 'concept',
+  color: 'blue',
+  created_by: 'user',
+  members: [
+    { entity_id: 'note-1', role: 'participant' },
+    { entity_id: 'note-2', role: 'participant' },
+  ]
+});
+```
+
+---
+
+### State Management (`src/store/`)
+
+**Status:** ✅ Implemented in WP 0.4, extended in WP 0.5
+
+**Exports:**
+```typescript
+// Core state
+export { appState$ } from './state';
+
+// Hooks
+export {
+  useNotes, useNote, useNotesLoading,
+  useConnections, useConnectionsFor,
+  useClusters, useCluster, useClustersForEntity, useClustersLoading,
+  useFeatureFlag, useDevSettings,
+  uiActions, entityActions, connectionActions, clusterActions,
+} from './hooks';
+
+// Initialization
+export { useInitializeStore } from './useInitializeStore';
+```
+
+**Usage:**
+```typescript
+import { useNotes, useClusters, clusterActions } from '@/store';
+
+function MyComponent() {
+  const notes = useNotes();
+  const clusters = useClusters();
+
+  const handleAddCluster = (cluster) => {
+    clusterActions.addCluster(cluster);
+  };
+}
 ```
 
 ---
 
 ## Data Models
-
-**Status:** ✅ Implemented in WP 0.3
 
 ### Entity (`src/shared/types/entities.ts`)
 ```typescript
@@ -198,6 +258,33 @@ interface Connection {
 }
 ```
 
+### Cluster (`src/shared/types/clusters.ts`) — NEW in WP 0.5
+```typescript
+type ClusterType = 'concept' | 'sequence' | 'hierarchy' | 'contradiction' | 'dependency';
+type MemberRole = 'source' | 'target' | 'participant' | 'hub' | 'evidence' | 'claim';
+
+interface ClusterMember {
+  entity_id: string;
+  role: MemberRole;
+  position?: number;    // For ordered clusters (sequence)
+  added_at: string;
+}
+
+interface Cluster {
+  id: string;
+  label: string;
+  description?: string;
+  type: ClusterType;
+  color: 'blue' | 'green' | 'red' | 'amber';
+  members?: ClusterMember[];
+  created_by: 'user' | 'ai' | 'system';
+  confidence?: number;  // 0-1 for AI-suggested clusters
+  created_at: string;
+  valid_at: string;
+  invalid_at: string | null;
+}
+```
+
 ### Embedding (`src/shared/types/embeddings.ts`)
 ```typescript
 interface Embedding {
@@ -214,7 +301,7 @@ interface Embedding {
 
 ## Database Schema
 
-**Tables:** `entities`, `connections`, `embeddings`, `schema_meta`
+**Tables:** `entities`, `connections`, `embeddings`, `clusters`, `cluster_members`, `schema_meta`
 
 **Indexes:**
 - `idx_entities_type` - Filter by entity type
@@ -222,18 +309,10 @@ interface Embedding {
 - `idx_connections_source/target` - Graph traversal
 - `idx_connections_color` - Tri-color filtering
 - `idx_embeddings_entity` - Embedding lookup
-
----
-
-## State Management
-
-**Status:** ⏳ Coming in WP 0.4
-
-Will use Legend-State with:
-- Entity store
-- Connection store
-- UI state
-- DevSettings
+- `idx_cluster_members_entity` - Cluster membership lookup
+- `idx_clusters_type` - Filter by cluster type
+- `idx_clusters_color` - Filter by cluster color
+- `idx_clusters_valid` - Bi-temporal queries
 
 ---
 
@@ -244,7 +323,8 @@ Will use Legend-State with:
 |---------|---------|---------|
 | react | 19.x | UI framework |
 | react-dom | 19.x | React DOM renderer |
-| wa-sqlite | 1.x | SQLite WASM |
+| sql.js | 1.x | SQLite WASM |
+| @legendapp/state | 3.x | State management |
 
 ### Development
 | Package | Version | Purpose |
@@ -262,8 +342,10 @@ Will use Legend-State with:
 |---------|----------|-------------|
 | Database singleton | `src/database/init.ts` | Single DB instance, lazy init |
 | Adapter pattern | `src/adapters/` | Interface + implementation separation |
-| Bi-temporal | All entities/connections | `valid_at`/`invalid_at` for soft delete |
+| Bi-temporal | All entities/connections/clusters | `valid_at`/`invalid_at` for soft delete |
 | Dependency injection | `AdapterProvider` | React context for adapters |
+| Observable state | `src/store/state.ts` | Legend-State for reactive updates |
+| N-way relationships | Clusters | Junction pattern for multi-entity relationships |
 
 ---
 
@@ -272,8 +354,8 @@ Will use Legend-State with:
 ### Path Alias
 Use `@/` for imports from `src/`:
 ```typescript
-import { useNoteAdapter } from '@/adapters';
-import type { Note } from '@/shared/types';
+import { useNoteAdapter, useClusterAdapter } from '@/adapters';
+import type { Note, Cluster } from '@/shared/types';
 ```
 
 ### File Naming
@@ -294,12 +376,31 @@ import type { Note } from '@/shared/types';
 
 ---
 
+## Console Debugging
+
+```javascript
+// Access state observables in browser console
+window.__ATHENA_STATE__       // Main app state (entities, connections, clusters)
+window.__ATHENA_DEV_SETTINGS__ // Feature flags
+```
+
+---
+
+## Phase Status
+
+- **Phase 0** (Foundation): Complete
+  - WP 0.1: Project scaffold
+  - WP 0.2: SQLite WASM integration
+  - WP 0.3: Data models and adapters
+  - WP 0.4: State layer + DevSettings
+  - WP 0.5: Cluster schema and types
+
 ## Coming Next
 
 | WP | What's Added |
 |----|--------------|
-| **0.4** | `src/store/`, `src/config/`, Legend-State, DevSettings |
 | **1.1** | `src/app/layout/`, routing, app shell |
+| **2.x** | React Flow canvas integration |
 
 ---
 

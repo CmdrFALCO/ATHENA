@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { appState$ } from './state';
-import { entityActions, connectionActions } from './hooks';
-import type { INoteAdapter, IConnectionAdapter } from '@/adapters';
+import { entityActions, connectionActions, clusterActions } from './hooks';
+import type { INoteAdapter, IConnectionAdapter, IClusterAdapter } from '@/adapters';
 
 interface InitializeOptions {
   noteAdapter: INoteAdapter;
   connectionAdapter: IConnectionAdapter;
+  clusterAdapter: IClusterAdapter;
 }
 
-export function useInitializeStore({ noteAdapter, connectionAdapter }: InitializeOptions) {
+export function useInitializeStore({
+  noteAdapter,
+  connectionAdapter,
+  clusterAdapter,
+}: InitializeOptions) {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +30,10 @@ export function useInitializeStore({ noteAdapter, connectionAdapter }: Initializ
         const connections = await connectionAdapter.getAll();
         connectionActions.setConnections(connections);
 
+        // Load clusters from SQLite
+        const clusters = await clusterAdapter.getAll();
+        clusterActions.setClusters(clusters);
+
         // Mark as initialized
         appState$.initialized.set(true);
         setIsReady(true);
@@ -37,7 +46,7 @@ export function useInitializeStore({ noteAdapter, connectionAdapter }: Initializ
     }
 
     initialize();
-  }, [noteAdapter, connectionAdapter]);
+  }, [noteAdapter, connectionAdapter, clusterAdapter]);
 
   return { isReady, error };
 }

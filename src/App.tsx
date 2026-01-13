@@ -5,8 +5,10 @@ import {
   SQLiteNoteAdapter,
   SQLiteConnectionAdapter,
   SQLiteEmbeddingAdapter,
+  SQLiteClusterAdapter,
   useNoteAdapter,
   useConnectionAdapter,
+  useClusterAdapter,
   type Adapters,
 } from './adapters';
 import {
@@ -22,7 +24,8 @@ import { DevSettingsPanel } from './config';
 function MainContent() {
   const noteAdapter = useNoteAdapter();
   const connectionAdapter = useConnectionAdapter();
-  const { isReady, error } = useInitializeStore({ noteAdapter, connectionAdapter });
+  const clusterAdapter = useClusterAdapter();
+  const { isReady, error } = useInitializeStore({ noteAdapter, connectionAdapter, clusterAdapter });
 
   const notes = useNotes();
   const connections = useConnections();
@@ -140,6 +143,7 @@ function App() {
           notes: new SQLiteNoteAdapter(db),
           connections: new SQLiteConnectionAdapter(db),
           embeddings: new SQLiteEmbeddingAdapter(db),
+          clusters: new SQLiteClusterAdapter(db),
         });
       } catch (err) {
         setError(String(err));
@@ -173,7 +177,7 @@ function App() {
         <MainContent />
 
         <p className="text-sm text-gray-600 mt-8">
-          WP 0.4 Complete — Phase 0 Done! | Ctrl+Shift+D for DevSettings
+          WP 0.5 Complete — Clusters Added! | Ctrl+Shift+D for DevSettings
         </p>
       </div>
 

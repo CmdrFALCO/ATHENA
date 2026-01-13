@@ -3,6 +3,7 @@ import { AdapterContext, type Adapters } from './context';
 import type { INoteAdapter } from './INoteAdapter';
 import type { IConnectionAdapter } from './IConnectionAdapter';
 import type { IEmbeddingAdapter } from './IEmbeddingAdapter';
+import type { IClusterAdapter } from './IClusterAdapter';
 
 export function useAdapters(): Adapters {
   const ctx = useContext(AdapterContext);
@@ -22,4 +23,8 @@ export function useConnectionAdapter(): IConnectionAdapter {
 
 export function useEmbeddingAdapter(): IEmbeddingAdapter {
   return useAdapters().embeddings;
+}
+
+export function useClusterAdapter(): IClusterAdapter {
+  return useAdapters().clusters;
 }

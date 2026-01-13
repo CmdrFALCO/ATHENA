@@ -2,6 +2,33 @@
 
 All notable changes to ATHENA will be documented in this file.
 
+## [0.5.0] - 2026-01-13
+
+### Added
+- **Cluster Schema**: N-way relationship support via clusters and cluster_members tables
+  - `clusters` table with type, color, confidence, bi-temporal fields
+  - `cluster_members` junction table for entity membership with roles
+  - Indexes for efficient queries on entity, type, color, validity
+- **Cluster Types**: TypeScript definitions for cluster concepts
+  - `ClusterType`: concept, sequence, hierarchy, contradiction, dependency
+  - `MemberRole`: source, target, participant, hub, evidence, claim
+  - `Cluster` and `ClusterMember` interfaces
+  - `CreateClusterInput` type for cluster creation
+- **Cluster Adapter**: `IClusterAdapter` interface with full CRUD + queries
+  - Member management: addMember, removeMember, getMembers
+  - Queries: getClustersForEntity, getByType, getByColor, getViolations
+  - Bi-temporal support via invalidate method
+- **SQLite Implementation**: `SQLiteClusterAdapter` following existing patterns
+- **Store Integration**: Cluster state management
+  - `useClusters()`, `useCluster(id)`, `useClustersForEntity(entityId)` hooks
+  - `clusterActions` for CRUD operations
+  - Clusters loaded on app initialization
+
+### Changed
+- Updated `AdapterProvider` to include cluster adapter
+- Updated `useInitializeStore` to load clusters on init
+- App.tsx now initializes SQLiteClusterAdapter
+
 ## [0.4.0] - 2026-01-13
 
 ### Added

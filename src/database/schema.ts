@@ -42,6 +42,30 @@ export const CREATE_TABLES = `
     created_at TEXT NOT NULL
   );
 
+  -- Clusters: N-way relationship junctions
+  CREATE TABLE IF NOT EXISTS clusters (
+    id TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    description TEXT,
+    type TEXT NOT NULL CHECK(type IN ('concept', 'sequence', 'hierarchy', 'contradiction', 'dependency')),
+    color TEXT NOT NULL CHECK(color IN ('blue', 'green', 'red', 'amber')),
+    created_by TEXT NOT NULL CHECK(created_by IN ('user', 'ai', 'system')),
+    confidence REAL CHECK(confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+    created_at TEXT NOT NULL,
+    valid_at TEXT NOT NULL,
+    invalid_at TEXT
+  );
+
+  -- Junction table for cluster membership
+  CREATE TABLE IF NOT EXISTS cluster_members (
+    cluster_id TEXT NOT NULL REFERENCES clusters(id) ON DELETE CASCADE,
+    entity_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    role TEXT NOT NULL CHECK(role IN ('source', 'target', 'participant', 'hub', 'evidence', 'claim')),
+    position INTEGER,
+    added_at TEXT NOT NULL,
+    PRIMARY KEY (cluster_id, entity_id)
+  );
+
   -- Indexes for common queries
   CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type);
   CREATE INDEX IF NOT EXISTS idx_entities_valid ON entities(valid_at, invalid_at);
@@ -49,6 +73,10 @@ export const CREATE_TABLES = `
   CREATE INDEX IF NOT EXISTS idx_connections_target ON connections(target_id);
   CREATE INDEX IF NOT EXISTS idx_connections_color ON connections(color);
   CREATE INDEX IF NOT EXISTS idx_embeddings_entity ON embeddings(entity_id);
+  CREATE INDEX IF NOT EXISTS idx_cluster_members_entity ON cluster_members(entity_id);
+  CREATE INDEX IF NOT EXISTS idx_clusters_type ON clusters(type);
+  CREATE INDEX IF NOT EXISTS idx_clusters_color ON clusters(color);
+  CREATE INDEX IF NOT EXISTS idx_clusters_valid ON clusters(valid_at, invalid_at);
 
   -- Schema version tracking
   CREATE TABLE IF NOT EXISTS schema_meta (

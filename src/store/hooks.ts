@@ -1,7 +1,7 @@
 import { useSelector } from '@legendapp/state/react';
 import { appState$ } from './state';
 import { devSettings$, type FeatureFlags } from '@/config';
-import type { Note, Connection } from '@/shared/types';
+import type { Note, Connection, Cluster } from '@/shared/types';
 
 // UI State hooks
 export function useSidebarOpen(): boolean {
@@ -149,5 +149,64 @@ export const connectionActions = {
     const items = appState$.connections.items.get();
     const { [id]: _, ...rest } = items;
     appState$.connections.items.set(rest);
+  },
+};
+
+// Cluster hooks
+export function useClusters(): Cluster[] {
+  return useSelector(() => Object.values(appState$.clusters.items.get()));
+}
+
+export function useCluster(id: string): Cluster | undefined {
+  return useSelector(() => {
+    const clusters = appState$.clusters.items.get();
+    return clusters[id];
+  });
+}
+
+export function useClustersForEntity(entityId: string): Cluster[] {
+  return useSelector(() => {
+    const all = appState$.clusters.items.get();
+    return Object.values(all).filter(
+      (c) => c.members?.some((m) => m.entity_id === entityId)
+    );
+  });
+}
+
+export function useClustersLoading(): boolean {
+  return useSelector(() => appState$.clusters.isLoading.get());
+}
+
+export const clusterActions = {
+  setClusters(clusters: Cluster[]) {
+    const map: Record<string, Cluster> = {};
+    for (const cluster of clusters) {
+      map[cluster.id] = cluster;
+    }
+    appState$.clusters.items.set(map);
+    appState$.clusters.lastSync.set(new Date().toISOString());
+  },
+
+  addCluster(cluster: Cluster) {
+    const items = appState$.clusters.items.get();
+    appState$.clusters.items.set({ ...items, [cluster.id]: cluster });
+  },
+
+  updateCluster(id: string, updates: Partial<Cluster>) {
+    const items = appState$.clusters.items.get();
+    const current = items[id];
+    if (current) {
+      appState$.clusters.items.set({ ...items, [id]: { ...current, ...updates } });
+    }
+  },
+
+  removeCluster(id: string) {
+    const items = appState$.clusters.items.get();
+    const { [id]: _, ...rest } = items;
+    appState$.clusters.items.set(rest);
+  },
+
+  setLoading(loading: boolean) {
+    appState$.clusters.isLoading.set(loading);
   },
 };

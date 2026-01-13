@@ -12,11 +12,16 @@ export {
   useNotesLoading,
   useConnections,
   useConnectionsFor,
+  useClusters,
+  useCluster,
+  useClustersForEntity,
+  useClustersLoading,
   useFeatureFlag,
   useDevSettings,
   uiActions,
   entityActions,
   connectionActions,
+  clusterActions,
 } from './hooks';
 
 // Initialization

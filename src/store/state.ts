@@ -2,7 +2,7 @@ import { observable } from '@legendapp/state';
 import { persistObservable } from '@legendapp/state/persist';
 import { ObservablePersistLocalStorage } from '@legendapp/state/persist-plugins/local-storage';
 import { configureObservablePersistence } from '@legendapp/state/persist';
-import type { Note, Connection } from '@/shared/types';
+import type { Note, Connection, Cluster } from '@/shared/types';
 
 // Configure persistence plugin
 configureObservablePersistence({
@@ -37,6 +37,13 @@ export const appState$ = observable({
   // Connection cache (loaded from SQLite on init)
   connections: {
     items: {} as Record<string, Connection>,
+    isLoading: false,
+    lastSync: null as string | null,
+  },
+
+  // Cluster cache (loaded from SQLite on init)
+  clusters: {
+    items: {} as Record<string, Cluster>,
     isLoading: false,
     lastSync: null as string | null,
   },
