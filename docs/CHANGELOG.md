@@ -1,5 +1,36 @@
 # ATHENA Changelog
 
+## [1.4.0] - 2026-01-14
+
+### Added
+- **Tiptap Editor**: Rich text editing for notes
+  - `NoteEditor.tsx` - Main Tiptap editor component with StarterKit
+  - `EditorToolbar.tsx` - Formatting toolbar (bold, italic, headings, lists, code, undo/redo)
+  - `EditorContainer.tsx` - Wrapper handling auto-save with 500ms debounce
+- **Shared Hooks**: New hooks module
+  - `useDebouncedCallback()` - Generic debounce hook for callbacks
+- **Editor Features**:
+  - Placeholder text "Start writing..." when empty
+  - Auto-save with "Saving..." indicator
+  - Keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+Z, etc.)
+  - Toolbar active state indicators
+  - Editor remounts on note switch (via key prop)
+
+### Changed
+- `EntityDetailContent.tsx` - Now uses EditorContainer instead of text extraction
+- `Block` type - Updated to match Tiptap's JSONContent format (recursive content, text, marks)
+- `index.css` - Added Tiptap editor and prose dark theme styles
+
+### Dependencies
+- `@tiptap/react` - React bindings for Tiptap
+- `@tiptap/starter-kit` - Common extensions (bold, italic, headings, lists, etc.)
+- `@tiptap/extension-placeholder` - Placeholder text support
+
+### Technical
+- Editor uses StarterKit for common formatting
+- Content stored as Tiptap JSON Block[] format
+- Saves to database via `noteAdapter.update()` and updates store via `entityActions.updateNote()`
+
 ## [1.3.0] - 2026-01-14
 
 ### Added

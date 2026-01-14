@@ -2,6 +2,70 @@
 
 All notable changes to ATHENA will be documented in this file.
 
+## [1.4.0] - 2026-01-14
+
+### Added
+- **Tiptap Editor**: Rich text editing for notes
+  - `NoteEditor.tsx` - Main Tiptap editor component with StarterKit
+  - `EditorToolbar.tsx` - Formatting toolbar (bold, italic, headings, lists, code, undo/redo)
+  - `EditorContainer.tsx` - Wrapper handling auto-save with 500ms debounce
+- **Shared Hooks**: New hooks module
+  - `useDebouncedCallback()` - Generic debounce hook for callbacks
+- **Editor Features**:
+  - Placeholder text "Start writing..." when empty
+  - Auto-save with "Saving..." indicator
+  - Keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+Z, etc.)
+  - Toolbar active state indicators
+  - Editor remounts on note switch (via key prop)
+
+### Changed
+- `EntityDetailContent.tsx` - Now uses EditorContainer instead of text extraction
+- `Block` type - Updated to match Tiptap's JSONContent format (recursive content, text, marks)
+- `index.css` - Added Tiptap editor and prose dark theme styles
+
+### Dependencies
+- `@tiptap/react` - React bindings for Tiptap
+- `@tiptap/starter-kit` - Common extensions (bold, italic, headings, lists, etc.)
+- `@tiptap/extension-placeholder` - Placeholder text support
+
+## [1.3.0] - 2026-01-14
+
+### Added
+- **Entity Detail View**: Display selected note in main content area
+  - `EntityDetail.tsx` - Main container, shows empty or note detail
+  - `EntityDetailEmpty.tsx` - Empty state with "Select a note" prompt
+  - `EntityDetailHeader.tsx` - Title, type badge, created/updated timestamps
+  - `EntityDetailContent.tsx` - Content display with text extraction from blocks
+- **Date Formatting**: Full date format utility
+  - `formatDate()` - Returns formatted date (e.g., "Jan 10, 2026")
+
+### Changed
+- `SophiaPage.tsx` - Now renders `EntityDetail` instead of placeholder
+- Updated component exports in sophia module
+
+## [1.2.0] - 2026-01-13
+
+### Added
+- **Entity List**: Functional note list in sidebar
+  - `EntityList.tsx` - Container component with loading/empty states
+  - `EntityListItem.tsx` - Single note item with title, icon, timestamp
+  - Sorted by `updated_at` descending (most recent first)
+  - Single selection support with visual highlight (blue left border)
+- **Sophia Module**: First module implementation
+  - `src/modules/sophia/` - Knowledge workspace module structure
+  - Barrel exports for components
+- **Utilities**: Shared utility functions
+  - `formatRelativeTime()` - Relative time formatting (e.g., "5 minutes ago", "yesterday")
+  - `src/shared/utils/` - Utility module structure
+- **Sample Data**: Auto-generated test notes on first run
+  - 3 sample notes created when database is empty
+  - Enables testing without note creation UI
+
+### Changed
+- `Sidebar.tsx` - Replaced placeholder with `EntityList` component
+- `useInitializeStore.ts` - Added sample data generation for testing
+- Navigation section no longer uses `flex-1` to allow entity list to fill space
+
 ## [1.1.0] - 2026-01-13
 
 ### Added

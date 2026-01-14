@@ -1,3 +1,107 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Tiptap editor styles */
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #888;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Prose styles for dark theme */
+.prose-invert {
+  color: #e0e0e0;
+}
+
+.prose-invert h1,
+.prose-invert h2,
+.prose-invert h3 {
+  color: #ffffff;
+}
+
+.prose-invert h1 {
+  font-size: 2em;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+.prose-invert h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose-invert h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+
+.prose-invert p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose-invert code {
+  background: #2a2a2a;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.prose-invert pre {
+  background: #2a2a2a;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.prose-invert pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose-invert ul,
+.prose-invert ol {
+  padding-left: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose-invert li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose-invert a {
+  color: #60a5fa;
+}
+
+.prose-invert blockquote {
+  border-left: 3px solid #888;
+  padding-left: 1em;
+  color: #aaa;
+  font-style: italic;
+}
+
+.prose-invert hr {
+  border-color: #444;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.prose-invert strong {
+  color: #ffffff;
+  font-weight: 600;
+}

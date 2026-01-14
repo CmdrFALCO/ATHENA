@@ -4,3 +4,6 @@ export { EntityDetail } from './EntityDetail';
 export { EntityDetailEmpty } from './EntityDetailEmpty';
 export { EntityDetailHeader } from './EntityDetailHeader';
 export { EntityDetailContent } from './EntityDetailContent';
+export { EditorContainer } from './EditorContainer';
+export { NoteEditor } from './NoteEditor';
+export { EditorToolbar } from './EditorToolbar';

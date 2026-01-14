@@ -48,12 +48,33 @@ src/
 │   └── schema.ts                # SQL schema definitions
 │
 ├── shared/
+│   ├── hooks/                   # Shared React hooks (WP 1.4)
+│   │   ├── index.ts             # Barrel export
+│   │   └── useDebounce.ts       # Debounced callback hook
+│   ├── utils/                   # Utility functions (WP 1.2)
+│   │   ├── index.ts             # Barrel export
+│   │   └── formatTime.ts        # Relative time formatting
 │   └── types/                   # TypeScript type definitions
 │       ├── index.ts             # Barrel export
 │       ├── entities.ts          # Entity, Note, Plan, Document types
 │       ├── connections.ts       # Connection types
 │       ├── embeddings.ts        # Embedding types
 │       └── clusters.ts          # Cluster and ClusterMember types
+│
+├── modules/
+│   └── sophia/                  # Knowledge workspace (WP 1.2-1.4)
+│       ├── index.ts             # Module exports
+│       └── components/
+│           ├── index.ts               # Component exports
+│           ├── EntityList.tsx         # Note list container
+│           ├── EntityListItem.tsx     # Single note item
+│           ├── EntityDetail.tsx       # Note detail view (WP 1.3)
+│           ├── EntityDetailEmpty.tsx  # Empty state
+│           ├── EntityDetailHeader.tsx # Header with title/meta
+│           ├── EntityDetailContent.tsx# Content display
+│           ├── EditorContainer.tsx    # Editor wrapper with auto-save (WP 1.4)
+│           ├── NoteEditor.tsx         # Tiptap editor instance (WP 1.4)
+│           └── EditorToolbar.tsx      # Formatting toolbar (WP 1.4)
 │
 ├── store/                       # State management (Legend-State)
 │   ├── index.ts                 # Barrel export
@@ -105,6 +126,9 @@ src/
 
 - **Phase 1** (Core UI): In Progress
   - WP 1.1: App shell + routing (Complete)
+  - WP 1.2: Entity list in sidebar (Complete)
+  - WP 1.3: Entity detail view (Complete)
+  - WP 1.4: Tiptap rich text editor (Complete)
 
 ### App Shell (`src/app/`)
 
@@ -112,6 +136,14 @@ src/
 - **Routing**: TanStack Router with `/sophia`, `/pronoia`, `/ergane` routes
 - **Components**: AppLayout, Header, Sidebar, StoreInitializer
 - **Icons**: lucide-react (Bird, Swords, Hammer for aspects)
+
+### Sophia Module (`src/modules/sophia/`)
+
+- **Entity List**: Note list in sidebar with selection support
+- **Entity Detail**: Note detail view with header and content
+- **Tiptap Editor**: Rich text editing with auto-save (500ms debounce)
+- **Toolbar**: Bold, italic, headings, lists, code, undo/redo
+- **Features**: Keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+Z), active state indicators
 
 ## Console Debugging
 

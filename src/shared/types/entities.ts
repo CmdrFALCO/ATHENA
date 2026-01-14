@@ -16,11 +16,13 @@ export interface Entity {
   position_y: number; // Canvas Y position
 }
 
-// For now, Block is simple - Tiptap will define structure later
+// Tiptap JSON content block - matches Tiptap's JSONContent type
 export interface Block {
   type: string;
-  content?: unknown;
+  content?: Block[];
+  text?: string;
   attrs?: Record<string, unknown>;
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
 }
 
 // Note is an Entity with type = 'note'

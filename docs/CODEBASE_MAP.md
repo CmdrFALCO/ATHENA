@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 1.3 (Entity Detail) |
+| **Last WP Completed** | 1.4 (Tiptap Editor) |
 | **Last Updated** | January 2026 |
 | **Phase** | 1 (Core UI) |
 
@@ -42,7 +42,9 @@ athena/
 │   │
 │   ├── shared/
 │   │   ├── components/           # ⏳ Empty - Generic UI components
-│   │   ├── hooks/                # ⏳ Empty - Shared React hooks
+│   │   ├── hooks/                # ✅ WP 1.4 - Shared React hooks
+│   │   │   ├── index.ts          # Barrel export
+│   │   │   └── useDebounce.ts    # Debounced callback hook
 │   │   ├── utils/                # ✅ WP 1.2 - Utility functions
 │   │   │   ├── index.ts          # Barrel export
 │   │   │   └── formatTime.ts     # Relative time formatting
@@ -65,7 +67,7 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── sophia/               # ✅ WP 1.2/1.3 - Knowledge workspace
+│   │   ├── sophia/               # ✅ WP 1.2-1.4 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
 │   │   │       ├── index.ts            # Component exports
@@ -74,7 +76,10 @@ athena/
 │   │   │       ├── EntityDetail.tsx    # ✅ WP 1.3 - Note detail view
 │   │   │       ├── EntityDetailEmpty.tsx    # Empty state
 │   │   │       ├── EntityDetailHeader.tsx   # Header with title/meta
-│   │   │       └── EntityDetailContent.tsx  # Content display
+│   │   │       ├── EntityDetailContent.tsx  # Content display (uses EditorContainer)
+│   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
+│   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
+│   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── canvas/               # ⏳ Phase 2 (React Flow graph)
@@ -134,6 +139,7 @@ athena/
 | `src/store/index.ts` | State management exports |
 | `src/modules/sophia/index.ts` | Sophia module exports |
 | `src/shared/utils/index.ts` | Utility function exports |
+| `src/shared/hooks/index.ts` | Shared hooks exports |
 
 ---
 
@@ -292,7 +298,7 @@ const isOpen = useSidebarOpen();
 
 ### Sophia Module (`src/modules/sophia/`)
 
-**Status:** ✅ Implemented in WP 1.2/1.3
+**Status:** ✅ Implemented in WP 1.2-1.4
 
 **Components:**
 - `EntityList` - Note list container with loading/empty states
@@ -300,12 +306,15 @@ const isOpen = useSidebarOpen();
 - `EntityDetail` - Main detail view for selected note (WP 1.3)
 - `EntityDetailEmpty` - Empty state when no note selected
 - `EntityDetailHeader` - Header with title, type badge, timestamps
-- `EntityDetailContent` - Content display (temporary text extraction)
+- `EntityDetailContent` - Content display (uses EditorContainer)
+- `EditorContainer` - Editor wrapper with auto-save logic (WP 1.4)
+- `NoteEditor` - Tiptap editor instance (WP 1.4)
+- `EditorToolbar` - Formatting toolbar (WP 1.4)
 
 **Exports:**
 ```typescript
 // src/modules/sophia/index.ts
-export { EntityList, EntityListItem, EntityDetail } from './components';
+export { EntityList, EntityListItem, EntityDetail, EditorContainer, NoteEditor, EditorToolbar } from './components';
 ```
 
 **Usage:**
@@ -316,7 +325,7 @@ import { EntityList, EntityDetail } from '@/modules/sophia';
 <EntityList />  // Displays all notes with selection support
 
 // In SophiaPage
-<EntityDetail />  // Shows selected note details
+<EntityDetail />  // Shows selected note with Tiptap editor
 ```
 
 **Features:**
@@ -326,7 +335,9 @@ import { EntityList, EntityDetail } from '@/modules/sophia';
 - Single selection with visual highlight
 - Relative time display (e.g., "5 minutes ago")
 - Note detail view with title, type badge, timestamps
-- Basic content extraction from Tiptap Block[] format
+- Rich text editing with Tiptap (WP 1.4)
+- Auto-save with 500ms debounce
+- Formatting toolbar (bold, italic, headings, lists, code, undo/redo)
 
 ---
 
@@ -349,6 +360,30 @@ formatRelativeTime('2026-01-13T12:00:00Z');
 
 formatDate('2026-01-13T12:00:00Z');
 // Returns: "Jan 13, 2026"
+```
+
+---
+
+### Shared Hooks (`src/shared/hooks/`)
+
+**Status:** ✅ Implemented in WP 1.4
+
+**Exports:**
+```typescript
+// src/shared/hooks/index.ts
+export { useDebouncedCallback } from './useDebounce';
+```
+
+**Usage:**
+```typescript
+import { useDebouncedCallback } from '@/shared/hooks';
+
+const debouncedSave = useDebouncedCallback(async (content) => {
+  await saveToDatabase(content);
+}, 500);
+
+// Called on every change, but only executes after 500ms of inactivity
+debouncedSave(newContent);
 ```
 
 ---
@@ -459,6 +494,9 @@ interface Embedding {
 | lucide-react | 0.x | Icon library |
 | sql.js | 1.x | SQLite WASM |
 | @legendapp/state | 3.x | State management |
+| @tiptap/react | 2.x | Rich text editor (React bindings) |
+| @tiptap/starter-kit | 2.x | Common editor extensions |
+| @tiptap/extension-placeholder | 2.x | Placeholder text support |
 
 ### Development
 | Package | Version | Purpose |
@@ -533,6 +571,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 1.1: App shell + routing (Complete)
   - WP 1.2: Entity list in sidebar (Complete)
   - WP 1.3: Entity detail view (Complete)
+  - WP 1.4: Tiptap rich text editor (Complete)
 
 ## Known Issues
 
@@ -544,7 +583,6 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **1.4** | Note editor with Tiptap |
 | **1.5** | Note persistence (create/update/delete) |
 | **1.6** | Note creation UI |
 | **2.x** | React Flow canvas integration |
