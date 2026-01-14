@@ -51,6 +51,9 @@ src/
 │   ├── hooks/                   # Shared React hooks (WP 1.4)
 │   │   ├── index.ts             # Barrel export
 │   │   └── useDebounce.ts       # Debounced callback hook
+│   ├── theme/                   # Theme constants (WP 2.1)
+│   │   ├── index.ts             # Barrel export
+│   │   └── colors.ts            # Centralized color definitions
 │   ├── utils/                   # Utility functions (WP 1.2)
 │   │   ├── index.ts             # Barrel export
 │   │   └── formatTime.ts        # Relative time formatting
@@ -62,6 +65,13 @@ src/
 │       └── clusters.ts          # Cluster and ClusterMember types
 │
 ├── modules/
+│   ├── canvas/                  # Graph canvas workspace (WP 2.1)
+│   │   ├── index.ts             # Module exports
+│   │   ├── components/
+│   │   │   ├── index.ts         # Component exports
+│   │   │   └── GraphCanvas.tsx  # React Flow canvas component
+│   │   └── hooks/
+│   │       └── index.ts         # Canvas hooks (future WPs)
 │   └── sophia/                  # Knowledge workspace (WP 1.2-1.4)
 │       ├── index.ts             # Module exports
 │       └── components/
@@ -131,12 +141,31 @@ src/
   - WP 1.4: Tiptap rich text editor (Complete)
   - WP 1.5: Entity CRUD (Complete)
 
+- **Phase 2** (Graph Visualization): In Progress
+  - WP 2.1: React Flow setup (Complete)
+
 ### App Shell (`src/app/`)
 
 - **Layout**: Header, Sidebar (collapsible 240px/64px), main content area
 - **Routing**: TanStack Router with `/sophia`, `/pronoia`, `/ergane` routes
 - **Components**: AppLayout, Header, Sidebar, StoreInitializer
 - **Icons**: lucide-react (Bird, Swords, Hammer for aspects)
+
+### Canvas Module (`src/modules/canvas/`)
+
+- **Technology**: React Flow v12+ (@xyflow/react)
+- **GraphCanvas**: Main canvas component with pan/zoom
+- **Features**: Background grid, Controls, MiniMap
+- **Layout**: 60/40 split with detail panel in Sophia workspace
+- **Theme**: Dark theme with custom colors from `src/shared/theme`
+
+### Theme (`src/shared/theme/`)
+
+- **ATHENA_COLORS**: Centralized color constants
+  - Connection colors: Blue (explicit), Green (semantic), Red (error)
+  - Node colors by type: Note (blue), Plan (amber), Document (purple)
+  - Surface colors: Canvas, node, panel backgrounds
+  - UI states: Selected, hover, focus
 
 ### Sophia Module (`src/modules/sophia/`)
 

@@ -1,5 +1,30 @@
 # ATHENA Changelog
 
+## [2.1.0] - 2026-01-14
+
+### Added
+- **React Flow Canvas**: Graph visualization foundation in Sophia workspace
+  - `GraphCanvas.tsx` - React Flow canvas with pan/zoom support
+  - Background grid, Controls (zoom +/-/fit), MiniMap
+  - Dark theme integration with custom colors
+- **Theme Constants**: Centralized color definitions
+  - `src/shared/theme/colors.ts` - ATHENA_COLORS constant
+  - Connection colors (blue/green/red/amber)
+  - Node colors by entity type
+  - Surface and UI state colors
+- **Canvas Module**: New module structure at `src/modules/canvas/`
+
+### Changed
+- `SophiaPage.tsx` - Now shows 60/40 split: canvas + detail panel
+- `index.css` - Added React Flow dark theme overrides
+
+### Dependencies
+- `@xyflow/react` - React Flow v12+ for graph visualization
+
+### Technical
+- Canvas currently renders empty (nodes/edges added in WP 2.2)
+- Layout: Canvas takes `flex-1`, detail panel fixed at 400px
+
 ## [1.5.0] - 2026-01-14
 
 ### Added

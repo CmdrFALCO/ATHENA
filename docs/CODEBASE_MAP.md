@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 1.5 (Entity CRUD) |
+| **Last WP Completed** | 2.1 (React Flow Setup) |
 | **Last Updated** | January 2026 |
-| **Phase** | 1 (Core UI) - Complete |
+| **Phase** | 2 (Graph Visualization) - In Progress |
 
 ---
 
@@ -45,6 +45,9 @@ athena/
 │   │   ├── hooks/                # ✅ WP 1.4 - Shared React hooks
 │   │   │   ├── index.ts          # Barrel export
 │   │   │   └── useDebounce.ts    # Debounced callback hook
+│   │   ├── theme/                # ✅ WP 2.1 - Theme constants
+│   │   │   ├── index.ts          # Barrel export
+│   │   │   └── colors.ts         # ATHENA_COLORS centralized colors
 │   │   ├── utils/                # ✅ WP 1.2 - Utility functions
 │   │   │   ├── index.ts          # Barrel export
 │   │   │   └── formatTime.ts     # Relative time formatting
@@ -67,6 +70,13 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
+│   │   ├── canvas/               # ✅ WP 2.1 - React Flow graph canvas
+│   │   │   ├── index.ts          # Module barrel export
+│   │   │   ├── components/
+│   │   │   │   ├── index.ts      # Component exports
+│   │   │   │   └── GraphCanvas.tsx  # React Flow canvas component
+│   │   │   └── hooks/
+│   │   │       └── index.ts      # Canvas hooks (future WPs)
 │   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
@@ -82,7 +92,6 @@ athena/
 │   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
-│   │   ├── canvas/               # ⏳ Phase 2 (React Flow graph)
 │   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
 │   │   ├── ai/                   # ⏳ Phase 3 (AI backends)
 │   │   └── search/               # ⏳ Phase 4 (FTS + vector)
@@ -137,7 +146,9 @@ athena/
 | `src/database/index.ts` | Database initialization |
 | `src/adapters/index.ts` | Adapter exports |
 | `src/store/index.ts` | State management exports |
+| `src/modules/canvas/index.ts` | Canvas module exports |
 | `src/modules/sophia/index.ts` | Sophia module exports |
+| `src/shared/theme/index.ts` | Theme constants exports |
 | `src/shared/utils/index.ts` | Utility function exports |
 | `src/shared/hooks/index.ts` | Shared hooks exports |
 
@@ -247,6 +258,75 @@ function MyComponent() {
     clusterActions.addCluster(cluster);
   };
 }
+```
+
+---
+
+### Canvas Module (`src/modules/canvas/`)
+
+**Status:** ✅ Implemented in WP 2.1
+
+**Components:**
+- `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
+
+**Exports:**
+```typescript
+// src/modules/canvas/index.ts
+export { GraphCanvas } from './components';
+```
+
+**Usage:**
+```typescript
+import { GraphCanvas } from '@/modules/canvas';
+
+// In SophiaPage - side by side with EntityDetail
+<div className="flex h-full">
+  <div className="flex-1 min-w-0">
+    <GraphCanvas />
+  </div>
+  <div className="w-[400px] border-l">
+    <EntityDetail />
+  </div>
+</div>
+```
+
+**Features:**
+- Dark themed canvas (`#1a1a1a` background)
+- Dot grid background pattern
+- Pan and zoom controls
+- MiniMap for navigation
+- Empty state (nodes added in WP 2.2)
+
+---
+
+### Theme (`src/shared/theme/`)
+
+**Status:** ✅ Implemented in WP 2.1
+
+**Exports:**
+```typescript
+// src/shared/theme/index.ts
+export { ATHENA_COLORS } from './colors';
+export type { ConnectionColor, NodeColor } from './colors';
+```
+
+**Usage:**
+```typescript
+import { ATHENA_COLORS } from '@/shared/theme';
+
+// Connection colors
+ATHENA_COLORS.connection.explicit  // '#3b82f6' - Blue
+ATHENA_COLORS.connection.semantic  // '#22c55e' - Green
+
+// Node colors by entity type
+ATHENA_COLORS.node.note     // '#3b82f6' - Blue
+ATHENA_COLORS.node.plan     // '#f59e0b' - Amber
+ATHENA_COLORS.node.document // '#8b5cf6' - Purple
+
+// Surface colors
+ATHENA_COLORS.surface.canvas     // '#1a1a1a'
+ATHENA_COLORS.surface.node       // '#252525'
+ATHENA_COLORS.surface.nodeBorder // '#3a3a3a'
 ```
 
 ---
@@ -495,6 +575,7 @@ interface Embedding {
 | react | 19.x | UI framework |
 | react-dom | 19.x | React DOM renderer |
 | @tanstack/react-router | 1.x | Client-side routing |
+| @xyflow/react | 12.x | React Flow graph visualization |
 | lucide-react | 0.x | Icon library |
 | sql.js | 1.x | SQLite WASM |
 | @legendapp/state | 3.x | State management |
@@ -578,6 +659,9 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 1.4: Tiptap rich text editor (Complete)
   - WP 1.5: Entity CRUD (Complete)
 
+- **Phase 2** (Graph Visualization): In Progress
+  - WP 2.1: React Flow setup (Complete)
+
 ## Known Issues
 
 Pre-existing lint errors to address:
@@ -588,7 +672,10 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **2.x** | React Flow canvas integration |
+| **2.2** | Entity nodes on canvas |
+| **2.3** | Node positioning (drag to reposition) |
+| **2.4** | Blue connections (drag between nodes) |
+| **2.5** | Connection inspector |
 | **3.x** | AI backends integration |
 | **4.x** | Full-text search + vector search |
 
