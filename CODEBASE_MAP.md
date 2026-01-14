@@ -65,13 +65,15 @@ src/
 │       └── clusters.ts          # Cluster and ClusterMember types
 │
 ├── modules/
-│   ├── canvas/                  # Graph canvas workspace (WP 2.1)
+│   ├── canvas/                  # Graph canvas workspace (WP 2.1-2.2)
 │   │   ├── index.ts             # Module exports
 │   │   ├── components/
 │   │   │   ├── index.ts         # Component exports
-│   │   │   └── GraphCanvas.tsx  # React Flow canvas component
+│   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
+│   │   │   └── EntityNode.tsx   # Custom node component (WP 2.2)
 │   │   └── hooks/
-│   │       └── index.ts         # Canvas hooks (future WPs)
+│   │       ├── index.ts         # Hook exports
+│   │       └── useNotesAsNodes.ts # Converts notes to React Flow nodes (WP 2.2)
 │   └── sophia/                  # Knowledge workspace (WP 1.2-1.4)
 │       ├── index.ts             # Module exports
 │       └── components/
@@ -143,6 +145,7 @@ src/
 
 - **Phase 2** (Graph Visualization): In Progress
   - WP 2.1: React Flow setup (Complete)
+  - WP 2.2: Entity nodes on canvas (Complete)
 
 ### App Shell (`src/app/`)
 
@@ -155,9 +158,12 @@ src/
 
 - **Technology**: React Flow v12+ (@xyflow/react)
 - **GraphCanvas**: Main canvas component with pan/zoom
-- **Features**: Background grid, Controls, MiniMap
+- **EntityNode**: Custom node component with type badge and title (WP 2.2)
+- **useNotesAsNodes**: Hook that converts store notes to React Flow nodes (WP 2.2)
+- **Features**: Background grid, Controls, MiniMap, node selection sync
 - **Layout**: 60/40 split with detail panel in Sophia workspace
 - **Theme**: Dark theme with custom colors from `src/shared/theme`
+- **Data Flow**: Store → useNotesAsNodes → GraphCanvas → EntityNode → Click → uiActions.selectEntity
 
 ### Theme (`src/shared/theme/`)
 

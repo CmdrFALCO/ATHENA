@@ -132,3 +132,27 @@
   border: 1px solid #3a3a3a;
   border-radius: 8px;
 }
+
+/* React Flow node overrides */
+.react-flow__node {
+  cursor: pointer;
+}
+
+.react-flow__node:focus {
+  outline: none;
+}
+
+.react-flow__node:focus-visible {
+  outline: none;
+}
+
+/* Handle styling - hidden by default, shown on hover */
+.react-flow__handle {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.react-flow__node:hover .react-flow__handle,
+.react-flow__handle:hover {
+  opacity: 1;
+}

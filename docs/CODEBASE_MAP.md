@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 2.1 (React Flow Setup) |
+| **Last WP Completed** | 2.2 (Entity Nodes) |
 | **Last Updated** | January 2026 |
 | **Phase** | 2 (Graph Visualization) - In Progress |
 
@@ -70,13 +70,15 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── canvas/               # ✅ WP 2.1 - React Flow graph canvas
+│   │   ├── canvas/               # ✅ WP 2.1-2.2 - React Flow graph canvas
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts      # Component exports
-│   │   │   │   └── GraphCanvas.tsx  # React Flow canvas component
+│   │   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
+│   │   │   │   └── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
 │   │   │   └── hooks/
-│   │   │       └── index.ts      # Canvas hooks (future WPs)
+│   │   │       ├── index.ts      # Hook exports
+│   │   │       └── useNotesAsNodes.ts  # ✅ WP 2.2 - Converts notes to nodes
 │   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
@@ -264,15 +266,20 @@ function MyComponent() {
 
 ### Canvas Module (`src/modules/canvas/`)
 
-**Status:** ✅ Implemented in WP 2.1
+**Status:** ✅ Implemented in WP 2.1-2.2
 
 **Components:**
 - `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
+- `EntityNode` - Custom node with type badge, icon, and title (WP 2.2)
+
+**Hooks:**
+- `useNotesAsNodes` - Converts store notes to React Flow nodes (WP 2.2)
 
 **Exports:**
 ```typescript
 // src/modules/canvas/index.ts
-export { GraphCanvas } from './components';
+export { GraphCanvas, EntityNode } from './components';
+export { useNotesAsNodes } from './hooks';
 ```
 
 **Usage:**
@@ -294,8 +301,15 @@ import { GraphCanvas } from '@/modules/canvas';
 - Dark themed canvas (`#1a1a1a` background)
 - Dot grid background pattern
 - Pan and zoom controls
-- MiniMap for navigation
-- Empty state (nodes added in WP 2.2)
+- MiniMap for navigation with color-coded nodes
+- Entity nodes with type badges and selection sync (WP 2.2)
+
+**Data Flow (WP 2.2):**
+```
+Store (notes) → useNotesAsNodes() → GraphCanvas → EntityNode
+     ↑                                              ↓
+uiActions.selectEntity() ←────── onNodeClick ──────┘
+```
 
 ---
 
@@ -661,6 +675,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
 
 - **Phase 2** (Graph Visualization): In Progress
   - WP 2.1: React Flow setup (Complete)
+  - WP 2.2: Entity nodes on canvas (Complete)
 
 ## Known Issues
 
@@ -672,7 +687,6 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **2.2** | Entity nodes on canvas |
 | **2.3** | Node positioning (drag to reposition) |
 | **2.4** | Blue connections (drag between nodes) |
 | **2.5** | Connection inspector |

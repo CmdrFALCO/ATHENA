@@ -1,5 +1,33 @@
 # ATHENA Changelog
 
+## [2.2.0] - 2026-01-14
+
+### Added
+- **Entity Nodes**: Custom React Flow node component for displaying entities
+  - `EntityNode.tsx` - Node with type badge, icon, and title
+  - Color-coded left border based on entity type (note=blue, plan=amber, document=purple)
+  - Selection highlight with amber ring
+  - Connection handles (hidden by default, shown on hover)
+- **useNotesAsNodes Hook**: Converts store notes to React Flow nodes
+  - Auto-generates grid layout positions if not set
+  - Click node → selects in store → updates detail panel
+
+### Changed
+- `GraphCanvas.tsx` - Now renders entity nodes from store with ID-based sync
+- `EntityNode.tsx` - Subscribes directly to store for selection state
+- `index.css` - Added node focus and handle hover styles
+
+### Fixed
+- Infinite loop when syncing React Flow nodes with store
+  - Root cause: `useEffect` triggering on every render due to array reference changes
+  - Solution: `EntityNode` subscribes directly to `useSelectedEntityIds()` instead of receiving selection via props
+  - `GraphCanvas` only syncs when node IDs actually change (add/remove)
+
+### Technical
+- Node positions use `position_x`/`position_y` from entity or fall back to auto-grid
+- Selection state handled per-node via direct store subscription (avoids prop drilling and re-render loops)
+- Data flow: Store → useNotesAsNodes → GraphCanvas → EntityNode (subscribes to selection) → onNodeClick → uiActions.selectEntity
+
 ## [2.1.0] - 2026-01-14
 
 ### Added
