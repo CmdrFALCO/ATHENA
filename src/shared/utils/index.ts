@@ -1,1 +1,1 @@
-export { formatRelativeTime } from './formatTime';
+export { formatRelativeTime, formatDate } from './formatTime';

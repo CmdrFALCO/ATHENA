@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 1.2 (Entity List) |
+| **Last WP Completed** | 1.3 (Entity Detail) |
 | **Last Updated** | January 2026 |
 | **Phase** | 1 (Core UI) |
 
@@ -65,12 +65,16 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── sophia/               # ✅ WP 1.2 - Knowledge workspace
+│   │   ├── sophia/               # ✅ WP 1.2/1.3 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
-│   │   │       ├── index.ts      # Component exports
+│   │   │       ├── index.ts            # Component exports
 │   │   │       ├── EntityList.tsx      # Note list container
-│   │   │       └── EntityListItem.tsx  # Single note item
+│   │   │       ├── EntityListItem.tsx  # Single note item
+│   │   │       ├── EntityDetail.tsx    # ✅ WP 1.3 - Note detail view
+│   │   │       ├── EntityDetailEmpty.tsx    # Empty state
+│   │   │       ├── EntityDetailHeader.tsx   # Header with title/meta
+│   │   │       └── EntityDetailContent.tsx  # Content display
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── canvas/               # ⏳ Phase 2 (React Flow graph)
@@ -288,24 +292,31 @@ const isOpen = useSidebarOpen();
 
 ### Sophia Module (`src/modules/sophia/`)
 
-**Status:** ✅ Implemented in WP 1.2
+**Status:** ✅ Implemented in WP 1.2/1.3
 
 **Components:**
 - `EntityList` - Note list container with loading/empty states
 - `EntityListItem` - Single note item with title, icon, and timestamp
+- `EntityDetail` - Main detail view for selected note (WP 1.3)
+- `EntityDetailEmpty` - Empty state when no note selected
+- `EntityDetailHeader` - Header with title, type badge, timestamps
+- `EntityDetailContent` - Content display (temporary text extraction)
 
 **Exports:**
 ```typescript
 // src/modules/sophia/index.ts
-export { EntityList, EntityListItem } from './components';
+export { EntityList, EntityListItem, EntityDetail } from './components';
 ```
 
 **Usage:**
 ```typescript
-import { EntityList } from '@/modules/sophia';
+import { EntityList, EntityDetail } from '@/modules/sophia';
 
 // In Sidebar
 <EntityList />  // Displays all notes with selection support
+
+// In SophiaPage
+<EntityDetail />  // Shows selected note details
 ```
 
 **Features:**
@@ -314,25 +325,30 @@ import { EntityList } from '@/modules/sophia';
 - Empty state when no notes exist
 - Single selection with visual highlight
 - Relative time display (e.g., "5 minutes ago")
+- Note detail view with title, type badge, timestamps
+- Basic content extraction from Tiptap Block[] format
 
 ---
 
 ### Utilities (`src/shared/utils/`)
 
-**Status:** ✅ Implemented in WP 1.2
+**Status:** ✅ Implemented in WP 1.2/1.3
 
 **Exports:**
 ```typescript
 // src/shared/utils/index.ts
-export { formatRelativeTime } from './formatTime';
+export { formatRelativeTime, formatDate } from './formatTime';
 ```
 
 **Usage:**
 ```typescript
-import { formatRelativeTime } from '@/shared/utils';
+import { formatRelativeTime, formatDate } from '@/shared/utils';
 
 formatRelativeTime('2026-01-13T12:00:00Z');
 // Returns: "5 minutes ago", "yesterday", "Jan 13", etc.
+
+formatDate('2026-01-13T12:00:00Z');
+// Returns: "Jan 13, 2026"
 ```
 
 ---
@@ -516,6 +532,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
 - **Phase 1** (Core UI): In Progress
   - WP 1.1: App shell + routing (Complete)
   - WP 1.2: Entity list in sidebar (Complete)
+  - WP 1.3: Entity detail view (Complete)
 
 ## Known Issues
 
@@ -527,9 +544,9 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **1.3** | Note editor panel |
-| **1.4** | Note persistence (create/update/delete) |
-| **1.5** | Note creation UI |
+| **1.4** | Note editor with Tiptap |
+| **1.5** | Note persistence (create/update/delete) |
+| **1.6** | Note creation UI |
 | **2.x** | React Flow canvas integration |
 
 ---

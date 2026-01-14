@@ -1,5 +1,25 @@
 # ATHENA Changelog
 
+## [1.3.0] - 2026-01-14
+
+### Added
+- **Entity Detail View**: Display selected note in main content area
+  - `EntityDetail.tsx` - Main container, shows empty or note detail
+  - `EntityDetailEmpty.tsx` - Empty state with "Select a note" prompt
+  - `EntityDetailHeader.tsx` - Title, type badge, created/updated timestamps
+  - `EntityDetailContent.tsx` - Content display with text extraction from blocks
+- **Date Formatting**: Full date format utility
+  - `formatDate()` - Returns formatted date (e.g., "Jan 10, 2026")
+
+### Changed
+- `SophiaPage.tsx` - Now renders `EntityDetail` instead of placeholder
+- Updated component exports in sophia module
+
+### Technical
+- Temporary text extraction from Tiptap Block[] format
+- Will be replaced by Tiptap editor in WP 1.4
+- Uses `useNote(id)` hook for efficient single note lookup
+
 ## [1.2.0] - 2026-01-13
 
 ### Added

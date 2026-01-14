@@ -35,3 +35,17 @@ export function formatRelativeTime(date: string | Date): string {
   // For older dates, show the date
   return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+/**
+ * Format a date as a full date string
+ * @param date - ISO date string or Date object
+ * @returns Formatted date string (e.g., "Jan 10, 2026")
+ */
+export function formatDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
