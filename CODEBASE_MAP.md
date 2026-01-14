@@ -124,11 +124,12 @@ src/
   - WP 0.4: State layer + DevSettings
   - WP 0.5: Cluster schema and types
 
-- **Phase 1** (Core UI): In Progress
+- **Phase 1** (Core UI): Complete
   - WP 1.1: App shell + routing (Complete)
   - WP 1.2: Entity list in sidebar (Complete)
   - WP 1.3: Entity detail view (Complete)
   - WP 1.4: Tiptap rich text editor (Complete)
+  - WP 1.5: Entity CRUD (Complete)
 
 ### App Shell (`src/app/`)
 
@@ -144,6 +145,10 @@ src/
 - **Tiptap Editor**: Rich text editing with auto-save (500ms debounce)
 - **Toolbar**: Bold, italic, headings, lists, code, undo/redo
 - **Features**: Keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+Z), active state indicators
+- **CRUD Operations** (WP 1.5):
+  - Create: Plus button in sidebar header creates new note
+  - Rename: Editable title in EntityDetailHeader (saves on blur/Enter)
+  - Delete: Trash button with confirmation dialog
 
 ## Console Debugging
 

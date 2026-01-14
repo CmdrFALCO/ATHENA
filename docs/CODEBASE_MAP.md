@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 1.4 (Tiptap Editor) |
+| **Last WP Completed** | 1.5 (Entity CRUD) |
 | **Last Updated** | January 2026 |
-| **Phase** | 1 (Core UI) |
+| **Phase** | 1 (Core UI) - Complete |
 
 ---
 
@@ -67,7 +67,7 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── sophia/               # ✅ WP 1.2-1.4 - Knowledge workspace
+│   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
 │   │   │       ├── index.ts            # Component exports
@@ -298,14 +298,14 @@ const isOpen = useSidebarOpen();
 
 ### Sophia Module (`src/modules/sophia/`)
 
-**Status:** ✅ Implemented in WP 1.2-1.4
+**Status:** ✅ Implemented in WP 1.2-1.5
 
 **Components:**
 - `EntityList` - Note list container with loading/empty states
 - `EntityListItem` - Single note item with title, icon, and timestamp
 - `EntityDetail` - Main detail view for selected note (WP 1.3)
 - `EntityDetailEmpty` - Empty state when no note selected
-- `EntityDetailHeader` - Header with title, type badge, timestamps
+- `EntityDetailHeader` - Header with editable title, delete button (WP 1.5)
 - `EntityDetailContent` - Content display (uses EditorContainer)
 - `EditorContainer` - Editor wrapper with auto-save logic (WP 1.4)
 - `NoteEditor` - Tiptap editor instance (WP 1.4)
@@ -338,6 +338,10 @@ import { EntityList, EntityDetail } from '@/modules/sophia';
 - Rich text editing with Tiptap (WP 1.4)
 - Auto-save with 500ms debounce
 - Formatting toolbar (bold, italic, headings, lists, code, undo/redo)
+- **CRUD Operations** (WP 1.5):
+  - Create: Plus button in sidebar header creates new note
+  - Rename: Editable title in EntityDetailHeader (saves on blur/Enter)
+  - Delete: Trash button with confirmation dialog
 
 ---
 
@@ -567,11 +571,12 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 0.4: State layer + DevSettings
   - WP 0.5: Cluster schema and types
 
-- **Phase 1** (Core UI): In Progress
+- **Phase 1** (Core UI): Complete
   - WP 1.1: App shell + routing (Complete)
   - WP 1.2: Entity list in sidebar (Complete)
   - WP 1.3: Entity detail view (Complete)
   - WP 1.4: Tiptap rich text editor (Complete)
+  - WP 1.5: Entity CRUD (Complete)
 
 ## Known Issues
 
@@ -583,9 +588,9 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **1.5** | Note persistence (create/update/delete) |
-| **1.6** | Note creation UI |
 | **2.x** | React Flow canvas integration |
+| **3.x** | AI backends integration |
+| **4.x** | Full-text search + vector search |
 
 ---
 

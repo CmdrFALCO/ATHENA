@@ -1,6 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft } from 'lucide-react';
-import { useSidebarOpen, uiActions } from '@/store';
+import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft, Plus } from 'lucide-react';
+import { useSidebarOpen, uiActions, entityActions } from '@/store';
+import { useNoteAdapter } from '@/adapters';
 import { EntityList } from '@/modules/sophia';
 
 const navItems = [
@@ -12,6 +13,21 @@ const navItems = [
 export function Sidebar() {
   const isOpen = useSidebarOpen();
   const location = useLocation();
+  const noteAdapter = useNoteAdapter();
+
+  const handleCreateNote = async () => {
+    const newNote = await noteAdapter.create({
+      type: 'note',
+      subtype: 'zettelkasten',
+      title: 'Untitled Note',
+      content: [],
+      metadata: {},
+      position_x: 0,
+      position_y: 0,
+    });
+    entityActions.addNote(newNote);
+    uiActions.selectEntity(newNote.id);
+  };
 
   return (
     <aside
@@ -52,6 +68,19 @@ export function Sidebar() {
       {/* Entity list */}
       {isOpen && (
         <div className="flex-1 min-h-0 border-t border-athena-border flex flex-col">
+          {/* Notes header with create button */}
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-xs font-medium text-athena-muted uppercase tracking-wider">
+              Notes
+            </span>
+            <button
+              onClick={handleCreateNote}
+              className="p-1 rounded hover:bg-athena-bg text-athena-muted hover:text-athena-text transition-colors"
+              title="New Note"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
           <EntityList />
         </div>
       )}

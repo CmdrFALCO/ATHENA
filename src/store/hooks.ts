@@ -107,8 +107,8 @@ export const entityActions = {
   },
 
   addNote(note: Note) {
-    const notes = appState$.entities.notes;
-    notes[note.id]?.set(note);
+    const notes = appState$.entities.notes.get();
+    appState$.entities.notes.set({ ...notes, [note.id]: note });
   },
 
   updateNote(id: string, updates: Partial<Note>) {

@@ -1,5 +1,35 @@
 # ATHENA Changelog
 
+## [1.5.0] - 2026-01-14
+
+### Added
+- **Create Note**: New note button in sidebar
+  - Plus icon button above entity list
+  - Creates note with default title "Untitled Note"
+  - Auto-selects newly created note
+- **Rename Note**: Editable title in EntityDetailHeader
+  - Click to edit title inline
+  - Saves on blur or Enter key
+  - Updates both database and store
+- **Delete Note**: Delete button with confirmation
+  - Trash icon in header
+  - Window confirm dialog before delete
+  - Soft delete via adapter, removes from store
+  - Clears selection after delete
+
+### Changed
+- `Sidebar.tsx` - Added "Notes" header with create button
+- `EntityDetailHeader.tsx` - Now has editable title input and delete button
+
+### Fixed
+- `entityActions.addNote()` - Fixed bug where new notes weren't added to store
+  - Was using optional chaining which doesn't work for new entries
+
+### Technical
+- Create uses `noteAdapter.create()` + `entityActions.addNote()` + `uiActions.selectEntity()`
+- Rename uses `noteAdapter.update()` + `entityActions.updateNote()`
+- Delete uses `noteAdapter.delete()` + `entityActions.removeNote()` + `uiActions.clearSelection()`
+
 ## [1.4.0] - 2026-01-14
 
 ### Added
