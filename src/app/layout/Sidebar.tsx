@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft, Plus } from 'lucide-react';
-import { useSidebarOpen, uiActions, entityActions } from '@/store';
+import { useSidebarOpen, useNotes, uiActions, entityActions } from '@/store';
 import { useNoteAdapter } from '@/adapters';
 import { EntityList } from '@/modules/sophia';
 
@@ -14,16 +14,23 @@ export function Sidebar() {
   const isOpen = useSidebarOpen();
   const location = useLocation();
   const noteAdapter = useNoteAdapter();
+  const notes = useNotes();
 
   const handleCreateNote = async () => {
+    // Calculate sensible default position (offset from existing nodes)
+    const defaultX = notes.length > 0
+      ? Math.max(...notes.map((n) => n.position_x ?? 0)) + 250
+      : 100;
+    const defaultY = 100;
+
     const newNote = await noteAdapter.create({
       type: 'note',
       subtype: 'zettelkasten',
       title: 'Untitled Note',
       content: [],
       metadata: {},
-      position_x: 0,
-      position_y: 0,
+      position_x: defaultX,
+      position_y: defaultY,
     });
     entityActions.addNote(newNote);
     uiActions.selectEntity(newNote.id);

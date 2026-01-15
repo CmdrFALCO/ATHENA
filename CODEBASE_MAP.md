@@ -65,7 +65,7 @@ src/
 │       └── clusters.ts          # Cluster and ClusterMember types
 │
 ├── modules/
-│   ├── canvas/                  # Graph canvas workspace (WP 2.1-2.2)
+│   ├── canvas/                  # Graph canvas workspace (WP 2.1-2.3)
 │   │   ├── index.ts             # Module exports
 │   │   ├── components/
 │   │   │   ├── index.ts         # Component exports
@@ -73,7 +73,8 @@ src/
 │   │   │   └── EntityNode.tsx   # Custom node component (WP 2.2)
 │   │   └── hooks/
 │   │       ├── index.ts         # Hook exports
-│   │       └── useNotesAsNodes.ts # Converts notes to React Flow nodes (WP 2.2)
+│   │       ├── useNotesAsNodes.ts     # Converts notes to React Flow nodes (WP 2.2)
+│   │       └── useNodePositionSync.ts # Persists node positions to SQLite (WP 2.3)
 │   └── sophia/                  # Knowledge workspace (WP 1.2-1.4)
 │       ├── index.ts             # Module exports
 │       └── components/
@@ -146,6 +147,7 @@ src/
 - **Phase 2** (Graph Visualization): In Progress
   - WP 2.1: React Flow setup (Complete)
   - WP 2.2: Entity nodes on canvas (Complete)
+  - WP 2.3: Node positioning (Complete)
 
 ### App Shell (`src/app/`)
 
@@ -160,10 +162,12 @@ src/
 - **GraphCanvas**: Main canvas component with pan/zoom
 - **EntityNode**: Custom node component with type badge and title (WP 2.2)
 - **useNotesAsNodes**: Hook that converts store notes to React Flow nodes (WP 2.2)
-- **Features**: Background grid, Controls, MiniMap, node selection sync
+- **useNodePositionSync**: Hook to persist node positions to SQLite (WP 2.3)
+- **Features**: Background grid, Controls, MiniMap, node selection sync, drag-to-reposition, snap-to-grid
 - **Layout**: 60/40 split with detail panel in Sophia workspace
 - **Theme**: Dark theme with custom colors from `src/shared/theme`
 - **Data Flow**: Store → useNotesAsNodes → GraphCanvas → EntityNode → Click → uiActions.selectEntity
+- **Position Persistence**: onNodeDragStop → useNodePositionSync → noteAdapter.update + entityActions.updateNote
 
 ### Theme (`src/shared/theme/`)
 

@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 2.2 (Entity Nodes) |
+| **Last WP Completed** | 2.3 (Node Positioning) |
 | **Last Updated** | January 2026 |
 | **Phase** | 2 (Graph Visualization) - In Progress |
 
@@ -70,7 +70,7 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── canvas/               # ✅ WP 2.1-2.2 - React Flow graph canvas
+│   │   ├── canvas/               # ✅ WP 2.1-2.3 - React Flow graph canvas
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts      # Component exports
@@ -78,7 +78,8 @@ athena/
 │   │   │   │   └── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
 │   │   │   └── hooks/
 │   │   │       ├── index.ts      # Hook exports
-│   │   │       └── useNotesAsNodes.ts  # ✅ WP 2.2 - Converts notes to nodes
+│   │   │       ├── useNotesAsNodes.ts      # ✅ WP 2.2 - Converts notes to nodes
+│   │   │       └── useNodePositionSync.ts  # ✅ WP 2.3 - Persists node positions
 │   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
@@ -266,7 +267,7 @@ function MyComponent() {
 
 ### Canvas Module (`src/modules/canvas/`)
 
-**Status:** ✅ Implemented in WP 2.1-2.2
+**Status:** ✅ Implemented in WP 2.1-2.3
 
 **Components:**
 - `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
@@ -274,12 +275,13 @@ function MyComponent() {
 
 **Hooks:**
 - `useNotesAsNodes` - Converts store notes to React Flow nodes (WP 2.2)
+- `useNodePositionSync` - Persists node positions to SQLite (WP 2.3)
 
 **Exports:**
 ```typescript
 // src/modules/canvas/index.ts
 export { GraphCanvas, EntityNode } from './components';
-export { useNotesAsNodes } from './hooks';
+export { useNotesAsNodes, useNodePositionSync } from './hooks';
 ```
 
 **Usage:**
@@ -303,12 +305,17 @@ import { GraphCanvas } from '@/modules/canvas';
 - Pan and zoom controls
 - MiniMap for navigation with color-coded nodes
 - Entity nodes with type badges and selection sync (WP 2.2)
+- Drag-to-reposition nodes with persistent storage (WP 2.3)
+- Snap-to-grid (20px) for cleaner layouts (WP 2.3)
 
-**Data Flow (WP 2.2):**
+**Data Flow (WP 2.2-2.3):**
 ```
 Store (notes) → useNotesAsNodes() → GraphCanvas → EntityNode
      ↑                                              ↓
 uiActions.selectEntity() ←────── onNodeClick ──────┘
+
+Drag → onNodeDragStop → useNodePositionSync.saveNodePosition
+    → noteAdapter.update() + entityActions.updateNote()
 ```
 
 ---
@@ -676,6 +683,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
 - **Phase 2** (Graph Visualization): In Progress
   - WP 2.1: React Flow setup (Complete)
   - WP 2.2: Entity nodes on canvas (Complete)
+  - WP 2.3: Node positioning (Complete)
 
 ## Known Issues
 

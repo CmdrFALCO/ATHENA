@@ -1,5 +1,26 @@
 # ATHENA Changelog
 
+## [2.3.0] - 2026-01-15
+
+### Added
+- **Node Positioning**: Drag-to-reposition nodes with persistent storage
+  - `useNodePositionSync.ts` - Hook to persist node positions to SQLite
+  - `onNodeDragStop` handler saves position on drag end
+  - Snap-to-grid (20px) for cleaner layouts
+- **Smart Default Positions**: New notes appear offset from existing nodes
+  - Calculates `position_x` based on rightmost existing node + 250px
+  - Prevents notes from stacking on top of each other
+
+### Changed
+- `GraphCanvas.tsx` - Added drag handling, snap-to-grid, position persistence
+- `Sidebar.tsx` - Note creation calculates sensible default position
+
+### Technical
+- Positions saved on drag end (not during) to minimize DB writes
+- Positions rounded to integers for cleaner storage
+- Data flow on drag: onNodeDragStop → saveNodePosition → noteAdapter.update + entityActions.updateNote
+- Position preservation during React Flow re-renders via Map lookup
+
 ## [2.2.0] - 2026-01-14
 
 ### Added
