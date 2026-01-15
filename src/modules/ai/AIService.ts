@@ -10,6 +10,7 @@ import type {
 import { DEFAULT_AI_SETTINGS } from './types';
 import { GeminiBackend } from './backends';
 import { getSecureStorage } from '@/services/secureStorage';
+import type { IEmbeddingAdapter, EmbeddingRecord, SimilarityResult } from '@/adapters/IEmbeddingAdapter';
 
 export interface IAIService {
   getBackend(): IAIBackend | null;
@@ -27,12 +28,24 @@ export interface IAIService {
 
   // Initialize with settings
   initialize(settings: AISettings): Promise<void>;
+
+  // Embedding adapter integration
+  setEmbeddingAdapter(adapter: IEmbeddingAdapter): void;
+  embedAndStore(entityId: string, text: string): Promise<EmbeddingRecord | null>;
+  findSimilarNotes(
+    entityId: string,
+    limit?: number,
+    threshold?: number
+  ): Promise<SimilarityResult[]>;
+  getActiveEmbeddingModel(): string | null;
+  handleModelChange(oldModel: string, newModel: string): Promise<void>;
 }
 
 class AIServiceImpl implements IAIService {
   private backend: IAIBackend | null = null;
   private settings: AISettings = DEFAULT_AI_SETTINGS;
   private apiKeys: Map<AIProviderType, string> = new Map();
+  private embeddingAdapter: IEmbeddingAdapter | null = null;
 
   async initialize(settings: AISettings): Promise<void> {
     this.settings = settings;
@@ -235,6 +248,106 @@ class AIServiceImpl implements IAIService {
       }
     } catch (error) {
       console.warn('Failed to reload API key:', error);
+    }
+  }
+
+  // ============================================
+  // Embedding Adapter Integration
+  // ============================================
+
+  setEmbeddingAdapter(adapter: IEmbeddingAdapter): void {
+    this.embeddingAdapter = adapter;
+  }
+
+  getActiveEmbeddingModel(): string | null {
+    if (!this.settings.enabled || this.settings.provider === 'none') {
+      return null;
+    }
+
+    const provider = this.settings.provider;
+    const config = this.settings.providerConfig[provider];
+    return config?.embeddingModel ?? null;
+  }
+
+  async embedAndStore(entityId: string, text: string): Promise<EmbeddingRecord | null> {
+    if (!this.isConfigured()) {
+      console.warn('AI not configured, cannot embed and store');
+      return null;
+    }
+
+    if (!this.embeddingAdapter) {
+      console.warn('Embedding adapter not set, cannot store embedding');
+      return null;
+    }
+
+    const model = this.getActiveEmbeddingModel();
+    if (!model) {
+      console.warn('No active embedding model');
+      return null;
+    }
+
+    try {
+      const result = await this.embed(text);
+      if (!result.vector || result.vector.length === 0) {
+        console.warn('Embedding result has no vector');
+        return null;
+      }
+
+      return await this.embeddingAdapter.store(entityId, result.vector, model);
+    } catch (error) {
+      console.error('Failed to embed and store:', error);
+      return null;
+    }
+  }
+
+  async findSimilarNotes(
+    entityId: string,
+    limit = 5,
+    threshold = 0.7
+  ): Promise<SimilarityResult[]> {
+    if (!this.embeddingAdapter) {
+      console.warn('Embedding adapter not set');
+      return [];
+    }
+
+    const model = this.getActiveEmbeddingModel();
+    if (!model) {
+      console.warn('No active embedding model');
+      return [];
+    }
+
+    try {
+      const embedding = await this.embeddingAdapter.getForEntity(entityId, model);
+      if (!embedding) {
+        return [];
+      }
+
+      return await this.embeddingAdapter.findSimilar(
+        embedding.vector,
+        model,
+        limit,
+        threshold,
+        [entityId] // Exclude the source entity
+      );
+    } catch (error) {
+      console.error('Failed to find similar notes:', error);
+      return [];
+    }
+  }
+
+  async handleModelChange(oldModel: string, newModel: string): Promise<void> {
+    if (!this.embeddingAdapter) {
+      console.warn('Embedding adapter not set, cannot handle model change');
+      return;
+    }
+
+    const { strategy, autoReindexOnModelChange } = this.settings.embedding;
+
+    if (strategy === 'single-model' && autoReindexOnModelChange) {
+      // Delete all embeddings for the old model
+      console.info(`Switching embedding model: ${oldModel} → ${newModel}`);
+      await this.embeddingAdapter.deleteByModel(oldModel);
+      // Note: Re-indexing with newModel happens via Background Indexer (WP 3.3)
     }
   }
 }

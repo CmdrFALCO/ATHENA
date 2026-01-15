@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.1 (AI Backend Interface) |
+| **Last WP Completed** | 3.2 (Embedding Storage) |
 | **Last Updated** | January 2026 |
 | **Phase** | 3 (AI Layer) - In Progress |
 
@@ -25,19 +25,19 @@ athena/
 │   │   ├── init.ts               # Database initialization
 │   │   └── schema.ts             # ✅ WP 0.5 - Table definitions (entities, connections, embeddings, clusters, cluster_members)
 │   │
-│   ├── adapters/                 # ✅ WP 0.3/0.5 - Database adapters
+│   ├── adapters/                 # ✅ WP 0.3/0.5/3.2 - Database adapters
 │   │   ├── index.ts              # Barrel exports
 │   │   ├── context.ts            # React context + Adapters type
 │   │   ├── hooks.ts              # useAdapters, useNoteAdapter, useClusterAdapter, etc.
 │   │   ├── AdapterProvider.tsx   # Provider component
 │   │   ├── INoteAdapter.ts       # Note adapter interface
 │   │   ├── IConnectionAdapter.ts # Connection adapter interface
-│   │   ├── IEmbeddingAdapter.ts  # Embedding adapter interface
+│   │   ├── IEmbeddingAdapter.ts  # ✅ WP 3.2 - Enhanced embedding adapter interface
 │   │   ├── IClusterAdapter.ts    # ✅ WP 0.5 - Cluster adapter interface
 │   │   └── sqlite/
 │   │       ├── SQLiteNoteAdapter.ts
 │   │       ├── SQLiteConnectionAdapter.ts
-│   │       ├── SQLiteEmbeddingAdapter.ts
+│   │       ├── SQLiteEmbeddingAdapter.ts  # ✅ WP 3.2 - Full implementation with similarity
 │   │       └── SQLiteClusterAdapter.ts  # ✅ WP 0.5
 │   │
 │   ├── shared/
@@ -104,14 +104,17 @@ athena/
 │   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
 │   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
 │   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
-│   │   ├── ai/                   # ✅ WP 3.1 - AI backend abstraction
+│   │   ├── ai/                   # ✅ WP 3.1-3.2 - AI backend abstraction + embedding storage
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── types.ts          # AI types (IAIBackend, AISettings, etc.)
-│   │   │   ├── AIService.ts      # Service orchestrator
+│   │   │   ├── AIService.ts      # Service orchestrator + embedding integration
 │   │   │   ├── AIContext.tsx     # React context (AIProvider, useAI)
-│   │   │   └── backends/
-│   │   │       ├── index.ts      # Backend exports
-│   │   │       └── GeminiBackend.ts  # ✅ Google Gemini implementation
+│   │   │   ├── backends/
+│   │   │   │   ├── index.ts      # Backend exports
+│   │   │   │   └── GeminiBackend.ts  # ✅ Google Gemini implementation
+│   │   │   └── hooks/            # ✅ WP 3.2 - AI hooks
+│   │   │       ├── index.ts      # Hook exports
+│   │   │       └── useEmbeddings.ts  # ✅ Embedding operations hook
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
@@ -414,9 +417,9 @@ await storage.delete('api-key-gemini');
 
 ### AI Module (`src/modules/ai/`)
 
-**Status:** ✅ Implemented in WP 3.1
+**Status:** ✅ Implemented in WP 3.1-3.2
 
-**Purpose:** Flexible AI backend abstraction for embeddings and text generation.
+**Purpose:** Flexible AI backend abstraction for embeddings, text generation, and embedding storage.
 
 **Exports:**
 ```typescript
@@ -425,6 +428,7 @@ export * from './types';
 export { getAIService, resetAIService, type IAIService } from './AIService';
 export { AIProvider, useAI, useAIStatus, useOptionalAI } from './AIContext';
 export { GeminiBackend } from './backends';
+export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from './hooks';
 ```
 
 **Types:**
@@ -495,6 +499,50 @@ function MyComponent() {
 function StatusIndicator() {
   const { isConfigured, isAvailable, provider } = useAIStatus();
   return <span>{isAvailable ? 'Connected' : 'Not connected'}</span>;
+}
+```
+
+**Embedding Storage Integration (WP 3.2):**
+```typescript
+// AIService embedding methods
+interface IAIService {
+  // ... existing methods ...
+
+  // Embedding storage integration
+  setEmbeddingAdapter(adapter: IEmbeddingAdapter): void;
+  embedAndStore(entityId: string, text: string): Promise<EmbeddingRecord | null>;
+  findSimilarNotes(entityId: string, limit?: number, threshold?: number): Promise<SimilarityResult[]>;
+  getActiveEmbeddingModel(): string | null;
+  handleModelChange(oldModel: string, newModel: string): Promise<void>;
+}
+
+// useEmbeddings hook
+interface UseEmbeddingsResult {
+  embedNote: (noteId: string, content: string) => Promise<EmbeddingRecord | null>;
+  findSimilar: (noteId: string, limit?: number, threshold?: number) => Promise<SimilarityResult[]>;
+  getEmbeddingStatus: (noteId: string) => Promise<{ hasEmbedding: boolean; model: string | null }>;
+  deleteEmbedding: (noteId: string, model?: string) => Promise<void>;
+  getEmbeddingCount: (model?: string) => Promise<number>;
+  hasEmbedding: (noteId: string, model: string) => Promise<boolean>;
+}
+```
+
+**Usage:**
+```typescript
+import { useEmbeddings } from '@/modules/ai';
+
+function MyComponent() {
+  const { embedNote, findSimilar, getEmbeddingStatus } = useEmbeddings();
+
+  // Embed a note
+  const embedding = await embedNote('note-123', 'Note content here...');
+
+  // Find similar notes
+  const similar = await findSimilar('note-123', 5, 0.7);
+
+  // Check embedding status
+  const status = await getEmbeddingStatus('note-123');
+  // { hasEmbedding: true, model: 'text-embedding-004' }
 }
 ```
 
@@ -754,6 +802,16 @@ interface Cluster {
 
 ### Embedding (`src/shared/types/embeddings.ts`)
 ```typescript
+// Primary type for WP 3.2+
+interface EmbeddingRecord {
+  id: string;
+  entity_id: string;
+  vector: number[];
+  model: string;
+  created_at: string;
+}
+
+// Legacy type (includes chunk_index)
 interface Embedding {
   id: string;
   entity_id: string;
@@ -761,6 +819,13 @@ interface Embedding {
   vector: number[];
   model: string;
   created_at: string;
+}
+
+// Similarity search result
+interface SimilarityResult {
+  entity_id: string;
+  similarity: number;  // 0-1, higher is more similar
+  embedding: EmbeddingRecord;
 }
 ```
 
@@ -821,6 +886,7 @@ interface Embedding {
 | N-way relationships | Clusters | Junction pattern for multi-entity relationships |
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
+| Embedding storage | `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` | Vector storage + JS-based cosine similarity |
 
 ---
 
@@ -892,8 +958,13 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
     - AIService orchestrator
     - AIContext React context (AIProvider, useAI)
     - DevSettings AI configuration UI
-  - WP 3.2: Embedding pipeline (Pending)
-  - WP 3.3: Semantic connections (Pending)
+  - WP 3.2: Embedding storage (Complete)
+    - Enhanced IEmbeddingAdapter interface (store, getForEntity, getAllForEntity, findSimilar, deleteForEntity, deleteByModel, hasEmbedding, getCount)
+    - SQLiteEmbeddingAdapter with cosine similarity
+    - AIService integration (embedAndStore, findSimilarNotes, handleModelChange)
+    - useEmbeddings hook for React components
+    - Updated EmbeddingRecord and SimilarityResult types
+  - WP 3.3: Background indexer (Pending)
 
 ## Known Issues
 

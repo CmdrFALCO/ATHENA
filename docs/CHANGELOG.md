@@ -1,5 +1,52 @@
 # ATHENA Changelog
 
+## [3.2.0] - 2026-01-15
+
+### Added
+- **Embedding Storage**: Full embedding persistence with similarity search
+  - `IEmbeddingAdapter` - Enhanced interface with 8 methods for embedding operations
+  - `SQLiteEmbeddingAdapter` - Full implementation with upsert and cosine similarity
+  - `useEmbeddings` hook - React integration for embedding operations
+- **Embedding Types**: New and updated type definitions
+  - `EmbeddingRecord` - Primary type for stored embeddings
+  - `SimilarityResult` - Enhanced with full embedding data
+- **AIService Embedding Integration**:
+  - `embedAndStore()` - Embed text and persist in one operation
+  - `findSimilarNotes()` - Find semantically similar entities
+  - `getActiveEmbeddingModel()` - Get current embedding model from settings
+  - `handleModelChange()` - Handle model switching (deletes old embeddings)
+  - `setEmbeddingAdapter()` - Connect AIService to embedding storage
+
+### Technical
+- **IEmbeddingAdapter Methods**:
+  - `store(entityId, vector, model)` - Upsert embedding (updates if same entity+model exists)
+  - `getForEntity(entityId, model?)` - Get embedding, optionally by model
+  - `getAllForEntity(entityId)` - Get all embeddings for multi-model scenarios
+  - `findSimilar(vector, model, limit, threshold?, excludeIds?)` - Cosine similarity search
+  - `deleteForEntity(entityId, model?)` - Delete embedding(s)
+  - `deleteByModel(model)` - Delete all embeddings for a model (for model switching)
+  - `hasEmbedding(entityId, model)` - Check if embedding exists
+  - `getCount(model?)` - Count embeddings
+- **Cosine Similarity**: Computed in JavaScript (SQLite WASM lacks native vector ops)
+- **Upsert Logic**: Check for existing (entity_id, model) pair before insert/update
+- **Model Switching**: In single-model mode with autoReindex, old model embeddings are deleted
+
+### Usage
+```typescript
+import { useEmbeddings } from '@/modules/ai';
+
+const { embedNote, findSimilar, getEmbeddingStatus } = useEmbeddings();
+
+// Embed a note
+const embedding = await embedNote('note-123', 'Note content...');
+
+// Find similar notes (top 5, threshold 0.7)
+const similar = await findSimilar('note-123', 5, 0.7);
+
+// Check embedding status
+const { hasEmbedding, model } = await getEmbeddingStatus('note-123');
+```
+
 ## [2.5.0] - 2026-01-15
 
 ### Added
