@@ -3,6 +3,7 @@ import { devSettingsActions, type FeatureFlags } from './devSettings';
 import { useEffect, useState, useCallback } from 'react';
 import {
   useOptionalAI,
+  useOptionalIndexer,
   type AIProviderType,
   PROVIDER_NAMES,
   PROVIDER_MODELS,
@@ -118,6 +119,122 @@ function ConnectionStatus({
     <span className="text-xs text-red-400 flex items-center gap-1">
       &#10007; Not connected
     </span>
+  );
+}
+
+/**
+ * Format a date as a relative time string (e.g., "2 minutes ago")
+ */
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffSeconds < 60) {
+    return 'just now';
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+}
+
+function IndexerStatusSection() {
+  const indexer = useOptionalIndexer();
+  const [isIndexing, setIsIndexing] = useState(false);
+
+  const handleIndexAll = useCallback(async () => {
+    if (!indexer) return;
+    setIsIndexing(true);
+    try {
+      const result = await indexer.indexAll();
+      console.log(`Indexed ${result.success} notes, ${result.failed} failed`);
+    } finally {
+      setIsIndexing(false);
+    }
+  }, [indexer]);
+
+  if (!indexer || !indexer.isEnabled) {
+    return (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-400 mb-2">Background Indexer</h3>
+        <div className="text-gray-500 text-sm py-2">
+          AI is disabled. Enable AI to use the indexer.
+        </div>
+      </div>
+    );
+  }
+
+  const { status } = indexer;
+
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-medium text-gray-400 mb-2">Background Indexer</h3>
+
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Status</span>
+        <span
+          className={`text-sm ${
+            status.mode === 'indexing'
+              ? 'text-amber-400'
+              : status.mode === 'paused'
+                ? 'text-yellow-500'
+                : 'text-gray-400'
+          }`}
+        >
+          {status.mode}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Processed</span>
+        <span className="text-sm text-gray-400">{status.processed}</span>
+      </div>
+
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Failed</span>
+        <span className={`text-sm ${status.failed > 0 ? 'text-red-400' : 'text-gray-400'}`}>
+          {status.failed}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Queue</span>
+        <span className="text-sm text-gray-400">{status.queue.length}</span>
+      </div>
+
+      {status.lastIndexedAt && (
+        <div className="flex items-center justify-between py-2 border-b border-gray-700">
+          <span className="text-sm text-gray-300">Last indexed</span>
+          <span className="text-sm text-gray-400">
+            {formatRelativeTime(new Date(status.lastIndexedAt))}
+          </span>
+        </div>
+      )}
+
+      {status.currentEntityId && (
+        <div className="flex items-center justify-between py-2 border-b border-gray-700">
+          <span className="text-sm text-gray-300">Current</span>
+          <span className="text-xs text-gray-400 font-mono truncate max-w-[150px]">
+            {status.currentEntityId.substring(0, 8)}...
+          </span>
+        </div>
+      )}
+
+      <div className="pt-3">
+        <button
+          onClick={handleIndexAll}
+          disabled={isIndexing}
+          className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isIndexing ? 'Indexing...' : 'Index All Unembedded Notes'}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -386,6 +503,9 @@ export function DevSettingsPanel() {
         <div className="px-4 py-2 overflow-y-auto max-h-[60vh]">
           {/* AI Configuration Section */}
           <AIConfigSection />
+
+          {/* Background Indexer Section */}
+          <IndexerStatusSection />
 
           {/* Search Section */}
           <div className="mb-4">

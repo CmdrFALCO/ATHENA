@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.2 (Embedding Storage) |
+| **Last WP Completed** | 3.3 (Background Indexer) |
 | **Last Updated** | January 2026 |
 | **Phase** | 3 (AI Layer) - In Progress |
 
@@ -104,17 +104,20 @@ athena/
 │   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
 │   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
 │   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
-│   │   ├── ai/                   # ✅ WP 3.1-3.2 - AI backend abstraction + embedding storage
+│   │   ├── ai/                   # ✅ WP 3.1-3.3 - AI backend abstraction + embedding storage + indexer
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── types.ts          # AI types (IAIBackend, AISettings, etc.)
 │   │   │   ├── AIService.ts      # Service orchestrator + embedding integration
 │   │   │   ├── AIContext.tsx     # React context (AIProvider, useAI)
+│   │   │   ├── IndexerService.ts # ✅ WP 3.3 - Background indexer service
 │   │   │   ├── backends/
 │   │   │   │   ├── index.ts      # Backend exports
 │   │   │   │   └── GeminiBackend.ts  # ✅ Google Gemini implementation
-│   │   │   └── hooks/            # ✅ WP 3.2 - AI hooks
+│   │   │   └── hooks/            # ✅ WP 3.2-3.3 - AI hooks
 │   │   │       ├── index.ts      # Hook exports
-│   │   │       └── useEmbeddings.ts  # ✅ Embedding operations hook
+│   │   │       ├── useEmbeddings.ts  # ✅ Embedding operations hook
+│   │   │       ├── useIndexer.ts     # ✅ WP 3.3 - Indexer control hook
+│   │   │       └── useIdleDetection.ts  # ✅ WP 3.3 - User activity detection
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
@@ -417,9 +420,9 @@ await storage.delete('api-key-gemini');
 
 ### AI Module (`src/modules/ai/`)
 
-**Status:** ✅ Implemented in WP 3.1-3.2
+**Status:** ✅ Implemented in WP 3.1-3.3
 
-**Purpose:** Flexible AI backend abstraction for embeddings, text generation, and embedding storage.
+**Purpose:** Flexible AI backend abstraction for embeddings, text generation, embedding storage, and background indexing.
 
 **Exports:**
 ```typescript
@@ -429,6 +432,9 @@ export { getAIService, resetAIService, type IAIService } from './AIService';
 export { AIProvider, useAI, useAIStatus, useOptionalAI } from './AIContext';
 export { GeminiBackend } from './backends';
 export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from './hooks';
+export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
+export { useIdleDetection, type IdleDetectionOptions } from './hooks';
+export { IndexerService, type IndexerStatus, type IndexerConfig } from './IndexerService';
 ```
 
 **Types:**
@@ -560,6 +566,71 @@ function MyComponent() {
 - Test Connection button with status indicator
 - Chat and embedding model selection
 - Connection status indicator (✓ Connected / ✗ Not connected / ○ Not configured)
+- Background Indexer status panel (WP 3.3)
+
+**Background Indexer (WP 3.3):**
+```typescript
+// IndexerService configuration
+interface IndexerConfig {
+  trigger: 'on-save' | 'on-demand' | 'continuous';
+  batchSize: number;        // For continuous mode
+  idleDelayMs: number;      // Wait before starting continuous indexing
+  debounceMs: number;       // For on-save mode
+  retryFailedAfterMs: number;
+}
+
+// IndexerStatus for UI display
+interface IndexerStatus {
+  isRunning: boolean;
+  mode: 'idle' | 'indexing' | 'paused';
+  queue: string[];
+  processed: number;
+  failed: number;
+  lastIndexedAt: string | null;
+  currentEntityId: string | null;
+}
+
+// useIndexer hook
+interface UseIndexerResult {
+  status: IndexerStatus;
+  onNoteSaved: (noteId: string, content: string) => void;
+  indexNote: (noteId: string) => Promise<boolean>;
+  indexAll: () => Promise<{ success: number; failed: number }>;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  isEnabled: boolean;
+}
+```
+
+**Trigger Modes:**
+| Mode | Behavior |
+|------|----------|
+| `on-save` | Embed when a note is saved (2s debounce) |
+| `on-demand` | Only embed when user explicitly requests |
+| `continuous` | Background process indexes during idle time |
+
+**Usage:**
+```typescript
+import { useIndexer, useIdleDetection } from '@/modules/ai';
+
+// In EditorContainer - trigger on save
+const { onNoteSaved } = useIndexer();
+onNoteSaved(noteId, textContent);
+
+// In AppLayout - pause/resume on activity
+const { pause, resume } = useIndexer();
+useIdleDetection({
+  idleThresholdMs: 3000,
+  onIdle: resume,
+  onActive: pause,
+});
+
+// Manual index all
+const { indexAll } = useIndexer();
+const result = await indexAll();
+// { success: 10, failed: 0 }
+```
 
 ---
 
@@ -887,6 +958,7 @@ interface SimilarityResult {
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
 | Embedding storage | `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` | Vector storage + JS-based cosine similarity |
+| Background indexer | `src/modules/ai/IndexerService.ts` | Configurable trigger modes with debouncing |
 
 ---
 
@@ -964,7 +1036,14 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
     - AIService integration (embedAndStore, findSimilarNotes, handleModelChange)
     - useEmbeddings hook for React components
     - Updated EmbeddingRecord and SimilarityResult types
-  - WP 3.3: Background indexer (Pending)
+  - WP 3.3: Background indexer (Complete)
+    - IndexerService with three trigger modes (on-save, on-demand, continuous)
+    - useIndexer hook for React components
+    - useIdleDetection hook for user activity detection
+    - EditorContainer integration (auto-embed on save)
+    - AppLayout integration (pause/resume on activity)
+    - DevSettings IndexerStatusSection UI
+  - WP 3.4: Similarity query (Pending)
 
 ## Known Issues
 
