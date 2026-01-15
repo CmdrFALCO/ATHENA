@@ -49,15 +49,17 @@ export function GraphCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<ConnectionEdgeData>>(storeEdges);
 
-  // Track previous IDs to detect actual changes (add/remove)
+  // Track previous state to detect actual changes
   const prevNodeIdsRef = useRef<string>(storeNodes.map((n) => n.id).sort().join(','));
+  const prevNodeDataRef = useRef<string>(JSON.stringify(storeNodes.map((n) => ({ id: n.id, data: n.data }))));
   const prevEdgeIdsRef = useRef<string>(storeEdges.map((e) => e.id).sort().join(','));
 
-  // Only sync nodes when notes are actually added or removed
+  // Sync nodes when notes are added or removed (preserve positions)
   useEffect(() => {
     const currentIds = storeNodes.map((n) => n.id).sort().join(',');
     if (currentIds !== prevNodeIdsRef.current) {
       prevNodeIdsRef.current = currentIds;
+      prevNodeDataRef.current = JSON.stringify(storeNodes.map((n) => ({ id: n.id, data: n.data })));
       // Preserve positions of existing nodes when syncing
       setNodes((currentNodes) => {
         const currentPositions = new Map(
@@ -69,6 +71,28 @@ export function GraphCanvas() {
         }));
       });
     }
+  }, [storeNodes, setNodes]);
+
+  // Sync node data (title, type) when it changes without affecting positions
+  useEffect(() => {
+    const currentDataStr = JSON.stringify(storeNodes.map((n) => ({ id: n.id, data: n.data })));
+    if (currentDataStr === prevNodeDataRef.current) {
+      return; // No data change, skip update
+    }
+    prevNodeDataRef.current = currentDataStr;
+
+    const storeDataMap = new Map(
+      storeNodes.map((n) => [n.id, n.data])
+    );
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        const newData = storeDataMap.get(node.id);
+        if (newData) {
+          return { ...node, data: newData };
+        }
+        return node;
+      })
+    );
   }, [storeNodes, setNodes]);
 
   // Only sync edges when connections are actually added or removed
@@ -140,6 +164,9 @@ export function GraphCanvas() {
         nodesDraggable={true}
         snapToGrid={true}
         snapGrid={[20, 20]}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        preventScrolling={true}
         connectionLineStyle={{
           stroke: ATHENA_COLORS.connection.explicit,
           strokeWidth: 2,

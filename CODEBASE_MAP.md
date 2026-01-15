@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.3 (Background Indexer) |
+| **Last WP Completed** | 3.4 (Similarity Query) |
 | **Last Updated** | January 2026 |
 | **Phase** | 3 (AI Layer) - In Progress |
 
@@ -91,20 +91,22 @@ athena/
 │   │   │       ├── useConnectionsAsEdges.ts  # ✅ WP 2.4 - Converts connections to edges
 │   │   │       ├── useConnectionHandlers.ts  # ✅ WP 2.4 - Connection creation/deletion
 │   │   │       └── useSelectedConnection.ts  # ✅ WP 2.5 - Edge selection state
-│   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
+│   │   ├── sophia/               # ✅ WP 1.2-1.5, 3.4 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
 │   │   │       ├── index.ts            # Component exports
 │   │   │       ├── EntityList.tsx      # Note list container
 │   │   │       ├── EntityListItem.tsx  # Single note item
-│   │   │       ├── EntityDetail.tsx    # ✅ WP 1.3 - Note detail view
+│   │   │       ├── EntityDetail.tsx    # ✅ WP 1.3, 3.4 - Note detail view with similar notes panel
 │   │   │       ├── EntityDetailEmpty.tsx    # Empty state
-│   │   │       ├── EntityDetailHeader.tsx   # Header with title/meta
+│   │   │       ├── EntityDetailHeader.tsx   # ✅ WP 3.4 - Header with title/meta/actions
 │   │   │       ├── EntityDetailContent.tsx  # Content display (uses EditorContainer)
 │   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
 │   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
-│   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
-│   │   ├── ai/                   # ✅ WP 3.1-3.3 - AI backend abstraction + embedding storage + indexer
+│   │   │       ├── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
+│   │   │       ├── SimilarNotesPanel.tsx    # ✅ WP 3.4 - Similar notes discovery panel
+│   │   │       └── SimilarNotesButton.tsx   # ✅ WP 3.4 - Toggle button for similar notes
+│   │   ├── ai/                   # ✅ WP 3.1-3.4 - AI backend abstraction + embedding storage + indexer + similarity
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── types.ts          # AI types (IAIBackend, AISettings, etc.)
 │   │   │   ├── AIService.ts      # Service orchestrator + embedding integration
@@ -113,11 +115,12 @@ athena/
 │   │   │   ├── backends/
 │   │   │   │   ├── index.ts      # Backend exports
 │   │   │   │   └── GeminiBackend.ts  # ✅ Google Gemini implementation
-│   │   │   └── hooks/            # ✅ WP 3.2-3.3 - AI hooks
+│   │   │   └── hooks/            # ✅ WP 3.2-3.4 - AI hooks
 │   │   │       ├── index.ts      # Hook exports
 │   │   │       ├── useEmbeddings.ts  # ✅ Embedding operations hook
 │   │   │       ├── useIndexer.ts     # ✅ WP 3.3 - Indexer control hook
-│   │   │       └── useIdleDetection.ts  # ✅ WP 3.3 - User activity detection
+│   │   │       ├── useIdleDetection.ts  # ✅ WP 3.3 - User activity detection
+│   │   │       └── useSimilarNotes.ts   # ✅ WP 3.4 - Similar notes discovery hook
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
@@ -420,9 +423,9 @@ await storage.delete('api-key-gemini');
 
 ### AI Module (`src/modules/ai/`)
 
-**Status:** ✅ Implemented in WP 3.1-3.3
+**Status:** ✅ Implemented in WP 3.1-3.4
 
-**Purpose:** Flexible AI backend abstraction for embeddings, text generation, embedding storage, and background indexing.
+**Purpose:** Flexible AI backend abstraction for embeddings, text generation, embedding storage, background indexing, and similarity discovery.
 
 **Exports:**
 ```typescript
@@ -434,6 +437,7 @@ export { GeminiBackend } from './backends';
 export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from './hooks';
 export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
 export { useIdleDetection, type IdleDetectionOptions } from './hooks';
+export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './hooks';
 export { IndexerService, type IndexerStatus, type IndexerConfig } from './IndexerService';
 ```
 
@@ -632,6 +636,48 @@ const result = await indexAll();
 // { success: 10, failed: 0 }
 ```
 
+**Similarity Query (WP 3.4):**
+```typescript
+// useSimilarNotes hook
+interface SimilarNote {
+  note: Note;
+  similarity: number;       // 0-1
+  similarityPercent: number; // 0-100 for display
+}
+
+interface UseSimilarNotesResult {
+  similarNotes: SimilarNote[];
+  isLoading: boolean;
+  error: string | null;
+  hasEmbedding: boolean;
+  findSimilar: (noteId: string) => Promise<void>;
+  refresh: () => Promise<void>;
+  clear: () => void;
+}
+```
+
+**Usage:**
+```typescript
+import { useSimilarNotes } from '@/modules/ai';
+
+function MyComponent({ noteId }: { noteId: string }) {
+  const { similarNotes, isLoading, findSimilar } = useSimilarNotes({
+    limit: 5,
+    threshold: 0.7,
+  });
+
+  // Find similar notes
+  await findSimilar(noteId);
+
+  // Display results
+  return similarNotes.map(({ note, similarityPercent }) => (
+    <div key={note.id}>
+      {note.title} - {similarityPercent}%
+    </div>
+  ));
+}
+```
+
 ---
 
 ### Theme (`src/shared/theme/`)
@@ -713,23 +759,25 @@ const isOpen = useSidebarOpen();
 
 ### Sophia Module (`src/modules/sophia/`)
 
-**Status:** ✅ Implemented in WP 1.2-1.5
+**Status:** ✅ Implemented in WP 1.2-1.5, 3.4
 
 **Components:**
 - `EntityList` - Note list container with loading/empty states
 - `EntityListItem` - Single note item with title, icon, and timestamp
-- `EntityDetail` - Main detail view for selected note (WP 1.3)
+- `EntityDetail` - Main detail view for selected note with similar notes sidebar (WP 1.3, 3.4)
 - `EntityDetailEmpty` - Empty state when no note selected
-- `EntityDetailHeader` - Header with editable title, delete button (WP 1.5)
+- `EntityDetailHeader` - Header with editable title, delete button, actions slot (WP 1.5, 3.4)
 - `EntityDetailContent` - Content display (uses EditorContainer)
 - `EditorContainer` - Editor wrapper with auto-save logic (WP 1.4)
 - `NoteEditor` - Tiptap editor instance (WP 1.4)
 - `EditorToolbar` - Formatting toolbar (WP 1.4)
+- `SimilarNotesPanel` - Sidebar panel showing semantically similar notes (WP 3.4)
+- `SimilarNotesButton` - Toggle button for similar notes panel (WP 3.4)
 
 **Exports:**
 ```typescript
 // src/modules/sophia/index.ts
-export { EntityList, EntityListItem, EntityDetail, EditorContainer, NoteEditor, EditorToolbar } from './components';
+export { EntityList, EntityListItem, EntityDetail, EditorContainer, NoteEditor, EditorToolbar, SimilarNotesPanel, SimilarNotesButton } from './components';
 ```
 
 **Usage:**
@@ -1043,13 +1091,28 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
     - EditorContainer integration (auto-embed on save)
     - AppLayout integration (pause/resume on activity)
     - DevSettings IndexerStatusSection UI
-  - WP 3.4: Similarity query (Pending)
+  - WP 3.4: Similarity query (Complete)
+    - useSimilarNotes hook for finding semantically similar notes
+    - SimilarNotesPanel component for displaying similar notes in a sidebar
+    - SimilarNotesButton component to toggle the similar notes panel
+    - EntityDetail integration with collapsible similar notes sidebar
+    - EntityDetailHeader actions slot for extensibility
+    - Similarity scores with color-coded percentages (90%+ green, 70-80% yellow)
+    - Configurable similarity threshold and max results from aiSettings
 
 ## Known Issues
 
 Pre-existing lint errors to address:
 - `src/adapters/sqlite/SQLiteClusterAdapter.ts:190` - `'_reason' is defined but never used`
 - `src/store/hooks.ts:124,150,205` - `'_' is assigned a value but never used`
+
+## Bug Fixes (Post WP 3.4)
+
+- **useIndexer.ts**: Fixed embedding adapter not being connected to AIService before indexing
+- **useSimilarNotes.ts**: Fixed refresh button by using ref instead of state for currentNoteId
+- **GraphCanvas.tsx**: Fixed node title sync when note title changes (added data sync effect with proper change detection)
+- **AppLayout.tsx**: Changed main `overflow-auto` to `overflow-hidden` to allow ReactFlow zoom scroll
+- **SophiaPage.tsx**: Added `h-full overflow-hidden` to GraphCanvas container for proper zoom handling
 
 ## Coming Next
 

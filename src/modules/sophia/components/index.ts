@@ -7,3 +7,5 @@ export { EntityDetailContent } from './EntityDetailContent';
 export { EditorContainer } from './EditorContainer';
 export { NoteEditor } from './NoteEditor';
 export { EditorToolbar } from './EditorToolbar';
+export { SimilarNotesPanel } from './SimilarNotesPanel';
+export { SimilarNotesButton } from './SimilarNotesButton';

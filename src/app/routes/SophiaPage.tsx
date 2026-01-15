@@ -5,7 +5,7 @@ export function SophiaPage() {
   return (
     <div className="flex h-full">
       {/* Graph Canvas - 60% */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
         <GraphCanvas />
       </div>
 

@@ -55,6 +55,9 @@ export function useIndexer(): UseIndexerResult {
       return;
     }
 
+    // Connect the embedding adapter to the AI service
+    ai.service.setEmbeddingAdapter(adapters.embeddings);
+
     const indexer = new IndexerService(ai.service, adapters.embeddings, adapters.notes, {
       trigger: triggerMode,
       debounceMs: 2000,

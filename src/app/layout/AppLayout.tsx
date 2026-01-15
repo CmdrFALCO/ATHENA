@@ -39,7 +39,7 @@ export function AppLayout() {
       <div className="flex flex-1 min-h-0">
         <Sidebar />
 
-        <main className="flex-1 bg-athena-bg overflow-auto">
+        <main className="flex-1 bg-athena-bg overflow-hidden">
           <StoreInitializer>
             <Outlet />
           </StoreInitializer>

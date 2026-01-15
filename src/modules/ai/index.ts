@@ -5,6 +5,7 @@ export { GeminiBackend } from './backends';
 export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from './hooks';
 export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
 export { useIdleDetection, type IdleDetectionOptions } from './hooks';
+export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './hooks';
 export {
   IndexerService,
   type IndexerStatus,
