@@ -1,6 +1,12 @@
 import { useDevSettings, useDevSettingsOpen, uiActions } from '@/store';
 import { devSettingsActions, type FeatureFlags } from './devSettings';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  useOptionalAI,
+  type AIProviderType,
+  PROVIDER_NAMES,
+  PROVIDER_MODELS,
+} from '@/modules/ai';
 
 interface FlagRowProps {
   label: string;
@@ -49,6 +55,296 @@ function FlagRow({ label, flag, value, type = 'boolean', options }: FlagRowProps
   );
 }
 
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      className={`w-12 h-6 rounded-full transition-colors ${
+        checked ? 'bg-blue-600' : 'bg-gray-600'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      <div
+        className={`w-5 h-5 bg-white rounded-full transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
+  );
+}
+
+function ConnectionStatus({
+  isConfigured,
+  isAvailable,
+  isLoading,
+}: {
+  isConfigured: boolean;
+  isAvailable: boolean;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <span className="text-xs text-gray-400 flex items-center gap-1">
+        <span className="animate-spin">&#8987;</span> Checking...
+      </span>
+    );
+  }
+
+  if (!isConfigured) {
+    return (
+      <span className="text-xs text-gray-400 flex items-center gap-1">
+        &#9675; Not configured
+      </span>
+    );
+  }
+
+  if (isAvailable) {
+    return (
+      <span className="text-xs text-green-400 flex items-center gap-1">
+        &#10003; Connected
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xs text-red-400 flex items-center gap-1">
+      &#10007; Not connected
+    </span>
+  );
+}
+
+function AIConfigSection() {
+  const settings = useDevSettings();
+  const ai = useOptionalAI();
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [hasKey, setHasKey] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<'success' | 'failed' | null>(null);
+
+  const provider = settings.flags.aiBackend as AIProviderType | 'none';
+  const isEnabled = settings.flags.enableAI;
+  const needsApiKey = provider !== 'none' && provider !== 'ollama';
+
+  // Check if API key exists when provider changes
+  useEffect(() => {
+    if (ai && needsApiKey) {
+      ai.hasApiKey(provider as AIProviderType).then(setHasKey);
+    } else {
+      setHasKey(false);
+    }
+    setApiKeyInput('');
+    setTestResult(null);
+  }, [ai, provider, needsApiKey]);
+
+  const handleSetApiKey = useCallback(async () => {
+    if (!ai || !apiKeyInput.trim() || provider === 'none') return;
+    try {
+      await ai.setApiKey(provider as AIProviderType, apiKeyInput.trim());
+      setHasKey(true);
+      setApiKeyInput('');
+      setTestResult(null);
+    } catch (error) {
+      console.error('Failed to set API key:', error);
+    }
+  }, [ai, apiKeyInput, provider]);
+
+  const handleClearApiKey = useCallback(async () => {
+    if (!ai || provider === 'none') return;
+    try {
+      await ai.clearApiKey(provider as AIProviderType);
+      setHasKey(false);
+      setTestResult(null);
+    } catch (error) {
+      console.error('Failed to clear API key:', error);
+    }
+  }, [ai, provider]);
+
+  const handleTestConnection = useCallback(async () => {
+    if (!ai) return;
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const result = await ai.testConnection();
+      setTestResult(result ? 'success' : 'failed');
+    } catch {
+      setTestResult('failed');
+    } finally {
+      setIsTesting(false);
+    }
+  }, [ai]);
+
+  const providerModels = provider !== 'none' ? PROVIDER_MODELS[provider as AIProviderType] : null;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium text-gray-400">AI Configuration</h3>
+        {ai && (
+          <ConnectionStatus
+            isConfigured={ai.isConfigured}
+            isAvailable={ai.isAvailable}
+            isLoading={ai.isLoading}
+          />
+        )}
+      </div>
+
+      {/* Enable AI Toggle */}
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Enable AI</span>
+        <Toggle
+          checked={isEnabled}
+          onChange={(checked) => devSettingsActions.setFlag('enableAI', checked)}
+        />
+      </div>
+
+      {/* Provider Selection */}
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Provider</span>
+        <select
+          value={provider}
+          onChange={(e) =>
+            devSettingsActions.setFlag('aiBackend', e.target.value as FeatureFlags['aiBackend'])
+          }
+          disabled={!isEnabled}
+          className="bg-gray-700 text-white text-sm rounded px-2 py-1 disabled:opacity-50"
+        >
+          {Object.entries(PROVIDER_NAMES).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Provider-specific settings - only show when AI is enabled and provider is selected */}
+      {isEnabled && provider !== 'none' && (
+        <>
+          {/* API Key Section (not needed for Ollama) */}
+          {needsApiKey && (
+            <div className="py-3 border-b border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-300">API Key</span>
+                {hasKey && (
+                  <span className="text-xs text-green-400">Key stored</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder={hasKey ? '••••••••' : 'Enter API key'}
+                  className="flex-1 bg-gray-700 text-white text-sm rounded px-2 py-1 placeholder-gray-500"
+                />
+                <button
+                  onClick={handleSetApiKey}
+                  disabled={!apiKeyInput.trim()}
+                  className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save
+                </button>
+                {hasKey && (
+                  <button
+                    onClick={handleClearApiKey}
+                    className="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Test Connection Button */}
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  onClick={handleTestConnection}
+                  disabled={!hasKey || isTesting}
+                  className="bg-gray-600 text-white text-xs px-3 py-1 rounded hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isTesting ? 'Testing...' : 'Test Connection'}
+                </button>
+                {testResult === 'success' && (
+                  <span className="text-xs text-green-400">Connection successful</span>
+                )}
+                {testResult === 'failed' && (
+                  <span className="text-xs text-red-400">Connection failed</span>
+                )}
+              </div>
+
+              {ai?.error && (
+                <p className="mt-2 text-xs text-red-400">{ai.error}</p>
+              )}
+            </div>
+          )}
+
+          {/* Ollama Endpoint (only for Ollama) */}
+          {provider === 'ollama' && (
+            <div className="py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300 block mb-1">Endpoint</span>
+              <input
+                type="text"
+                defaultValue="http://localhost:11434"
+                disabled
+                className="w-full bg-gray-700 text-white text-sm rounded px-2 py-1 disabled:opacity-50"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Ollama must be running locally
+              </p>
+            </div>
+          )}
+
+          {/* Model Selection */}
+          {providerModels && (
+            <>
+              <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                <span className="text-sm text-gray-300">Chat Model</span>
+                <select
+                  className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+                  defaultValue={providerModels.chat[0]}
+                >
+                  {providerModels.chat.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                <span className="text-sm text-gray-300">Embedding Model</span>
+                <select
+                  className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+                  defaultValue={providerModels.embedding[0]}
+                >
+                  {providerModels.embedding.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Show Green Connections (AI-suggested) */}
+      <FlagRow
+        label="Show Green Connections"
+        flag="showGreenConnections"
+        value={settings.flags.showGreenConnections}
+      />
+    </div>
+  );
+}
+
 export function DevSettingsPanel() {
   const isOpen = useDevSettingsOpen();
   const settings = useDevSettings();
@@ -88,23 +384,8 @@ export function DevSettingsPanel() {
 
         {/* Content */}
         <div className="px-4 py-2 overflow-y-auto max-h-[60vh]">
-          {/* AI Section */}
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-400 mb-2">AI (Phase 3)</h3>
-            <FlagRow label="Enable AI" flag="enableAI" value={settings.flags.enableAI} />
-            <FlagRow
-              label="AI Backend"
-              flag="aiBackend"
-              value={settings.flags.aiBackend}
-              type="select"
-              options={['none', 'ollama', 'anthropic', 'openai', 'gemini', 'mistral']}
-            />
-            <FlagRow
-              label="Show Green Connections"
-              flag="showGreenConnections"
-              value={settings.flags.showGreenConnections}
-            />
-          </div>
+          {/* AI Configuration Section */}
+          <AIConfigSection />
 
           {/* Search Section */}
           <div className="mb-4">

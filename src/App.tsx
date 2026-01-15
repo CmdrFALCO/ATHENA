@@ -10,6 +10,7 @@ import {
   type Adapters,
 } from './adapters';
 import { router } from './app/routes';
+import { AIProvider } from './modules/ai';
 
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
@@ -50,7 +51,9 @@ function App() {
 
   return (
     <AdapterProvider adapters={adapters}>
-      <RouterProvider router={router} />
+      <AIProvider>
+        <RouterProvider router={router} />
+      </AIProvider>
     </AdapterProvider>
   );
 }

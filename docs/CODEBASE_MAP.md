@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 2.5 (Connection Inspector) |
+| **Last WP Completed** | 3.1 (AI Backend Interface) |
 | **Last Updated** | January 2026 |
-| **Phase** | 2 (Graph Visualization) - Complete |
+| **Phase** | 3 (AI Layer) - In Progress |
 
 ---
 
@@ -64,10 +64,16 @@ athena/
 │   │   ├── hooks.ts              # React hooks + actions (incl. clusterActions)
 │   │   └── useInitializeStore.ts # Store initialization (loads all data from SQLite)
 │   │
-│   ├── config/                   # ✅ WP 0.4 - DevSettings
+│   ├── config/                   # ✅ WP 0.4/3.1 - DevSettings
 │   │   ├── index.ts              # Barrel export
 │   │   ├── devSettings.ts        # devSettings$ observable (feature flags)
-│   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
+│   │   └── DevSettingsPanel.tsx  # ✅ WP 3.1 - UI panel with AI config (Ctrl+Shift+D)
+│   │
+│   ├── services/                 # ✅ WP 3.1 - Application services
+│   │   └── secureStorage/        # ✅ WP 3.1 - Encrypted storage (Web Crypto API)
+│   │       ├── index.ts          # Barrel export
+│   │       ├── crypto.ts         # AES-GCM encryption, PBKDF2 key derivation
+│   │       └── SecureStorage.ts  # IndexedDB-backed encrypted key-value store
 │   │
 │   ├── modules/
 │   │   ├── canvas/               # ✅ WP 2.1-2.5 - React Flow graph canvas
@@ -98,10 +104,17 @@ athena/
 │   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
 │   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
 │   │   │       └── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
+│   │   ├── ai/                   # ✅ WP 3.1 - AI backend abstraction
+│   │   │   ├── index.ts          # Module barrel export
+│   │   │   ├── types.ts          # AI types (IAIBackend, AISettings, etc.)
+│   │   │   ├── AIService.ts      # Service orchestrator
+│   │   │   ├── AIContext.tsx     # React context (AIProvider, useAI)
+│   │   │   └── backends/
+│   │   │       ├── index.ts      # Backend exports
+│   │   │       └── GeminiBackend.ts  # ✅ Google Gemini implementation
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
 │   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
-│   │   ├── ai/                   # ⏳ Phase 3 (AI backends)
 │   │   └── search/               # ⏳ Phase 4 (FTS + vector)
 │   │
 │   ├── app/                      # ✅ WP 1.1 - App shell
@@ -156,6 +169,8 @@ athena/
 | `src/store/index.ts` | State management exports |
 | `src/modules/canvas/index.ts` | Canvas module exports |
 | `src/modules/sophia/index.ts` | Sophia module exports |
+| `src/modules/ai/index.ts` | AI module exports |
+| `src/services/secureStorage/index.ts` | Secure storage exports |
 | `src/shared/theme/index.ts` | Theme constants exports |
 | `src/shared/utils/index.ts` | Utility function exports |
 | `src/shared/hooks/index.ts` | Shared hooks exports |
@@ -337,6 +352,166 @@ Connect → onConnect → connectionAdapter.create() → connectionActions.addCo
 EdgeClick → selectConnection → ConnectionInspector renders
     → label edit → connectionAdapter.update() + connectionActions.updateConnection()
 ```
+
+---
+
+### Secure Storage (`src/services/secureStorage/`)
+
+**Status:** ✅ Implemented in WP 3.1
+
+**Purpose:** Encrypt and store sensitive data (API keys) using Web Crypto API with IndexedDB persistence.
+
+**Exports:**
+```typescript
+// src/services/secureStorage/index.ts
+export { getSecureStorage, resetSecureStorage, type ISecureStorage } from './SecureStorage';
+export { generateKey, encrypt, decrypt, deriveKeyFromPassword, generateSalt } from './crypto';
+```
+
+**Interface:**
+```typescript
+interface ISecureStorage {
+  store(key: string, value: string): Promise<void>;
+  retrieve(key: string): Promise<string | null>;
+  delete(key: string): Promise<void>;
+  clear(): Promise<void>;
+
+  // Lock/unlock for password mode
+  isLocked(): boolean;
+  unlock(password?: string): Promise<boolean>;
+  lock(): void;
+
+  // Mode management
+  setPasswordProtection(password: string): Promise<void>;
+  removePasswordProtection(): Promise<void>;
+  isPasswordProtected(): boolean;
+}
+```
+
+**Usage:**
+```typescript
+import { getSecureStorage } from '@/services/secureStorage';
+
+const storage = getSecureStorage();
+
+// Store encrypted value
+await storage.store('api-key-gemini', 'your-api-key');
+
+// Retrieve decrypted value
+const key = await storage.retrieve('api-key-gemini');
+
+// Delete value
+await storage.delete('api-key-gemini');
+```
+
+**Storage:** IndexedDB database `athena-secure` with two object stores:
+- `keys` - Stores CryptoKey (browser mode) or salt (password mode)
+- `values` - Stores encrypted key-value pairs
+
+**Encryption:** AES-GCM with 256-bit keys. Password mode uses PBKDF2 (100,000 iterations).
+
+---
+
+### AI Module (`src/modules/ai/`)
+
+**Status:** ✅ Implemented in WP 3.1
+
+**Purpose:** Flexible AI backend abstraction for embeddings and text generation.
+
+**Exports:**
+```typescript
+// src/modules/ai/index.ts
+export * from './types';
+export { getAIService, resetAIService, type IAIService } from './AIService';
+export { AIProvider, useAI, useAIStatus, useOptionalAI } from './AIContext';
+export { GeminiBackend } from './backends';
+```
+
+**Types:**
+```typescript
+type AIProviderType = 'gemini' | 'ollama' | 'anthropic' | 'openai' | 'mistral';
+
+interface IAIBackend {
+  readonly id: string;
+  readonly name: string;
+  readonly type: AIProviderType;
+
+  embed(text: string): Promise<EmbeddingResult>;
+  generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
+  isAvailable(): Promise<boolean>;
+  configure(config: ProviderConfig): void;
+  getEmbeddingDimensions(): number;
+  getSupportedModels(): ModelInfo[];
+}
+
+interface EmbeddingResult {
+  vector: number[];
+  model: string;
+  dimensions: number;
+  tokenCount?: number;
+}
+
+interface GenerateResult {
+  text: string;
+  model: string;
+  tokenCount?: { prompt: number; completion: number; total: number };
+  finishReason?: 'stop' | 'length' | 'error';
+}
+```
+
+**React Context:**
+```typescript
+interface AIContextValue {
+  service: IAIService;
+  isConfigured: boolean;
+  isAvailable: boolean;
+  isLoading: boolean;
+  error: string | null;
+  provider: AIProviderType | null;
+
+  testConnection: () => Promise<boolean>;
+  setApiKey: (provider: AIProviderType, key: string) => Promise<void>;
+  clearApiKey: (provider: AIProviderType) => Promise<void>;
+  hasApiKey: (provider: AIProviderType) => Promise<boolean>;
+}
+```
+
+**Usage:**
+```typescript
+import { useAI, useAIStatus } from '@/modules/ai';
+
+// Full context
+function MyComponent() {
+  const { service, isConfigured, isAvailable, testConnection, setApiKey } = useAI();
+
+  // Generate text
+  const result = await service.generate('Hello, world!');
+
+  // Get embeddings
+  const embedding = await service.embed('Some text to embed');
+}
+
+// Status only (lighter)
+function StatusIndicator() {
+  const { isConfigured, isAvailable, provider } = useAIStatus();
+  return <span>{isAvailable ? 'Connected' : 'Not connected'}</span>;
+}
+```
+
+**Implemented Backends:**
+- ✅ `GeminiBackend` - Google Gemini API (embeddings + generation)
+- ⏳ `OllamaBackend` - Local Ollama (planned)
+- ⏳ `AnthropicBackend` - Claude API (planned)
+- ⏳ `OpenAIBackend` - OpenAI API (planned)
+- ⏳ `MistralBackend` - Mistral API (planned)
+
+**DevSettings UI (Ctrl+Shift+D):**
+- Enable/disable AI toggle
+- Provider selection dropdown
+- API key input with Save/Clear buttons
+- Test Connection button with status indicator
+- Chat and embedding model selection
+- Connection status indicator (✓ Connected / ✗ Not connected / ○ Not configured)
 
 ---
 
@@ -644,6 +819,8 @@ interface Embedding {
 | Dependency injection | `AdapterProvider` | React context for adapters |
 | Observable state | `src/store/state.ts` | Legend-State for reactive updates |
 | N-way relationships | Clusters | Junction pattern for multi-entity relationships |
+| Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
+| AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
 
 ---
 
@@ -706,6 +883,17 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 2.3: Node positioning (Complete)
   - WP 2.4: Blue connections (Complete)
   - WP 2.5: Connection inspector (Complete)
+
+- **Phase 3** (AI Layer): In Progress
+  - WP 3.1: AI backend interface (Complete)
+    - SecureStorage service (Web Crypto API + IndexedDB)
+    - AI types and interfaces (IAIBackend, AISettings, etc.)
+    - GeminiBackend implementation (embed + generate)
+    - AIService orchestrator
+    - AIContext React context (AIProvider, useAI)
+    - DevSettings AI configuration UI
+  - WP 3.2: Embedding pipeline (Pending)
+  - WP 3.3: Semantic connections (Pending)
 
 ## Known Issues
 
