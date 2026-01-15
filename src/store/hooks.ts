@@ -145,6 +145,14 @@ export const connectionActions = {
     appState$.connections.items.set({ ...items, [connection.id]: connection });
   },
 
+  updateConnection(id: string, updates: Partial<Connection>) {
+    const items = appState$.connections.items.get();
+    const current = items[id];
+    if (current) {
+      appState$.connections.items.set({ ...items, [id]: { ...current, ...updates } });
+    }
+  },
+
   removeConnection(id: string) {
     const items = appState$.connections.items.get();
     const { [id]: _, ...rest } = items;

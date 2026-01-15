@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 2.4 (Blue Connections) |
+| **Last WP Completed** | 2.5 (Connection Inspector) |
 | **Last Updated** | January 2026 |
-| **Phase** | 2 (Graph Visualization) - In Progress |
+| **Phase** | 2 (Graph Visualization) - Complete |
 
 ---
 
@@ -70,19 +70,21 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── canvas/               # ✅ WP 2.1-2.4 - React Flow graph canvas
+│   │   ├── canvas/               # ✅ WP 2.1-2.5 - React Flow graph canvas
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts      # Component exports
 │   │   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
 │   │   │   │   ├── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
-│   │   │   │   └── ConnectionEdge.tsx  # ✅ WP 2.4 - Custom edge component
+│   │   │   │   ├── ConnectionEdge.tsx  # ✅ WP 2.4 - Custom edge component
+│   │   │   │   └── ConnectionInspector.tsx  # ✅ WP 2.5 - Connection detail panel
 │   │   │   └── hooks/
 │   │   │       ├── index.ts      # Hook exports
 │   │   │       ├── useNotesAsNodes.ts      # ✅ WP 2.2 - Converts notes to nodes
 │   │   │       ├── useNodePositionSync.ts  # ✅ WP 2.3 - Persists node positions
 │   │   │       ├── useConnectionsAsEdges.ts  # ✅ WP 2.4 - Converts connections to edges
-│   │   │       └── useConnectionHandlers.ts  # ✅ WP 2.4 - Connection creation/deletion
+│   │   │       ├── useConnectionHandlers.ts  # ✅ WP 2.4 - Connection creation/deletion
+│   │   │       └── useSelectedConnection.ts  # ✅ WP 2.5 - Edge selection state
 │   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
@@ -270,24 +272,26 @@ function MyComponent() {
 
 ### Canvas Module (`src/modules/canvas/`)
 
-**Status:** ✅ Implemented in WP 2.1-2.4
+**Status:** ✅ Implemented in WP 2.1-2.5
 
 **Components:**
 - `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
 - `EntityNode` - Custom node with type badge, icon, and title (WP 2.2)
 - `ConnectionEdge` - Custom edge with color-coded styling (WP 2.4)
+- `ConnectionInspector` - Connection detail panel with label editing (WP 2.5)
 
 **Hooks:**
 - `useNotesAsNodes` - Converts store notes to React Flow nodes (WP 2.2)
 - `useNodePositionSync` - Persists node positions to SQLite (WP 2.3)
 - `useConnectionsAsEdges` - Converts store connections to React Flow edges (WP 2.4)
 - `useConnectionHandlers` - Handles connection creation and deletion (WP 2.4)
+- `useSelectedConnection` - Manages edge selection state (WP 2.5)
 
 **Exports:**
 ```typescript
 // src/modules/canvas/index.ts
-export { GraphCanvas, EntityNode, ConnectionEdge } from './components';
-export { useNotesAsNodes, useNodePositionSync, useConnectionsAsEdges, useConnectionHandlers } from './hooks';
+export { GraphCanvas, EntityNode, ConnectionEdge, ConnectionInspector } from './components';
+export { useNotesAsNodes, useNodePositionSync, useConnectionsAsEdges, useConnectionHandlers, useSelectedConnection } from './hooks';
 ```
 
 **Usage:**
@@ -315,8 +319,10 @@ import { GraphCanvas } from '@/modules/canvas';
 - Snap-to-grid (20px) for cleaner layouts (WP 2.3)
 - Blue connections via drag between handles (WP 2.4)
 - Connection deletion with backspace/delete (WP 2.4)
+- Connection inspector panel on edge click (WP 2.5)
+- Editable connection labels with auto-save (WP 2.5)
 
-**Data Flow (WP 2.2-2.4):**
+**Data Flow (WP 2.2-2.5):**
 ```
 Store (notes) → useNotesAsNodes() → GraphCanvas → EntityNode
      ↑                                              ↓
@@ -327,6 +333,9 @@ Drag → onNodeDragStop → useNodePositionSync.saveNodePosition
 
 Connect → onConnect → connectionAdapter.create() → connectionActions.addConnection()
     → useConnectionsAsEdges() → GraphCanvas renders ConnectionEdge
+
+EdgeClick → selectConnection → ConnectionInspector renders
+    → label edit → connectionAdapter.update() + connectionActions.updateConnection()
 ```
 
 ---
@@ -691,11 +700,12 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 1.4: Tiptap rich text editor (Complete)
   - WP 1.5: Entity CRUD (Complete)
 
-- **Phase 2** (Graph Visualization): In Progress
+- **Phase 2** (Graph Visualization): Complete
   - WP 2.1: React Flow setup (Complete)
   - WP 2.2: Entity nodes on canvas (Complete)
   - WP 2.3: Node positioning (Complete)
   - WP 2.4: Blue connections (Complete)
+  - WP 2.5: Connection inspector (Complete)
 
 ## Known Issues
 
@@ -707,11 +717,10 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **2.3** | Node positioning (drag to reposition) |
-| **2.4** | Blue connections (drag between nodes) |
-| **2.5** | Connection inspector |
 | **3.x** | AI backends integration |
 | **4.x** | Full-text search + vector search |
+| **5.x** | CPN validation engine |
+| **6.x** | Plans and documents |
 
 ---
 

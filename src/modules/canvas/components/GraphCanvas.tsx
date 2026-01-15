@@ -11,6 +11,7 @@ import {
   type NodeTypes,
   type EdgeTypes,
   type NodeMouseHandler,
+  type EdgeMouseHandler,
   type OnNodeDrag,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -18,10 +19,12 @@ import '@xyflow/react/dist/style.css';
 import { ATHENA_COLORS } from '@/shared/theme';
 import { EntityNode, type EntityNodeData } from './EntityNode';
 import { ConnectionEdge, type ConnectionEdgeData } from './ConnectionEdge';
+import { ConnectionInspector } from './ConnectionInspector';
 import { useNotesAsNodes } from '../hooks/useNotesAsNodes';
 import { useConnectionsAsEdges } from '../hooks/useConnectionsAsEdges';
 import { useNodePositionSync } from '../hooks/useNodePositionSync';
 import { useConnectionHandlers } from '../hooks/useConnectionHandlers';
+import { useSelectedConnection } from '../hooks/useSelectedConnection';
 
 // Register custom node types - must be outside component or memoized
 const nodeTypes: NodeTypes = {
@@ -37,6 +40,11 @@ export function GraphCanvas() {
   const { edges: storeEdges } = useConnectionsAsEdges();
   const { saveNodePosition } = useNodePositionSync();
   const { onConnect, onEdgesDelete } = useConnectionHandlers();
+  const {
+    selectedConnection,
+    selectConnection,
+    clearConnectionSelection,
+  } = useSelectedConnection();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<ConnectionEdgeData>>(storeEdges);
@@ -76,9 +84,24 @@ export function GraphCanvas() {
     (_event, node) => {
       const data = node.data as EntityNodeData;
       onNodeSelect(data.entityId);
+      clearConnectionSelection(); // Clear edge selection when clicking node
     },
-    [onNodeSelect]
+    [onNodeSelect, clearConnectionSelection]
   );
+
+  const handleEdgeClick: EdgeMouseHandler = useCallback(
+    (_event, edge) => {
+      const data = edge.data as ConnectionEdgeData | undefined;
+      if (data?.connectionId) {
+        selectConnection(data.connectionId);
+      }
+    },
+    [selectConnection]
+  );
+
+  const handlePaneClick = useCallback(() => {
+    clearConnectionSelection();
+  }, [clearConnectionSelection]);
 
   const handleNodeDragStop: OnNodeDrag = useCallback(
     (_event, node) => {
@@ -88,8 +111,16 @@ export function GraphCanvas() {
     [saveNodePosition]
   );
 
+  const handleEdgesDelete = useCallback(
+    (edgesToDelete: Edge<ConnectionEdgeData>[]) => {
+      onEdgesDelete(edgesToDelete);
+      clearConnectionSelection();
+    },
+    [onEdgesDelete, clearConnectionSelection]
+  );
+
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -97,8 +128,10 @@ export function GraphCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         onNodeDragStop={handleNodeDragStop}
-        onEdgesDelete={onEdgesDelete}
+        onEdgesDelete={handleEdgesDelete}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
@@ -128,6 +161,14 @@ export function GraphCanvas() {
           }}
         />
       </ReactFlow>
+
+      {/* Connection Inspector Panel */}
+      {selectedConnection && (
+        <ConnectionInspector
+          connection={selectedConnection}
+          onClose={clearConnectionSelection}
+        />
+      )}
     </div>
   );
 }

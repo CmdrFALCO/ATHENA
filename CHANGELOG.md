@@ -1,6 +1,139 @@
-# Changelog
+# ATHENA Changelog
 
-All notable changes to ATHENA will be documented in this file.
+## [2.5.0] - 2026-01-15
+
+### Added
+- **Connection Inspector**: Panel for viewing and editing connection details
+  - `ConnectionInspector.tsx` - Inspector panel showing source/target, label, metadata
+  - `useSelectedConnection.ts` - Hook for managing selected connection state
+  - Click edge → opens inspector in top-right corner
+  - Displays: source note, target note, connection type, creator, created date
+  - Editable label field (saves on blur/Enter)
+  - Delete button with confirmation dialog
+  - Confidence percentage shown for AI-suggested connections
+- **Connection Update**: Store action for updating connection fields
+  - `connectionActions.updateConnection()` - Update label, confidence, etc.
+
+### Changed
+- `GraphCanvas.tsx` - Added edge click handling, pane click to dismiss inspector
+- `index.css` - Added slide-in animation for inspector panel
+
+### Technical
+- Inspector uses direct store selector for reactive updates
+- Color mapping: blue→Explicit, green→AI Suggested, red→Validation Error, amber→Validation Warning
+- Inspector closes on: pane click, node click, X button, or connection delete
+- Data flow: onEdgeClick → selectConnection → ConnectionInspector renders
+
+### Phase 2 Complete
+- WP 2.1: React Flow setup ✅
+- WP 2.2: Entity nodes ✅
+- WP 2.3: Node positioning ✅
+- WP 2.4: Blue connections ✅
+- WP 2.5: Connection inspector ✅
+
+## [2.4.0] - 2026-01-15
+
+### Added
+- **Blue Connections**: Create explicit connections by dragging between node handles
+  - `ConnectionEdge.tsx` - Custom edge component with color-coded styling
+  - `useConnectionsAsEdges.ts` - Converts store connections to React Flow edges
+  - `useConnectionHandlers.ts` - Handles connection creation and deletion
+- **Connection Features**:
+  - Drag from source handle (bottom) to target handle (top) to create connection
+  - Blue bezier curve for explicit user connections
+  - Optional label display on edge center
+  - Edge selection with visual feedback (thicker stroke)
+  - Delete connections with backspace/delete key
+
+### Changed
+- `GraphCanvas.tsx` - Added edge types, onConnect, onEdgesDelete handlers
+- `index.css` - Added edge hover and selection styles
+
+### Fixed
+- Infinite loop when syncing React Flow edges with store
+  - Same root cause as WP 2.2: `useEffect` triggering on every render due to array reference changes
+  - Solution: Track edge IDs with ref, only sync when edges actually added/removed
+
+### Technical
+- Connections persist to SQLite via `connectionAdapter.create()`
+- Store sync via `connectionActions.addConnection()`
+- Self-connections prevented
+- Color mapping: blue→explicit, green→semantic, red→error, amber→warning
+- Data flow: onConnect → connectionAdapter.create → connectionActions.addConnection → useConnectionsAsEdges → render
+
+## [2.3.0] - 2026-01-15
+
+### Added
+- **Node Positioning**: Drag-to-reposition nodes with persistent storage
+  - `useNodePositionSync.ts` - Hook to persist node positions to SQLite
+  - `onNodeDragStop` handler saves position on drag end
+  - Snap-to-grid (20px) for cleaner layouts
+- **Smart Default Positions**: New notes appear offset from existing nodes
+  - Calculates `position_x` based on rightmost existing node + 250px
+  - Prevents notes from stacking on top of each other
+
+### Changed
+- `GraphCanvas.tsx` - Added drag handling, snap-to-grid, position persistence
+- `Sidebar.tsx` - Note creation calculates sensible default position
+
+### Technical
+- Positions saved on drag end (not during) to minimize DB writes
+- Positions rounded to integers for cleaner storage
+- Data flow on drag: onNodeDragStop → saveNodePosition → noteAdapter.update + entityActions.updateNote
+- Position preservation during React Flow re-renders via Map lookup
+
+## [2.2.0] - 2026-01-14
+
+### Added
+- **Entity Nodes**: Custom React Flow node component for displaying entities
+  - `EntityNode.tsx` - Node with type badge, icon, and title
+  - Color-coded left border based on entity type (note=blue, plan=amber, document=purple)
+  - Selection highlight with amber ring
+  - Connection handles (hidden by default, shown on hover)
+- **useNotesAsNodes Hook**: Converts store notes to React Flow nodes
+  - Auto-generates grid layout positions if not set
+  - Click node → selects in store → updates detail panel
+
+### Changed
+- `GraphCanvas.tsx` - Now renders entity nodes from store with ID-based sync
+- `EntityNode.tsx` - Subscribes directly to store for selection state
+- `index.css` - Added node focus and handle hover styles
+
+### Fixed
+- Infinite loop when syncing React Flow nodes with store
+  - Root cause: `useEffect` triggering on every render due to array reference changes
+  - Solution: `EntityNode` subscribes directly to `useSelectedEntityIds()` instead of receiving selection via props
+  - `GraphCanvas` only syncs when node IDs actually change (add/remove)
+
+### Technical
+- Node positions use `position_x`/`position_y` from entity or fall back to auto-grid
+- Selection state handled per-node via direct store subscription (avoids prop drilling and re-render loops)
+- Data flow: Store → useNotesAsNodes → GraphCanvas → EntityNode (subscribes to selection) → onNodeClick → uiActions.selectEntity
+
+## [2.1.0] - 2026-01-14
+
+### Added
+- **React Flow Canvas**: Graph visualization foundation in Sophia workspace
+  - `GraphCanvas.tsx` - React Flow canvas with pan/zoom support
+  - Background grid, Controls (zoom +/-/fit), MiniMap
+  - Dark theme integration with custom colors
+- **Theme Constants**: Centralized color definitions
+  - `src/shared/theme/colors.ts` - ATHENA_COLORS constant
+  - Connection colors (blue/green/red/amber)
+  - Node colors by entity type
+  - Surface and UI state colors
+- **Canvas Module**: New module structure at `src/modules/canvas/`
+
+### Changed
+- `SophiaPage.tsx` - Now shows 60/40 split: canvas + detail panel
+- `index.css` - Added React Flow dark theme overrides
+
+### Dependencies
+- `@xyflow/react` - React Flow v12+ for graph visualization
+
+### Technical
+- Canvas currently renders empty (nodes/edges added in WP 2.2)
+- Layout: Canvas takes `flex-1`, detail panel fixed at 400px
 
 ## [1.5.0] - 2026-01-14
 
@@ -26,6 +159,11 @@ All notable changes to ATHENA will be documented in this file.
 ### Fixed
 - `entityActions.addNote()` - Fixed bug where new notes weren't added to store
   - Was using optional chaining which doesn't work for new entries
+
+### Technical
+- Create uses `noteAdapter.create()` + `entityActions.addNote()` + `uiActions.selectEntity()`
+- Rename uses `noteAdapter.update()` + `entityActions.updateNote()`
+- Delete uses `noteAdapter.delete()` + `entityActions.removeNote()` + `uiActions.clearSelection()`
 
 ## [1.4.0] - 2026-01-14
 
@@ -53,6 +191,11 @@ All notable changes to ATHENA will be documented in this file.
 - `@tiptap/starter-kit` - Common extensions (bold, italic, headings, lists, etc.)
 - `@tiptap/extension-placeholder` - Placeholder text support
 
+### Technical
+- Editor uses StarterKit for common formatting
+- Content stored as Tiptap JSON Block[] format
+- Saves to database via `noteAdapter.update()` and updates store via `entityActions.updateNote()`
+
 ## [1.3.0] - 2026-01-14
 
 ### Added
@@ -67,6 +210,11 @@ All notable changes to ATHENA will be documented in this file.
 ### Changed
 - `SophiaPage.tsx` - Now renders `EntityDetail` instead of placeholder
 - Updated component exports in sophia module
+
+### Technical
+- Temporary text extraction from Tiptap Block[] format
+- Will be replaced by Tiptap editor in WP 1.4
+- Uses `useNote(id)` hook for efficient single note lookup
 
 ## [1.2.0] - 2026-01-13
 
@@ -90,6 +238,11 @@ All notable changes to ATHENA will be documented in this file.
 - `Sidebar.tsx` - Replaced placeholder with `EntityList` component
 - `useInitializeStore.ts` - Added sample data generation for testing
 - Navigation section no longer uses `flex-1` to allow entity list to fill space
+
+### Technical
+- EntityList uses `appState$.initialized` to determine loading state
+- Selection managed via `uiActions.selectEntity()` (single selection mode)
+- Notes retrieved via `useNotes()` hook from Legend-State store
 
 ## [1.1.0] - 2026-01-13
 
@@ -124,77 +277,68 @@ Pre-existing lint errors to address:
 
 ### Added
 - **Cluster Schema**: N-way relationship support via clusters and cluster_members tables
-  - `clusters` table with type, color, confidence, bi-temporal fields
-  - `cluster_members` junction table for entity membership with roles
-  - Indexes for efficient queries on entity, type, color, validity
 - **Cluster Types**: TypeScript definitions for cluster concepts
-  - `ClusterType`: concept, sequence, hierarchy, contradiction, dependency
-  - `MemberRole`: source, target, participant, hub, evidence, claim
-  - `Cluster` and `ClusterMember` interfaces
-  - `CreateClusterInput` type for cluster creation
 - **Cluster Adapter**: `IClusterAdapter` interface with full CRUD + queries
-  - Member management: addMember, removeMember, getMembers
-  - Queries: getClustersForEntity, getByType, getByColor, getViolations
-  - Bi-temporal support via invalidate method
 - **SQLite Implementation**: `SQLiteClusterAdapter` following existing patterns
-- **Store Integration**: Cluster state management
-  - `useClusters()`, `useCluster(id)`, `useClustersForEntity(entityId)` hooks
-  - `clusterActions` for CRUD operations
-  - Clusters loaded on app initialization
+- **Store Integration**: Cluster state management hooks and actions
 
 ### Changed
 - Updated `AdapterProvider` to include cluster adapter
 - Updated `useInitializeStore` to load clusters on init
-- App.tsx now initializes SQLiteClusterAdapter
 
 ## [0.4.0] - 2026-01-13
 
 ### Added
-- **State Management**: Integrated Legend-State for reactive state management
-  - `appState$` observable for UI state, entities, and connections
-  - `devSettings$` observable for feature flags
-  - React hooks: `useNotes()`, `useConnections()`, `useFeatureFlag()`, etc.
-  - Action creators: `uiActions`, `entityActions`, `connectionActions`
-- **DevSettings Panel**: Feature flag management UI
-  - Toggle with Ctrl+Shift+D keyboard shortcut
-  - Feature flags for AI, Search, Validation phases
-  - Debug flags for state and adapter logging
-  - Settings persist to localStorage
-- **Store Initialization**: `useInitializeStore()` hook loads entities from SQLite on app start
+- **State Management**: Legend-State for reactive state management
+- **DevSettings Panel**: Feature flag management UI (Ctrl+Shift+D)
+- **Store Initialization**: `useInitializeStore()` hook
 
 ### Changed
-- App.tsx updated to use Legend-State hooks instead of local React state
-- UI now reflects entities loaded from SQLite via reactive state
 - **SQLite Library Migration**: Replaced wa-sqlite with sql.js
-  - wa-sqlite exhibited unstable behavior in browser environment:
-    - IDBBatchAtomicVFS failed with "unable to open database file"
-    - MemoryAsyncVFS caused "RuntimeError: unreachable" WASM errors
-    - Sync module returned Promises unexpectedly, causing invalid database handles
-    - Resulted in persistent "SQLiteError: out of memory" errors
-  - sql.js provides a stable, well-tested synchronous API
-  - Database currently runs in-memory; IndexedDB persistence planned for future WP
+  - wa-sqlite exhibited unstable behavior in browser environment
+  - sql.js provides stable synchronous API
 
 ## [0.3.0] - 2026-01-13
 
 ### Added
-- **Data Models**: TypeScript types for Entity, Note, Connection, Embedding
-- **Adapter Pattern**: Interface-based data access layer
-  - `INoteAdapter`, `IConnectionAdapter`, `IEmbeddingAdapter` interfaces
-  - SQLite implementations for all adapters
-- **React Context**: `AdapterProvider` and hooks for adapter access
-- **Bi-temporal Support**: `valid_at` and `invalid_at` fields for temporal queries
+- TypeScript types for Entity, Connection, and Embedding models
+- SQLite schema with entities, connections, and embeddings tables
+- Adapter pattern interfaces (INoteAdapter, IConnectionAdapter, IEmbeddingAdapter)
+- SQLite adapter implementations for all data types
+- AdapterProvider React context for dependency injection
+- Path alias `@/` for cleaner imports
+- Bi-temporal data model (valid_at/invalid_at for soft deletes)
+
+### Changed
+- Updated App.tsx with adapter test panel
+- Enhanced database init to run schema on startup
+- Vite config updated with path alias resolution
+
+### Technical
+- Adapter pattern enables future backend swapping (e.g., remote sync)
+- Soft delete via invalidation supports data recovery
+- Cosine similarity for embeddings computed in JavaScript
 
 ## [0.2.0] - 2026-01-13
 
 ### Added
-- **SQLite WASM**: Integrated wa-sqlite with IndexedDB persistence (later replaced with sql.js in v0.4.0)
-- **Database Schema**: Tables for entities, connections, embeddings
-- **Database Initialization**: Async initialization with error handling
+- SQLite WASM integration using wa-sqlite
+- Database module with IndexedDB persistence (IDBBatchAtomicVFS)
+- Database initialization with singleton pattern
+- Test component showing database status in UI
+
+### Changed
+- Updated App.tsx with database test component
+- Added Vite config for WASM loading and COOP/COEP headers
+
+### Technical
+- Using wa-sqlite-async.mjs for async database operations
+- IndexedDB storage via IDBBatchAtomicVFS for cross-session persistence
 
 ## [0.1.0] - 2026-01-13
 
 ### Added
-- Initial project scaffold with Vite + React + TypeScript
-- Tailwind CSS configuration
-- ESLint configuration
-- Basic App component structure
+- Project scaffold with Vite + React 19 + TypeScript
+- Tailwind CSS configuration with dark mode
+- Folder structure for all planned modules
+- Documentation scaffolding (ARCHITECTURE, DECISIONS, LESSONS_LEARNED)

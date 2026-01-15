@@ -1,5 +1,36 @@
 # ATHENA Changelog
 
+## [2.5.0] - 2026-01-15
+
+### Added
+- **Connection Inspector**: Panel for viewing and editing connection details
+  - `ConnectionInspector.tsx` - Inspector panel showing source/target, label, metadata
+  - `useSelectedConnection.ts` - Hook for managing selected connection state
+  - Click edge → opens inspector in top-right corner
+  - Displays: source note, target note, connection type, creator, created date
+  - Editable label field (saves on blur/Enter)
+  - Delete button with confirmation dialog
+  - Confidence percentage shown for AI-suggested connections
+- **Connection Update**: Store action for updating connection fields
+  - `connectionActions.updateConnection()` - Update label, confidence, etc.
+
+### Changed
+- `GraphCanvas.tsx` - Added edge click handling, pane click to dismiss inspector
+- `index.css` - Added slide-in animation for inspector panel
+
+### Technical
+- Inspector uses direct store selector for reactive updates
+- Color mapping: blue→Explicit, green→AI Suggested, red→Validation Error, amber→Validation Warning
+- Inspector closes on: pane click, node click, X button, or connection delete
+- Data flow: onEdgeClick → selectConnection → ConnectionInspector renders
+
+### Phase 2 Complete
+- WP 2.1: React Flow setup ✅
+- WP 2.2: Entity nodes ✅
+- WP 2.3: Node positioning ✅
+- WP 2.4: Blue connections ✅
+- WP 2.5: Connection inspector ✅
+
 ## [2.4.0] - 2026-01-15
 
 ### Added

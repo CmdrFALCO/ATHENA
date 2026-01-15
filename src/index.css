@@ -171,3 +171,19 @@
   stroke: #3b82f6;
   stroke-width: 2px;
 }
+
+/* Connection Inspector animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.connection-inspector {
+  animation: slideIn 150ms ease-out;
+}
