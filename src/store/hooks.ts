@@ -1,5 +1,5 @@
 import { useSelector } from '@legendapp/state/react';
-import { appState$ } from './state';
+import { appState$, type SuggestedConnection } from './state';
 import { devSettings$, type FeatureFlags } from '@/config';
 import type { Note, Connection, Cluster } from '@/shared/types';
 
@@ -216,5 +216,89 @@ export const clusterActions = {
 
   setLoading(loading: boolean) {
     appState$.clusters.isLoading.set(loading);
+  },
+};
+
+// ============================================
+// Suggestions (WP 3.5 - Green Connections)
+// ============================================
+
+export function useSuggestedConnections(): SuggestedConnection[] {
+  return useSelector(() => appState$.suggestions.connections.get());
+}
+
+export function usePendingSuggestions(): SuggestedConnection[] {
+  return useSelector(() =>
+    appState$.suggestions.connections.get().filter((s) => s.status === 'pending')
+  );
+}
+
+export function useSuggestionsGenerating(): boolean {
+  return useSelector(() => appState$.suggestions.isGenerating.get());
+}
+
+export function useSuggestionsSourceNote(): string | null {
+  return useSelector(() => appState$.suggestions.sourceNoteId.get());
+}
+
+export const suggestionActions = {
+  setSuggestions(suggestions: SuggestedConnection[], sourceNoteId: string) {
+    appState$.suggestions.connections.set(suggestions);
+    appState$.suggestions.sourceNoteId.set(sourceNoteId);
+    appState$.suggestions.lastGeneratedAt.set(new Date().toISOString());
+  },
+
+  addSuggestion(suggestion: SuggestedConnection) {
+    const current = appState$.suggestions.connections.get();
+    appState$.suggestions.connections.set([...current, suggestion]);
+  },
+
+  dismissSuggestion(id: string) {
+    const current = appState$.suggestions.connections.get();
+    appState$.suggestions.connections.set(
+      current.map((s) => (s.id === id ? { ...s, status: 'dismissed' as const } : s))
+    );
+  },
+
+  clearSuggestions() {
+    appState$.suggestions.connections.set([]);
+    appState$.suggestions.sourceNoteId.set(null);
+    appState$.suggestions.lastGeneratedAt.set(null);
+  },
+
+  setGenerating(isGenerating: boolean) {
+    appState$.suggestions.isGenerating.set(isGenerating);
+  },
+
+  removeSuggestion(id: string) {
+    const current = appState$.suggestions.connections.get();
+    appState$.suggestions.connections.set(current.filter((s) => s.id !== id));
+  },
+
+  removeSuggestionsForEntity(entityId: string) {
+    const current = appState$.suggestions.connections.get();
+    appState$.suggestions.connections.set(
+      current.filter((s) => s.sourceId !== entityId && s.targetId !== entityId)
+    );
+  },
+};
+
+// ============================================
+// Indexer Events (WP 3.5 - Global broadcasts)
+// ============================================
+
+export function useLastIndexedNoteId(): string | null {
+  return useSelector(() => appState$.indexer.lastIndexedNoteId.get());
+}
+
+export const indexerActions = {
+  noteIndexed(noteId: string) {
+    appState$.indexer.lastIndexedNoteId.set(noteId);
+    appState$.indexer.lastIndexedAt.set(new Date().toISOString());
+  },
+
+  clearLastIndexed() {
+    appState$.indexer.lastIndexedNoteId.set(null);
+    appState$.indexer.lastIndexedAt.set(null);
   },
 };

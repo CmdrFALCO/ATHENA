@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -25,6 +25,9 @@ import { useConnectionsAsEdges } from '../hooks/useConnectionsAsEdges';
 import { useNodePositionSync } from '../hooks/useNodePositionSync';
 import { useConnectionHandlers } from '../hooks/useConnectionHandlers';
 import { useSelectedConnection } from '../hooks/useSelectedConnection';
+import { useSuggestedEdges } from '../hooks/useSuggestedEdges';
+import { useOptionalSuggestions } from '@/modules/ai/hooks/useSuggestions';
+import { useLastIndexedNoteId } from '@/store';
 
 // Register custom node types - must be outside component or memoized
 const nodeTypes: NodeTypes = {
@@ -36,8 +39,9 @@ const edgeTypes: EdgeTypes = {
 };
 
 export function GraphCanvas() {
-  const { nodes: storeNodes, onNodeSelect } = useNotesAsNodes();
+  const { nodes: storeNodes, onNodeSelect, selectedNodeId } = useNotesAsNodes();
   const { edges: storeEdges } = useConnectionsAsEdges();
+  const { edges: suggestedEdges } = useSuggestedEdges();
   const { saveNodePosition } = useNodePositionSync();
   const { onConnect, onEdgesDelete } = useConnectionHandlers();
   const {
@@ -45,14 +49,52 @@ export function GraphCanvas() {
     selectConnection,
     clearConnectionSelection,
   } = useSelectedConnection();
+  const { generateForNote, clearSuggestions } = useOptionalSuggestions();
+  const lastIndexedNoteId = useLastIndexedNoteId();
+
+  // Combine explicit connections (blue) with suggestions (green)
+  const allEdges = useMemo<Edge<ConnectionEdgeData>[]>(() => {
+    return [...storeEdges, ...suggestedEdges];
+  }, [storeEdges, suggestedEdges]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<ConnectionEdgeData>>(storeEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<ConnectionEdgeData>>(allEdges);
 
   // Track previous state to detect actual changes
   const prevNodeIdsRef = useRef<string>(storeNodes.map((n) => n.id).sort().join(','));
   const prevNodeDataRef = useRef<string>(JSON.stringify(storeNodes.map((n) => ({ id: n.id, data: n.data }))));
-  const prevEdgeIdsRef = useRef<string>(storeEdges.map((e) => e.id).sort().join(','));
+  const prevEdgeIdsRef = useRef<string>(allEdges.map((e) => e.id).sort().join(','));
+
+  // Generate suggestions when a note is selected (WP 3.5)
+  const prevSelectedNodeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (selectedNodeId && selectedNodeId !== prevSelectedNodeRef.current) {
+      prevSelectedNodeRef.current = selectedNodeId;
+      // Generate suggestions for the newly selected note
+      generateForNote(selectedNodeId);
+    } else if (!selectedNodeId && prevSelectedNodeRef.current) {
+      // Clear suggestions when deselecting
+      prevSelectedNodeRef.current = null;
+      clearSuggestions();
+    }
+  }, [selectedNodeId, generateForNote, clearSuggestions]);
+
+  // Regenerate suggestions when the selected note is re-indexed (WP 3.5)
+  // Uses global Legend-State observable to detect when ANY indexer instance indexes a note
+  const prevIndexedNoteRef = useRef<string | null>(null);
+  useEffect(() => {
+    // Skip if no note was indexed or same note was already processed
+    if (!lastIndexedNoteId || lastIndexedNoteId === prevIndexedNoteRef.current) {
+      return;
+    }
+    prevIndexedNoteRef.current = lastIndexedNoteId;
+
+    // If the currently selected note was just re-indexed, regenerate suggestions
+    if (lastIndexedNoteId === prevSelectedNodeRef.current) {
+      console.log(`[GraphCanvas] Note ${lastIndexedNoteId} re-indexed, regenerating suggestions`);
+      generateForNote(lastIndexedNoteId);
+    }
+  }, [lastIndexedNoteId, generateForNote]);
 
   // Sync nodes when notes are added or removed (preserve positions)
   useEffect(() => {
@@ -97,12 +139,12 @@ export function GraphCanvas() {
 
   // Only sync edges when connections are actually added or removed
   useEffect(() => {
-    const currentIds = storeEdges.map((e) => e.id).sort().join(',');
+    const currentIds = allEdges.map((e) => e.id).sort().join(',');
     if (currentIds !== prevEdgeIdsRef.current) {
       prevEdgeIdsRef.current = currentIds;
-      setEdges(storeEdges);
+      setEdges(allEdges);
     }
-  }, [storeEdges, setEdges]);
+  }, [allEdges, setEdges]);
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -116,9 +158,11 @@ export function GraphCanvas() {
   const handleEdgeClick: EdgeMouseHandler = useCallback(
     (_event, edge) => {
       const data = edge.data as ConnectionEdgeData | undefined;
-      if (data?.connectionId) {
+      // Don't open inspector for suggested edges (they're not persisted yet)
+      if (data?.connectionId && !data?.isSuggested) {
         selectConnection(data.connectionId);
       }
+      // For suggested edges, we could add accept/dismiss UI here in WP 3.6
     },
     [selectConnection]
   );

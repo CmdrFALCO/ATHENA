@@ -44,6 +44,7 @@ export function EditorContainer({ note }: EditorContainerProps) {
         // Trigger embedding (respects trigger mode setting)
         if (indexer) {
           const textContent = extractTextFromBlocks(content, note.title);
+          console.log(`[EditorContainer] Triggering indexer for note ${note.id}`);
           indexer.onNoteSaved(note.id, textContent);
         }
       } catch (error) {

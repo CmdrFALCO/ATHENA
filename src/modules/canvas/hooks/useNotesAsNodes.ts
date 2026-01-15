@@ -1,9 +1,13 @@
 import { useMemo, useCallback } from 'react';
 import type { Node } from '@xyflow/react';
-import { useNotes, uiActions } from '@/store';
+import { useNotes, useSelectedEntityIds, uiActions } from '@/store';
 
 export function useNotesAsNodes() {
   const notes = useNotes();
+  const selectedEntityIds = useSelectedEntityIds();
+
+  // Get the first selected entity ID (single selection for now)
+  const selectedNodeId = selectedEntityIds.length > 0 ? selectedEntityIds[0] : null;
 
   // Only depend on notes - selection state is handled in EntityNode
   const nodes = useMemo<Node[]>(() => {
@@ -27,5 +31,5 @@ export function useNotesAsNodes() {
     uiActions.selectEntity(entityId);
   }, []);
 
-  return { nodes, onNodeSelect };
+  return { nodes, onNodeSelect, selectedNodeId };
 }

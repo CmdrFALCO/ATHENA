@@ -3,3 +3,4 @@ export { useNodePositionSync } from './useNodePositionSync';
 export { useConnectionsAsEdges } from './useConnectionsAsEdges';
 export { useConnectionHandlers } from './useConnectionHandlers';
 export { useSelectedConnection } from './useSelectedConnection';
+export { useSuggestedEdges } from './useSuggestedEdges';

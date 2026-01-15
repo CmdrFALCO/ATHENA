@@ -2,6 +2,7 @@ import type { IEmbeddingAdapter } from '@/adapters/IEmbeddingAdapter';
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
 import type { IAIService } from './AIService';
 import type { Note, Block } from '@/shared/types';
+import { indexerActions } from '@/store';
 
 export interface IndexerStatus {
   isRunning: boolean;
@@ -47,6 +48,7 @@ export class IndexerService {
   private failedEntities: Map<string, number> = new Map(); // entityId -> timestamp of failure
 
   private onStatusChange?: (status: IndexerStatus) => void;
+  private onNoteIndexed?: (noteId: string) => void;
 
   constructor(
     private aiService: IAIService,
@@ -74,6 +76,10 @@ export class IndexerService {
 
   setStatusCallback(callback: (status: IndexerStatus) => void): void {
     this.onStatusChange = callback;
+  }
+
+  setNoteIndexedCallback(callback: (noteId: string) => void): void {
+    this.onNoteIndexed = callback;
   }
 
   // --- Public API ---
@@ -113,18 +119,28 @@ export class IndexerService {
    */
   async indexAllUnembedded(): Promise<{ success: number; failed: number }> {
     const model = this.aiService.getActiveEmbeddingModel();
-    if (!model) return { success: 0, failed: 0 };
+    if (!model) {
+      console.warn('[Indexer] No active embedding model, skipping indexAllUnembedded');
+      return { success: 0, failed: 0 };
+    }
 
     const allNotes = await this.noteAdapter.getAll();
+    console.log(`[Indexer] Found ${allNotes.length} notes, checking for embeddings with model: ${model}`);
+
     let success = 0;
     let failed = 0;
+    let skipped = 0;
 
     this.updateStatus({ mode: 'indexing', isRunning: true });
 
     for (const note of allNotes) {
       const hasEmbedding = await this.embeddingAdapter.hasEmbedding(note.id, model);
-      if (hasEmbedding) continue;
+      if (hasEmbedding) {
+        skipped++;
+        continue;
+      }
 
+      console.log(`[Indexer] Embedding note: ${note.id} (${note.title})`);
       const content = this.extractTextContent(note);
       const result = await this.embedNote(note.id, content);
 
@@ -140,6 +156,7 @@ export class IndexerService {
       });
     }
 
+    console.log(`[Indexer] Complete: ${success} embedded, ${failed} failed, ${skipped} skipped (already had embeddings)`);
     this.updateStatus({ mode: 'idle', isRunning: false, currentEntityId: null });
 
     return { success, failed };
@@ -203,6 +220,7 @@ export class IndexerService {
   // --- Private Methods ---
 
   private debouncedIndex(noteId: string, content: string): void {
+    console.log(`[IndexerService] debouncedIndex called for ${noteId}, debounce: ${this.config.debounceMs}ms`);
     // Clear existing timer for this note
     const existingTimer = this.saveDebounceTimers.get(noteId);
     if (existingTimer) {
@@ -211,6 +229,7 @@ export class IndexerService {
 
     // Set new timer
     const timer = setTimeout(async () => {
+      console.log(`[IndexerService] Debounce timer fired for ${noteId}, calling embedNote`);
       this.saveDebounceTimers.delete(noteId);
       await this.embedNote(noteId, content);
     }, this.config.debounceMs);
@@ -236,6 +255,12 @@ export class IndexerService {
           currentEntityId: null,
         });
         this.failedEntities.delete(noteId);
+        // Notify listeners that this note was indexed
+        console.log(`[IndexerService] Note ${noteId} embedded successfully, broadcasting via Legend-State`);
+        // Broadcast globally via Legend-State (fixes multi-instance issue)
+        indexerActions.noteIndexed(noteId);
+        // Also call instance callback for backwards compatibility
+        this.onNoteIndexed?.(noteId);
         return true;
       } else {
         this.handleFailure(noteId);

@@ -5,11 +5,19 @@
 
 ---
 
+## Quick Links
+
+- [Module Documentation](docs/modules/) - Detailed docs for each module
+- [Code Patterns](docs/PATTERNS.md) - Implementation patterns with examples
+- [Phase History](docs/PHASE_HISTORY.md) - Completed phases and bug fixes
+
+---
+
 ## Current State
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.4 (Similarity Query) |
+| **Last WP Completed** | 3.5 (Green Suggestions) |
 | **Last Updated** | January 2026 |
 | **Phase** | 3 (AI Layer) - In Progress |
 
@@ -20,149 +28,62 @@
 ```
 athena/
 ├── src/
-│   ├── database/                 # ✅ WP 0.2 - SQLite WASM
-│   │   ├── index.ts              # Main export (initDatabase)
-│   │   ├── init.ts               # Database initialization
-│   │   └── schema.ts             # ✅ WP 0.5 - Table definitions (entities, connections, embeddings, clusters, cluster_members)
-│   │
-│   ├── adapters/                 # ✅ WP 0.3/0.5/3.2 - Database adapters
-│   │   ├── index.ts              # Barrel exports
-│   │   ├── context.ts            # React context + Adapters type
-│   │   ├── hooks.ts              # useAdapters, useNoteAdapter, useClusterAdapter, etc.
-│   │   ├── AdapterProvider.tsx   # Provider component
-│   │   ├── INoteAdapter.ts       # Note adapter interface
-│   │   ├── IConnectionAdapter.ts # Connection adapter interface
-│   │   ├── IEmbeddingAdapter.ts  # ✅ WP 3.2 - Enhanced embedding adapter interface
-│   │   ├── IClusterAdapter.ts    # ✅ WP 0.5 - Cluster adapter interface
-│   │   └── sqlite/
-│   │       ├── SQLiteNoteAdapter.ts
-│   │       ├── SQLiteConnectionAdapter.ts
-│   │       ├── SQLiteEmbeddingAdapter.ts  # ✅ WP 3.2 - Full implementation with similarity
-│   │       └── SQLiteClusterAdapter.ts  # ✅ WP 0.5
-│   │
+│   ├── database/                 # SQLite WASM
+│   ├── adapters/                 # Database adapters
+│   │   └── sqlite/               # SQLite implementations
 │   ├── shared/
-│   │   ├── components/           # ⏳ Empty - Generic UI components
-│   │   ├── hooks/                # ✅ WP 1.4 - Shared React hooks
-│   │   │   ├── index.ts          # Barrel export
-│   │   │   └── useDebounce.ts    # Debounced callback hook
-│   │   ├── theme/                # ✅ WP 2.1 - Theme constants
-│   │   │   ├── index.ts          # Barrel export
-│   │   │   └── colors.ts         # ATHENA_COLORS centralized colors
-│   │   ├── utils/                # ✅ WP 1.2 - Utility functions
-│   │   │   ├── index.ts          # Barrel export
-│   │   │   └── formatTime.ts     # Relative time formatting
-│   │   └── types/                # ✅ WP 0.3/0.5 - TypeScript types
-│   │       ├── index.ts          # Barrel export
-│   │       ├── entities.ts       # Entity, Note, Plan, Document, Block
-│   │       ├── connections.ts    # Connection, ConnectionType, ConnectionColor
-│   │       ├── embeddings.ts     # Embedding, SimilarityResult
-│   │       └── clusters.ts       # ✅ WP 0.5 - Cluster, ClusterMember, ClusterType, MemberRole
-│   │
-│   ├── store/                    # ✅ WP 0.4/0.5 - Legend-State
-│   │   ├── index.ts              # Barrel export
-│   │   ├── state.ts              # appState$ observable (entities, connections, clusters)
-│   │   ├── hooks.ts              # React hooks + actions (incl. clusterActions)
-│   │   └── useInitializeStore.ts # Store initialization (loads all data from SQLite)
-│   │
-│   ├── config/                   # ✅ WP 0.4/3.1 - DevSettings
-│   │   ├── index.ts              # Barrel export
-│   │   ├── devSettings.ts        # devSettings$ observable (feature flags)
-│   │   └── DevSettingsPanel.tsx  # ✅ WP 3.1 - UI panel with AI config (Ctrl+Shift+D)
-│   │
-│   ├── services/                 # ✅ WP 3.1 - Application services
-│   │   └── secureStorage/        # ✅ WP 3.1 - Encrypted storage (Web Crypto API)
-│   │       ├── index.ts          # Barrel export
-│   │       ├── crypto.ts         # AES-GCM encryption, PBKDF2 key derivation
-│   │       └── SecureStorage.ts  # IndexedDB-backed encrypted key-value store
-│   │
+│   │   ├── components/           # Generic UI components
+│   │   ├── hooks/                # Shared React hooks
+│   │   ├── theme/                # Theme constants
+│   │   ├── utils/                # Utility functions
+│   │   └── types/                # TypeScript types
+│   ├── store/                    # Legend-State
+│   ├── config/                   # DevSettings
+│   ├── services/
+│   │   └── secureStorage/        # Encrypted storage
 │   ├── modules/
-│   │   ├── canvas/               # ✅ WP 2.1-2.5 - React Flow graph canvas
-│   │   │   ├── index.ts          # Module barrel export
-│   │   │   ├── components/
-│   │   │   │   ├── index.ts      # Component exports
-│   │   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
-│   │   │   │   ├── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
-│   │   │   │   ├── ConnectionEdge.tsx  # ✅ WP 2.4 - Custom edge component
-│   │   │   │   └── ConnectionInspector.tsx  # ✅ WP 2.5 - Connection detail panel
-│   │   │   └── hooks/
-│   │   │       ├── index.ts      # Hook exports
-│   │   │       ├── useNotesAsNodes.ts      # ✅ WP 2.2 - Converts notes to nodes
-│   │   │       ├── useNodePositionSync.ts  # ✅ WP 2.3 - Persists node positions
-│   │   │       ├── useConnectionsAsEdges.ts  # ✅ WP 2.4 - Converts connections to edges
-│   │   │       ├── useConnectionHandlers.ts  # ✅ WP 2.4 - Connection creation/deletion
-│   │   │       └── useSelectedConnection.ts  # ✅ WP 2.5 - Edge selection state
-│   │   ├── sophia/               # ✅ WP 1.2-1.5, 3.4 - Knowledge workspace
-│   │   │   ├── index.ts          # Module barrel export
-│   │   │   └── components/
-│   │   │       ├── index.ts            # Component exports
-│   │   │       ├── EntityList.tsx      # Note list container
-│   │   │       ├── EntityListItem.tsx  # Single note item
-│   │   │       ├── EntityDetail.tsx    # ✅ WP 1.3, 3.4 - Note detail view with similar notes panel
-│   │   │       ├── EntityDetailEmpty.tsx    # Empty state
-│   │   │       ├── EntityDetailHeader.tsx   # ✅ WP 3.4 - Header with title/meta/actions
-│   │   │       ├── EntityDetailContent.tsx  # Content display (uses EditorContainer)
-│   │   │       ├── EditorContainer.tsx      # ✅ WP 1.4 - Editor wrapper with auto-save
-│   │   │       ├── NoteEditor.tsx           # ✅ WP 1.4 - Tiptap editor instance
-│   │   │       ├── EditorToolbar.tsx        # ✅ WP 1.4 - Formatting toolbar
-│   │   │       ├── SimilarNotesPanel.tsx    # ✅ WP 3.4 - Similar notes discovery panel
-│   │   │       └── SimilarNotesButton.tsx   # ✅ WP 3.4 - Toggle button for similar notes
-│   │   ├── ai/                   # ✅ WP 3.1-3.4 - AI backend abstraction + embedding storage + indexer + similarity
-│   │   │   ├── index.ts          # Module barrel export
-│   │   │   ├── types.ts          # AI types (IAIBackend, AISettings, etc.)
-│   │   │   ├── AIService.ts      # Service orchestrator + embedding integration
-│   │   │   ├── AIContext.tsx     # React context (AIProvider, useAI)
-│   │   │   ├── IndexerService.ts # ✅ WP 3.3 - Background indexer service
-│   │   │   ├── backends/
-│   │   │   │   ├── index.ts      # Backend exports
-│   │   │   │   └── GeminiBackend.ts  # ✅ Google Gemini implementation
-│   │   │   └── hooks/            # ✅ WP 3.2-3.4 - AI hooks
-│   │   │       ├── index.ts      # Hook exports
-│   │   │       ├── useEmbeddings.ts  # ✅ Embedding operations hook
-│   │   │       ├── useIndexer.ts     # ✅ WP 3.3 - Indexer control hook
-│   │   │       ├── useIdleDetection.ts  # ✅ WP 3.3 - User activity detection
-│   │   │       └── useSimilarNotes.ts   # ✅ WP 3.4 - Similar notes discovery hook
-│   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
-│   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
-│   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
-│   │   └── search/               # ⏳ Phase 4 (FTS + vector)
-│   │
-│   ├── app/                      # ✅ WP 1.1 - App shell
-│   │   ├── index.ts              # Barrel export
-│   │   ├── layout/               # ✅ WP 1.1 - Layout components
-│   │   │   ├── index.ts          # Barrel export
-│   │   │   ├── AppLayout.tsx     # Main layout wrapper (Header, Sidebar, content)
-│   │   │   ├── Header.tsx        # Top header bar (title, sidebar toggle)
-│   │   │   ├── Sidebar.tsx       # Collapsible sidebar (240px/64px)
-│   │   │   └── StoreInitializer.tsx # Store initialization wrapper
-│   │   └── routes/               # ✅ WP 1.1 - TanStack Router
-│   │       ├── index.tsx         # Router configuration + route tree
-│   │       ├── SophiaPage.tsx    # Knowledge workspace placeholder
-│   │       ├── PronoiaPage.tsx   # Planning workspace placeholder
-│   │       └── ErganePage.tsx    # Creation workspace placeholder
-│   │
-│   ├── App.tsx                   # ✅ Root component (RouterProvider wrapper)
-│   ├── main.tsx                  # ✅ Entry point
-│   └── index.css                 # ✅ Tailwind imports
-│
+│   │   ├── canvas/               # React Flow graph
+│   │   ├── sophia/               # Knowledge workspace
+│   │   ├── ai/                   # AI backend
+│   │   ├── pronoia/              # ⏳ Plans, decisions
+│   │   ├── ergane/               # ⏳ Documents, export
+│   │   ├── validation/           # ⏳ CPN engine
+│   │   └── search/               # ⏳ FTS + vector
+│   ├── app/                      # App shell
+│   │   ├── layout/               # Layout components
+│   │   └── routes/               # TanStack Router
+│   ├── App.tsx                   # Root component
+│   ├── main.tsx                  # Entry point
+│   └── index.css                 # Tailwind imports
 ├── docs/
+│   ├── modules/                  # Module documentation
+│   ├── PATTERNS.md               # Code patterns
+│   ├── PHASE_HISTORY.md          # Phase archive
 │   ├── ARCHITECTURE.md           # System design
 │   ├── DECISIONS.md              # ADRs
-│   ├── LESSONS_LEARNED.md        # Gotchas
-│   └── CODEBASE_MAP.md           # This file
-│
+│   └── LESSONS_LEARNED.md        # Gotchas
+├── CODEBASE_MAP.md               # This file
 ├── CHANGELOG.md                  # What changed per WP
-├── CODEBASE_MAP.md               # Root-level codebase map
-├── public/                       # Static assets
-├── index.html                    # HTML entry
-├── package.json
-├── tsconfig.json                 # Strict mode enabled
-├── tsconfig.app.json             # Path alias @/ configured
-├── vite.config.ts                # Path alias + WASM config
-├── tailwind.config.js            # Dark mode, tri-color system
-└── eslint.config.js              # Flat config (ESLint 9+)
+└── [config files]                # vite, tailwind, eslint, etc.
 ```
 
 **Legend:** ✅ Implemented | ⏳ Placeholder/Empty | ❌ Not started
+
+---
+
+## Module Index
+
+| Module | Location | Documentation | Status |
+|--------|----------|---------------|--------|
+| Database | `src/database/` | [docs/modules/ADAPTERS.md](docs/modules/ADAPTERS.md) | ✅ |
+| Adapters | `src/adapters/` | [docs/modules/ADAPTERS.md](docs/modules/ADAPTERS.md) | ✅ |
+| Store | `src/store/` | [docs/modules/STORE.md](docs/modules/STORE.md) | ✅ |
+| Canvas | `src/modules/canvas/` | [docs/modules/CANVAS.md](docs/modules/CANVAS.md) | ✅ |
+| Sophia | `src/modules/sophia/` | [docs/modules/SOPHIA.md](docs/modules/SOPHIA.md) | ✅ |
+| AI | `src/modules/ai/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
+| App Shell | `src/app/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
+| Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
+| Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 
 ---
 
@@ -174,822 +95,6 @@ athena/
 | `src/App.tsx` | Root component (RouterProvider wrapper) |
 | `src/app/routes/index.tsx` | Router configuration + route tree |
 | `src/database/index.ts` | Database initialization |
-| `src/adapters/index.ts` | Adapter exports |
-| `src/store/index.ts` | State management exports |
-| `src/modules/canvas/index.ts` | Canvas module exports |
-| `src/modules/sophia/index.ts` | Sophia module exports |
-| `src/modules/ai/index.ts` | AI module exports |
-| `src/services/secureStorage/index.ts` | Secure storage exports |
-| `src/shared/theme/index.ts` | Theme constants exports |
-| `src/shared/utils/index.ts` | Utility function exports |
-| `src/shared/hooks/index.ts` | Shared hooks exports |
-
----
-
-## Key Modules
-
-### Database (`src/database/`)
-
-**Status:** ✅ Implemented in WP 0.2, enhanced in WP 0.3/0.5
-
-**Exports:**
-```typescript
-// src/database/index.ts
-export { initDatabase, getDatabase } from './init';
-export type { DatabaseConnection } from './init';
-```
-
-**Usage:**
-```typescript
-import { initDatabase } from './database';
-
-const db = await initDatabase();
-await db.run('INSERT INTO entities ...', [params]);
-const results = await db.exec<Entity>('SELECT * FROM entities', []);
-```
-
-**Storage:** In-memory (sql.js). IndexedDB persistence planned for future WP.
-
----
-
-### Adapters (`src/adapters/`)
-
-**Status:** ✅ Implemented in WP 0.3, extended in WP 0.5
-
-**Exports:**
-```typescript
-// Interfaces
-export type { INoteAdapter, IConnectionAdapter, IEmbeddingAdapter, IClusterAdapter } from './adapters';
-
-// SQLite implementations
-export { SQLiteNoteAdapter, SQLiteConnectionAdapter, SQLiteEmbeddingAdapter, SQLiteClusterAdapter } from './adapters';
-
-// Provider and hooks
-export { AdapterProvider, useAdapters, useNoteAdapter, useConnectionAdapter, useEmbeddingAdapter, useClusterAdapter } from './adapters';
-```
-
-**Usage:**
-```typescript
-import { AdapterProvider, useNoteAdapter, useClusterAdapter } from '@/adapters';
-
-// In App.tsx
-<AdapterProvider adapters={adapters}>
-  <MyComponent />
-</AdapterProvider>
-
-// In component
-const noteAdapter = useNoteAdapter();
-const clusterAdapter = useClusterAdapter();
-
-const notes = await noteAdapter.getAll();
-const cluster = await clusterAdapter.create({
-  label: 'Thermal Runaway Discussion',
-  type: 'concept',
-  color: 'blue',
-  created_by: 'user',
-  members: [
-    { entity_id: 'note-1', role: 'participant' },
-    { entity_id: 'note-2', role: 'participant' },
-  ]
-});
-```
-
----
-
-### State Management (`src/store/`)
-
-**Status:** ✅ Implemented in WP 0.4, extended in WP 0.5
-
-**Exports:**
-```typescript
-// Core state
-export { appState$ } from './state';
-
-// Hooks
-export {
-  useNotes, useNote, useNotesLoading,
-  useConnections, useConnectionsFor,
-  useClusters, useCluster, useClustersForEntity, useClustersLoading,
-  useFeatureFlag, useDevSettings,
-  uiActions, entityActions, connectionActions, clusterActions,
-} from './hooks';
-
-// Initialization
-export { useInitializeStore } from './useInitializeStore';
-```
-
-**Usage:**
-```typescript
-import { useNotes, useClusters, clusterActions } from '@/store';
-
-function MyComponent() {
-  const notes = useNotes();
-  const clusters = useClusters();
-
-  const handleAddCluster = (cluster) => {
-    clusterActions.addCluster(cluster);
-  };
-}
-```
-
----
-
-### Canvas Module (`src/modules/canvas/`)
-
-**Status:** ✅ Implemented in WP 2.1-2.5
-
-**Components:**
-- `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
-- `EntityNode` - Custom node with type badge, icon, and title (WP 2.2)
-- `ConnectionEdge` - Custom edge with color-coded styling (WP 2.4)
-- `ConnectionInspector` - Connection detail panel with label editing (WP 2.5)
-
-**Hooks:**
-- `useNotesAsNodes` - Converts store notes to React Flow nodes (WP 2.2)
-- `useNodePositionSync` - Persists node positions to SQLite (WP 2.3)
-- `useConnectionsAsEdges` - Converts store connections to React Flow edges (WP 2.4)
-- `useConnectionHandlers` - Handles connection creation and deletion (WP 2.4)
-- `useSelectedConnection` - Manages edge selection state (WP 2.5)
-
-**Exports:**
-```typescript
-// src/modules/canvas/index.ts
-export { GraphCanvas, EntityNode, ConnectionEdge, ConnectionInspector } from './components';
-export { useNotesAsNodes, useNodePositionSync, useConnectionsAsEdges, useConnectionHandlers, useSelectedConnection } from './hooks';
-```
-
-**Usage:**
-```typescript
-import { GraphCanvas } from '@/modules/canvas';
-
-// In SophiaPage - side by side with EntityDetail
-<div className="flex h-full">
-  <div className="flex-1 min-w-0">
-    <GraphCanvas />
-  </div>
-  <div className="w-[400px] border-l">
-    <EntityDetail />
-  </div>
-</div>
-```
-
-**Features:**
-- Dark themed canvas (`#1a1a1a` background)
-- Dot grid background pattern
-- Pan and zoom controls
-- MiniMap for navigation with color-coded nodes
-- Entity nodes with type badges and selection sync (WP 2.2)
-- Drag-to-reposition nodes with persistent storage (WP 2.3)
-- Snap-to-grid (20px) for cleaner layouts (WP 2.3)
-- Blue connections via drag between handles (WP 2.4)
-- Connection deletion with backspace/delete (WP 2.4)
-- Connection inspector panel on edge click (WP 2.5)
-- Editable connection labels with auto-save (WP 2.5)
-
-**Data Flow (WP 2.2-2.5):**
-```
-Store (notes) → useNotesAsNodes() → GraphCanvas → EntityNode
-     ↑                                              ↓
-uiActions.selectEntity() ←────── onNodeClick ──────┘
-
-Drag → onNodeDragStop → useNodePositionSync.saveNodePosition
-    → noteAdapter.update() + entityActions.updateNote()
-
-Connect → onConnect → connectionAdapter.create() → connectionActions.addConnection()
-    → useConnectionsAsEdges() → GraphCanvas renders ConnectionEdge
-
-EdgeClick → selectConnection → ConnectionInspector renders
-    → label edit → connectionAdapter.update() + connectionActions.updateConnection()
-```
-
----
-
-### Secure Storage (`src/services/secureStorage/`)
-
-**Status:** ✅ Implemented in WP 3.1
-
-**Purpose:** Encrypt and store sensitive data (API keys) using Web Crypto API with IndexedDB persistence.
-
-**Exports:**
-```typescript
-// src/services/secureStorage/index.ts
-export { getSecureStorage, resetSecureStorage, type ISecureStorage } from './SecureStorage';
-export { generateKey, encrypt, decrypt, deriveKeyFromPassword, generateSalt } from './crypto';
-```
-
-**Interface:**
-```typescript
-interface ISecureStorage {
-  store(key: string, value: string): Promise<void>;
-  retrieve(key: string): Promise<string | null>;
-  delete(key: string): Promise<void>;
-  clear(): Promise<void>;
-
-  // Lock/unlock for password mode
-  isLocked(): boolean;
-  unlock(password?: string): Promise<boolean>;
-  lock(): void;
-
-  // Mode management
-  setPasswordProtection(password: string): Promise<void>;
-  removePasswordProtection(): Promise<void>;
-  isPasswordProtected(): boolean;
-}
-```
-
-**Usage:**
-```typescript
-import { getSecureStorage } from '@/services/secureStorage';
-
-const storage = getSecureStorage();
-
-// Store encrypted value
-await storage.store('api-key-gemini', 'your-api-key');
-
-// Retrieve decrypted value
-const key = await storage.retrieve('api-key-gemini');
-
-// Delete value
-await storage.delete('api-key-gemini');
-```
-
-**Storage:** IndexedDB database `athena-secure` with two object stores:
-- `keys` - Stores CryptoKey (browser mode) or salt (password mode)
-- `values` - Stores encrypted key-value pairs
-
-**Encryption:** AES-GCM with 256-bit keys. Password mode uses PBKDF2 (100,000 iterations).
-
----
-
-### AI Module (`src/modules/ai/`)
-
-**Status:** ✅ Implemented in WP 3.1-3.4
-
-**Purpose:** Flexible AI backend abstraction for embeddings, text generation, embedding storage, background indexing, and similarity discovery.
-
-**Exports:**
-```typescript
-// src/modules/ai/index.ts
-export * from './types';
-export { getAIService, resetAIService, type IAIService } from './AIService';
-export { AIProvider, useAI, useAIStatus, useOptionalAI } from './AIContext';
-export { GeminiBackend } from './backends';
-export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from './hooks';
-export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
-export { useIdleDetection, type IdleDetectionOptions } from './hooks';
-export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './hooks';
-export { IndexerService, type IndexerStatus, type IndexerConfig } from './IndexerService';
-```
-
-**Types:**
-```typescript
-type AIProviderType = 'gemini' | 'ollama' | 'anthropic' | 'openai' | 'mistral';
-
-interface IAIBackend {
-  readonly id: string;
-  readonly name: string;
-  readonly type: AIProviderType;
-
-  embed(text: string): Promise<EmbeddingResult>;
-  generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
-  isAvailable(): Promise<boolean>;
-  configure(config: ProviderConfig): void;
-  getEmbeddingDimensions(): number;
-  getSupportedModels(): ModelInfo[];
-}
-
-interface EmbeddingResult {
-  vector: number[];
-  model: string;
-  dimensions: number;
-  tokenCount?: number;
-}
-
-interface GenerateResult {
-  text: string;
-  model: string;
-  tokenCount?: { prompt: number; completion: number; total: number };
-  finishReason?: 'stop' | 'length' | 'error';
-}
-```
-
-**React Context:**
-```typescript
-interface AIContextValue {
-  service: IAIService;
-  isConfigured: boolean;
-  isAvailable: boolean;
-  isLoading: boolean;
-  error: string | null;
-  provider: AIProviderType | null;
-
-  testConnection: () => Promise<boolean>;
-  setApiKey: (provider: AIProviderType, key: string) => Promise<void>;
-  clearApiKey: (provider: AIProviderType) => Promise<void>;
-  hasApiKey: (provider: AIProviderType) => Promise<boolean>;
-}
-```
-
-**Usage:**
-```typescript
-import { useAI, useAIStatus } from '@/modules/ai';
-
-// Full context
-function MyComponent() {
-  const { service, isConfigured, isAvailable, testConnection, setApiKey } = useAI();
-
-  // Generate text
-  const result = await service.generate('Hello, world!');
-
-  // Get embeddings
-  const embedding = await service.embed('Some text to embed');
-}
-
-// Status only (lighter)
-function StatusIndicator() {
-  const { isConfigured, isAvailable, provider } = useAIStatus();
-  return <span>{isAvailable ? 'Connected' : 'Not connected'}</span>;
-}
-```
-
-**Embedding Storage Integration (WP 3.2):**
-```typescript
-// AIService embedding methods
-interface IAIService {
-  // ... existing methods ...
-
-  // Embedding storage integration
-  setEmbeddingAdapter(adapter: IEmbeddingAdapter): void;
-  embedAndStore(entityId: string, text: string): Promise<EmbeddingRecord | null>;
-  findSimilarNotes(entityId: string, limit?: number, threshold?: number): Promise<SimilarityResult[]>;
-  getActiveEmbeddingModel(): string | null;
-  handleModelChange(oldModel: string, newModel: string): Promise<void>;
-}
-
-// useEmbeddings hook
-interface UseEmbeddingsResult {
-  embedNote: (noteId: string, content: string) => Promise<EmbeddingRecord | null>;
-  findSimilar: (noteId: string, limit?: number, threshold?: number) => Promise<SimilarityResult[]>;
-  getEmbeddingStatus: (noteId: string) => Promise<{ hasEmbedding: boolean; model: string | null }>;
-  deleteEmbedding: (noteId: string, model?: string) => Promise<void>;
-  getEmbeddingCount: (model?: string) => Promise<number>;
-  hasEmbedding: (noteId: string, model: string) => Promise<boolean>;
-}
-```
-
-**Usage:**
-```typescript
-import { useEmbeddings } from '@/modules/ai';
-
-function MyComponent() {
-  const { embedNote, findSimilar, getEmbeddingStatus } = useEmbeddings();
-
-  // Embed a note
-  const embedding = await embedNote('note-123', 'Note content here...');
-
-  // Find similar notes
-  const similar = await findSimilar('note-123', 5, 0.7);
-
-  // Check embedding status
-  const status = await getEmbeddingStatus('note-123');
-  // { hasEmbedding: true, model: 'text-embedding-004' }
-}
-```
-
-**Implemented Backends:**
-- ✅ `GeminiBackend` - Google Gemini API (embeddings + generation)
-- ⏳ `OllamaBackend` - Local Ollama (planned)
-- ⏳ `AnthropicBackend` - Claude API (planned)
-- ⏳ `OpenAIBackend` - OpenAI API (planned)
-- ⏳ `MistralBackend` - Mistral API (planned)
-
-**DevSettings UI (Ctrl+Shift+D):**
-- Enable/disable AI toggle
-- Provider selection dropdown
-- API key input with Save/Clear buttons
-- Test Connection button with status indicator
-- Chat and embedding model selection
-- Connection status indicator (✓ Connected / ✗ Not connected / ○ Not configured)
-- Background Indexer status panel (WP 3.3)
-
-**Background Indexer (WP 3.3):**
-```typescript
-// IndexerService configuration
-interface IndexerConfig {
-  trigger: 'on-save' | 'on-demand' | 'continuous';
-  batchSize: number;        // For continuous mode
-  idleDelayMs: number;      // Wait before starting continuous indexing
-  debounceMs: number;       // For on-save mode
-  retryFailedAfterMs: number;
-}
-
-// IndexerStatus for UI display
-interface IndexerStatus {
-  isRunning: boolean;
-  mode: 'idle' | 'indexing' | 'paused';
-  queue: string[];
-  processed: number;
-  failed: number;
-  lastIndexedAt: string | null;
-  currentEntityId: string | null;
-}
-
-// useIndexer hook
-interface UseIndexerResult {
-  status: IndexerStatus;
-  onNoteSaved: (noteId: string, content: string) => void;
-  indexNote: (noteId: string) => Promise<boolean>;
-  indexAll: () => Promise<{ success: number; failed: number }>;
-  pause: () => void;
-  resume: () => void;
-  stop: () => void;
-  isEnabled: boolean;
-}
-```
-
-**Trigger Modes:**
-| Mode | Behavior |
-|------|----------|
-| `on-save` | Embed when a note is saved (2s debounce) |
-| `on-demand` | Only embed when user explicitly requests |
-| `continuous` | Background process indexes during idle time |
-
-**Usage:**
-```typescript
-import { useIndexer, useIdleDetection } from '@/modules/ai';
-
-// In EditorContainer - trigger on save
-const { onNoteSaved } = useIndexer();
-onNoteSaved(noteId, textContent);
-
-// In AppLayout - pause/resume on activity
-const { pause, resume } = useIndexer();
-useIdleDetection({
-  idleThresholdMs: 3000,
-  onIdle: resume,
-  onActive: pause,
-});
-
-// Manual index all
-const { indexAll } = useIndexer();
-const result = await indexAll();
-// { success: 10, failed: 0 }
-```
-
-**Similarity Query (WP 3.4):**
-```typescript
-// useSimilarNotes hook
-interface SimilarNote {
-  note: Note;
-  similarity: number;       // 0-1
-  similarityPercent: number; // 0-100 for display
-}
-
-interface UseSimilarNotesResult {
-  similarNotes: SimilarNote[];
-  isLoading: boolean;
-  error: string | null;
-  hasEmbedding: boolean;
-  findSimilar: (noteId: string) => Promise<void>;
-  refresh: () => Promise<void>;
-  clear: () => void;
-}
-```
-
-**Usage:**
-```typescript
-import { useSimilarNotes } from '@/modules/ai';
-
-function MyComponent({ noteId }: { noteId: string }) {
-  const { similarNotes, isLoading, findSimilar } = useSimilarNotes({
-    limit: 5,
-    threshold: 0.7,
-  });
-
-  // Find similar notes
-  await findSimilar(noteId);
-
-  // Display results
-  return similarNotes.map(({ note, similarityPercent }) => (
-    <div key={note.id}>
-      {note.title} - {similarityPercent}%
-    </div>
-  ));
-}
-```
-
----
-
-### Theme (`src/shared/theme/`)
-
-**Status:** ✅ Implemented in WP 2.1
-
-**Exports:**
-```typescript
-// src/shared/theme/index.ts
-export { ATHENA_COLORS } from './colors';
-export type { ConnectionColor, NodeColor } from './colors';
-```
-
-**Usage:**
-```typescript
-import { ATHENA_COLORS } from '@/shared/theme';
-
-// Connection colors
-ATHENA_COLORS.connection.explicit  // '#3b82f6' - Blue
-ATHENA_COLORS.connection.semantic  // '#22c55e' - Green
-
-// Node colors by entity type
-ATHENA_COLORS.node.note     // '#3b82f6' - Blue
-ATHENA_COLORS.node.plan     // '#f59e0b' - Amber
-ATHENA_COLORS.node.document // '#8b5cf6' - Purple
-
-// Surface colors
-ATHENA_COLORS.surface.canvas     // '#1a1a1a'
-ATHENA_COLORS.surface.node       // '#252525'
-ATHENA_COLORS.surface.nodeBorder // '#3a3a3a'
-```
-
----
-
-### App Shell (`src/app/`)
-
-**Status:** ✅ Implemented in WP 1.1
-
-**Components:**
-- `AppLayout` - Main layout wrapper with Header, Sidebar, and content area
-- `Header` - Top header with app title and sidebar toggle
-- `Sidebar` - Collapsible navigation (240px expanded, 64px collapsed)
-- `StoreInitializer` - Wraps content to ensure store is initialized
-
-**Routes:**
-| Path | Component | Description |
-|------|-----------|-------------|
-| `/` | Redirect | Redirects to `/sophia` |
-| `/sophia` | SophiaPage | Knowledge workspace (Bird icon) |
-| `/pronoia` | PronoiaPage | Planning workspace (Swords icon) |
-| `/ergane` | ErganePage | Creation workspace (Hammer icon) |
-
-**Usage:**
-```typescript
-import { Link, useLocation } from '@tanstack/react-router';
-
-// Navigation link with active state
-<Link
-  to="/sophia"
-  className={location.pathname === '/sophia' ? 'active' : ''}
->
-  Sophia
-</Link>
-
-// Sidebar toggle
-import { useSidebarOpen, uiActions } from '@/store';
-
-const isOpen = useSidebarOpen();
-<button onClick={() => uiActions.toggleSidebar()}>Toggle</button>
-```
-
-**Styling:**
-- Dark theme colors: `athena-bg`, `athena-surface`, `athena-border`, `athena-text`, `athena-muted`
-- Sidebar width: 240px (expanded), 64px (collapsed)
-- Header height: 48px
-- Smooth transitions: `transition-all duration-200`
-
----
-
-### Sophia Module (`src/modules/sophia/`)
-
-**Status:** ✅ Implemented in WP 1.2-1.5, 3.4
-
-**Components:**
-- `EntityList` - Note list container with loading/empty states
-- `EntityListItem` - Single note item with title, icon, and timestamp
-- `EntityDetail` - Main detail view for selected note with similar notes sidebar (WP 1.3, 3.4)
-- `EntityDetailEmpty` - Empty state when no note selected
-- `EntityDetailHeader` - Header with editable title, delete button, actions slot (WP 1.5, 3.4)
-- `EntityDetailContent` - Content display (uses EditorContainer)
-- `EditorContainer` - Editor wrapper with auto-save logic (WP 1.4)
-- `NoteEditor` - Tiptap editor instance (WP 1.4)
-- `EditorToolbar` - Formatting toolbar (WP 1.4)
-- `SimilarNotesPanel` - Sidebar panel showing semantically similar notes (WP 3.4)
-- `SimilarNotesButton` - Toggle button for similar notes panel (WP 3.4)
-
-**Exports:**
-```typescript
-// src/modules/sophia/index.ts
-export { EntityList, EntityListItem, EntityDetail, EditorContainer, NoteEditor, EditorToolbar, SimilarNotesPanel, SimilarNotesButton } from './components';
-```
-
-**Usage:**
-```typescript
-import { EntityList, EntityDetail } from '@/modules/sophia';
-
-// In Sidebar
-<EntityList />  // Displays all notes with selection support
-
-// In SophiaPage
-<EntityDetail />  // Shows selected note with Tiptap editor
-```
-
-**Features:**
-- Displays notes sorted by `updated_at` descending
-- Loading state while store initializes
-- Empty state when no notes exist
-- Single selection with visual highlight
-- Relative time display (e.g., "5 minutes ago")
-- Note detail view with title, type badge, timestamps
-- Rich text editing with Tiptap (WP 1.4)
-- Auto-save with 500ms debounce
-- Formatting toolbar (bold, italic, headings, lists, code, undo/redo)
-- **CRUD Operations** (WP 1.5):
-  - Create: Plus button in sidebar header creates new note
-  - Rename: Editable title in EntityDetailHeader (saves on blur/Enter)
-  - Delete: Trash button with confirmation dialog
-
----
-
-### Utilities (`src/shared/utils/`)
-
-**Status:** ✅ Implemented in WP 1.2/1.3
-
-**Exports:**
-```typescript
-// src/shared/utils/index.ts
-export { formatRelativeTime, formatDate } from './formatTime';
-```
-
-**Usage:**
-```typescript
-import { formatRelativeTime, formatDate } from '@/shared/utils';
-
-formatRelativeTime('2026-01-13T12:00:00Z');
-// Returns: "5 minutes ago", "yesterday", "Jan 13", etc.
-
-formatDate('2026-01-13T12:00:00Z');
-// Returns: "Jan 13, 2026"
-```
-
----
-
-### Shared Hooks (`src/shared/hooks/`)
-
-**Status:** ✅ Implemented in WP 1.4
-
-**Exports:**
-```typescript
-// src/shared/hooks/index.ts
-export { useDebouncedCallback } from './useDebounce';
-```
-
-**Usage:**
-```typescript
-import { useDebouncedCallback } from '@/shared/hooks';
-
-const debouncedSave = useDebouncedCallback(async (content) => {
-  await saveToDatabase(content);
-}, 500);
-
-// Called on every change, but only executes after 500ms of inactivity
-debouncedSave(newContent);
-```
-
----
-
-## Data Models
-
-### Entity (`src/shared/types/entities.ts`)
-```typescript
-interface Entity {
-  id: string;                    // UUID
-  type: 'note' | 'plan' | 'document';
-  subtype: string;               // Template-defined
-  title: string;
-  content: Block[];              // Tiptap JSON
-  metadata: Record<string, unknown>;
-  created_at: string;
-  updated_at: string;
-  valid_at: string;              // Bi-temporal
-  invalid_at: string | null;     // Bi-temporal (null = current)
-  position_x: number;
-  position_y: number;
-}
-```
-
-### Connection (`src/shared/types/connections.ts`)
-```typescript
-interface Connection {
-  id: string;
-  source_id: string;
-  target_id: string;
-  type: 'explicit' | 'semantic' | 'validation';
-  color: 'blue' | 'green' | 'red' | 'amber';
-  label: string | null;
-  confidence: number | null;
-  created_by: 'user' | 'ai' | 'system';
-  created_at: string;
-  valid_at: string;
-  invalid_at: string | null;
-}
-```
-
-### Cluster (`src/shared/types/clusters.ts`) — NEW in WP 0.5
-```typescript
-type ClusterType = 'concept' | 'sequence' | 'hierarchy' | 'contradiction' | 'dependency';
-type MemberRole = 'source' | 'target' | 'participant' | 'hub' | 'evidence' | 'claim';
-
-interface ClusterMember {
-  entity_id: string;
-  role: MemberRole;
-  position?: number;    // For ordered clusters (sequence)
-  added_at: string;
-}
-
-interface Cluster {
-  id: string;
-  label: string;
-  description?: string;
-  type: ClusterType;
-  color: 'blue' | 'green' | 'red' | 'amber';
-  members?: ClusterMember[];
-  created_by: 'user' | 'ai' | 'system';
-  confidence?: number;  // 0-1 for AI-suggested clusters
-  created_at: string;
-  valid_at: string;
-  invalid_at: string | null;
-}
-```
-
-### Embedding (`src/shared/types/embeddings.ts`)
-```typescript
-// Primary type for WP 3.2+
-interface EmbeddingRecord {
-  id: string;
-  entity_id: string;
-  vector: number[];
-  model: string;
-  created_at: string;
-}
-
-// Legacy type (includes chunk_index)
-interface Embedding {
-  id: string;
-  entity_id: string;
-  chunk_index: number;
-  vector: number[];
-  model: string;
-  created_at: string;
-}
-
-// Similarity search result
-interface SimilarityResult {
-  entity_id: string;
-  similarity: number;  // 0-1, higher is more similar
-  embedding: EmbeddingRecord;
-}
-```
-
----
-
-## Database Schema
-
-**Tables:** `entities`, `connections`, `embeddings`, `clusters`, `cluster_members`, `schema_meta`
-
-**Indexes:**
-- `idx_entities_type` - Filter by entity type
-- `idx_entities_valid` - Bi-temporal queries
-- `idx_connections_source/target` - Graph traversal
-- `idx_connections_color` - Tri-color filtering
-- `idx_embeddings_entity` - Embedding lookup
-- `idx_cluster_members_entity` - Cluster membership lookup
-- `idx_clusters_type` - Filter by cluster type
-- `idx_clusters_color` - Filter by cluster color
-- `idx_clusters_valid` - Bi-temporal queries
-
----
-
-## Dependencies
-
-### Production
-| Package | Version | Purpose |
-|---------|---------|---------|
-| react | 19.x | UI framework |
-| react-dom | 19.x | React DOM renderer |
-| @tanstack/react-router | 1.x | Client-side routing |
-| @xyflow/react | 12.x | React Flow graph visualization |
-| lucide-react | 0.x | Icon library |
-| sql.js | 1.x | SQLite WASM |
-| @legendapp/state | 3.x | State management |
-| @tiptap/react | 2.x | Rich text editor (React bindings) |
-| @tiptap/starter-kit | 2.x | Common editor extensions |
-| @tiptap/extension-placeholder | 2.x | Placeholder text support |
-
-### Development
-| Package | Version | Purpose |
-|---------|---------|---------|
-| vite | 7.x | Build tool |
-| typescript | 5.9.x | Type checking |
-| tailwindcss | 3.x | Styling |
-| eslint | 9.x | Linting |
 
 ---
 
@@ -1005,123 +110,68 @@ interface SimilarityResult {
 | N-way relationships | Clusters | Junction pattern for multi-entity relationships |
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
-| Embedding storage | `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` | Vector storage + JS-based cosine similarity |
-| Background indexer | `src/modules/ai/IndexerService.ts` | Configurable trigger modes with debouncing |
+| Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation) |
+
+**See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
 ---
 
-## Conventions
+## Data Models
 
-### Path Alias
-Use `@/` for imports from `src/`:
-```typescript
-import { useNoteAdapter, useClusterAdapter } from '@/adapters';
-import type { Note, Cluster } from '@/shared/types';
-```
+| Type | Location | Description |
+|------|----------|-------------|
+| Entity | `src/shared/types/entities.ts` | Note, Plan, Document with bi-temporal |
+| Connection | `src/shared/types/connections.ts` | Entity relationships with tri-color |
+| Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
+| Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
+| SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
 
-### File Naming
-- Components: `PascalCase.tsx`
-- Utilities: `camelCase.ts`
-- Types: `types.ts` or in `types/` folder
-- Interfaces: `IName.ts`
+---
 
-### Import Order
-1. React/external libraries
-2. Internal modules (`@/`)
-3. Relative imports (`./`)
-4. Types (with `type` keyword)
+## Dependencies
 
-### Module Exports
-- Each module has `index.ts` barrel export
-- Export interfaces separately from implementations
+### Production
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| react | 19.x | UI framework |
+| react-dom | 19.x | React DOM renderer |
+| @tanstack/react-router | 1.x | Client-side routing |
+| @xyflow/react | 12.x | React Flow graph visualization |
+| lucide-react | 0.x | Icon library |
+| sql.js | 1.x | SQLite WASM |
+| @legendapp/state | 3.x | State management |
+| @tiptap/react | 2.x | Rich text editor |
+| @tiptap/starter-kit | 2.x | Editor extensions |
+
+### Development
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| vite | 7.x | Build tool |
+| typescript | 5.9.x | Type checking |
+| tailwindcss | 3.x | Styling |
+| eslint | 9.x | Linting |
+
+---
+
+## Coming Next
+
+| WP | What's Added |
+|----|--------------|
+| **3.6** | Accept/Reject green suggestions UI |
+| **4.x** | Full-text search + vector search |
+| **5.x** | CPN validation engine |
+| **6.x** | Plans and documents |
 
 ---
 
 ## Console Debugging
 
 ```javascript
-// Access state observables in browser console
-window.__ATHENA_STATE__       // Main app state (entities, connections, clusters)
+window.__ATHENA_STATE__       // Main app state
 window.__ATHENA_DEV_SETTINGS__ // Feature flags
 ```
-
----
-
-## Phase Status
-
-- **Phase 0** (Foundation): Complete
-  - WP 0.1: Project scaffold
-  - WP 0.2: SQLite WASM integration
-  - WP 0.3: Data models and adapters
-  - WP 0.4: State layer + DevSettings
-  - WP 0.5: Cluster schema and types
-
-- **Phase 1** (Core UI): Complete
-  - WP 1.1: App shell + routing (Complete)
-  - WP 1.2: Entity list in sidebar (Complete)
-  - WP 1.3: Entity detail view (Complete)
-  - WP 1.4: Tiptap rich text editor (Complete)
-  - WP 1.5: Entity CRUD (Complete)
-
-- **Phase 2** (Graph Visualization): Complete
-  - WP 2.1: React Flow setup (Complete)
-  - WP 2.2: Entity nodes on canvas (Complete)
-  - WP 2.3: Node positioning (Complete)
-  - WP 2.4: Blue connections (Complete)
-  - WP 2.5: Connection inspector (Complete)
-
-- **Phase 3** (AI Layer): In Progress
-  - WP 3.1: AI backend interface (Complete)
-    - SecureStorage service (Web Crypto API + IndexedDB)
-    - AI types and interfaces (IAIBackend, AISettings, etc.)
-    - GeminiBackend implementation (embed + generate)
-    - AIService orchestrator
-    - AIContext React context (AIProvider, useAI)
-    - DevSettings AI configuration UI
-  - WP 3.2: Embedding storage (Complete)
-    - Enhanced IEmbeddingAdapter interface (store, getForEntity, getAllForEntity, findSimilar, deleteForEntity, deleteByModel, hasEmbedding, getCount)
-    - SQLiteEmbeddingAdapter with cosine similarity
-    - AIService integration (embedAndStore, findSimilarNotes, handleModelChange)
-    - useEmbeddings hook for React components
-    - Updated EmbeddingRecord and SimilarityResult types
-  - WP 3.3: Background indexer (Complete)
-    - IndexerService with three trigger modes (on-save, on-demand, continuous)
-    - useIndexer hook for React components
-    - useIdleDetection hook for user activity detection
-    - EditorContainer integration (auto-embed on save)
-    - AppLayout integration (pause/resume on activity)
-    - DevSettings IndexerStatusSection UI
-  - WP 3.4: Similarity query (Complete)
-    - useSimilarNotes hook for finding semantically similar notes
-    - SimilarNotesPanel component for displaying similar notes in a sidebar
-    - SimilarNotesButton component to toggle the similar notes panel
-    - EntityDetail integration with collapsible similar notes sidebar
-    - EntityDetailHeader actions slot for extensibility
-    - Similarity scores with color-coded percentages (90%+ green, 70-80% yellow)
-    - Configurable similarity threshold and max results from aiSettings
-
-## Known Issues
-
-Pre-existing lint errors to address:
-- `src/adapters/sqlite/SQLiteClusterAdapter.ts:190` - `'_reason' is defined but never used`
-- `src/store/hooks.ts:124,150,205` - `'_' is assigned a value but never used`
-
-## Bug Fixes (Post WP 3.4)
-
-- **useIndexer.ts**: Fixed embedding adapter not being connected to AIService before indexing
-- **useSimilarNotes.ts**: Fixed refresh button by using ref instead of state for currentNoteId
-- **GraphCanvas.tsx**: Fixed node title sync when note title changes (added data sync effect with proper change detection)
-- **AppLayout.tsx**: Changed main `overflow-auto` to `overflow-hidden` to allow ReactFlow zoom scroll
-- **SophiaPage.tsx**: Added `h-full overflow-hidden` to GraphCanvas container for proper zoom handling
-
-## Coming Next
-
-| WP | What's Added |
-|----|--------------|
-| **3.x** | AI backends integration |
-| **4.x** | Full-text search + vector search |
-| **5.x** | CPN validation engine |
-| **6.x** | Plans and documents |
 
 ---
 

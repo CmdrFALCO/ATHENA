@@ -24,6 +24,7 @@ export interface UseIndexerResult {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  setOnNoteIndexed: (callback: ((noteId: string) => void) | undefined) => void;
   isEnabled: boolean;
 }
 
@@ -43,6 +44,7 @@ export function useIndexer(): UseIndexerResult {
   };
 
   const indexerRef = useRef<IndexerService | null>(null);
+  const noteIndexedCallbackRef = useRef<((noteId: string) => void) | undefined>(undefined);
   const [status, setStatus] = useState<IndexerStatus>(DEFAULT_INDEXER_STATUS);
 
   const isEnabled = aiSettings.enabled && aiSettings.provider !== 'none';
@@ -66,6 +68,10 @@ export function useIndexer(): UseIndexerResult {
     } satisfies Partial<IndexerConfig>);
 
     indexer.setStatusCallback(setStatus);
+    // Set up the note indexed callback (uses ref so it can be updated without re-creating indexer)
+    indexer.setNoteIndexedCallback((noteId) => {
+      noteIndexedCallbackRef.current?.(noteId);
+    });
     indexerRef.current = indexer;
 
     // Start continuous mode if configured and AI is enabled
@@ -123,6 +129,13 @@ export function useIndexer(): UseIndexerResult {
     indexerRef.current?.stop();
   }, []);
 
+  const setOnNoteIndexed = useCallback(
+    (callback: ((noteId: string) => void) | undefined) => {
+      noteIndexedCallbackRef.current = callback;
+    },
+    []
+  );
+
   return {
     status,
     onNoteSaved,
@@ -131,6 +144,7 @@ export function useIndexer(): UseIndexerResult {
     pause,
     resume,
     stop,
+    setOnNoteIndexed,
     isEnabled,
   };
 }

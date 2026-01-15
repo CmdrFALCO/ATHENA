@@ -17,6 +17,24 @@ export interface UIState {
   devSettingsOpen: boolean;
 }
 
+// Suggested Connection (WP 3.5 - Green Connections)
+export interface SuggestedConnection {
+  id: string;                    // Temporary ID (not persisted to DB)
+  sourceId: string;              // Entity ID
+  targetId: string;              // Entity ID
+  similarity: number;            // 0-1 confidence score
+  generatedAt: string;           // ISO timestamp
+  status: 'pending' | 'dismissed';
+}
+
+// Suggestions State
+export interface SuggestionsState {
+  connections: SuggestedConnection[];
+  isGenerating: boolean;
+  lastGeneratedAt: string | null;
+  sourceNoteId: string | null;   // The note we generated suggestions for
+}
+
 // App State (persisted to localStorage for UI, synced from SQLite for data)
 export const appState$ = observable({
   // UI state (persisted to localStorage)
@@ -46,6 +64,21 @@ export const appState$ = observable({
     items: {} as Record<string, Cluster>,
     isLoading: false,
     lastSync: null as string | null,
+  },
+
+  // AI Suggestions (WP 3.5 - Green Connections)
+  // Note: NOT persisted - suggestions are ephemeral
+  suggestions: {
+    connections: [] as SuggestedConnection[],
+    isGenerating: false,
+    lastGeneratedAt: null as string | null,
+    sourceNoteId: null as string | null,
+  } as SuggestionsState,
+
+  // Indexer events (WP 3.5 - used to broadcast note indexed events globally)
+  indexer: {
+    lastIndexedNoteId: null as string | null,
+    lastIndexedAt: null as string | null,
   },
 
   // Initialization status

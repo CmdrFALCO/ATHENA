@@ -2,3 +2,4 @@ export { useEmbeddings, useOptionalEmbeddings, type UseEmbeddingsResult } from '
 export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './useIndexer';
 export { useIdleDetection, type IdleDetectionOptions } from './useIdleDetection';
 export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './useSimilarNotes';
+export { useSuggestions, useOptionalSuggestions, type UseSuggestionsResult } from './useSuggestions';

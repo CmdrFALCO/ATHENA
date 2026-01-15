@@ -1,6 +1,6 @@
 // Core state
 export { appState$ } from './state';
-export type { UIState } from './state';
+export type { UIState, SuggestedConnection, SuggestionsState } from './state';
 
 // Hooks
 export {
@@ -22,6 +22,15 @@ export {
   entityActions,
   connectionActions,
   clusterActions,
+  // Suggestions (WP 3.5)
+  useSuggestedConnections,
+  usePendingSuggestions,
+  useSuggestionsGenerating,
+  useSuggestionsSourceNote,
+  suggestionActions,
+  // Indexer events (WP 3.5)
+  useLastIndexedNoteId,
+  indexerActions,
 } from './hooks';
 
 // Initialization

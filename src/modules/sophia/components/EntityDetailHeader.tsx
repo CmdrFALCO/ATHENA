@@ -3,7 +3,27 @@ import { Trash2 } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '@/shared/utils';
 import { useNoteAdapter } from '@/adapters';
 import { entityActions, uiActions } from '@/store';
-import type { Note } from '@/shared/types';
+import { useOptionalIndexer } from '@/modules/ai';
+import type { Note, Block } from '@/shared/types';
+
+/**
+ * Extract plain text content from Tiptap blocks for embedding.
+ */
+function extractTextFromBlocks(blocks: Block[], title: string): string {
+  const textParts: string[] = [title];
+
+  const extractFromNode = (node: Block): void => {
+    if (node.type === 'text' && node.text) {
+      textParts.push(node.text);
+    }
+    if (node.content && Array.isArray(node.content)) {
+      node.content.forEach(extractFromNode);
+    }
+  };
+
+  blocks.forEach(extractFromNode);
+  return textParts.filter(Boolean).join(' ');
+}
 
 interface EntityDetailHeaderProps {
   note: Note;
@@ -12,6 +32,7 @@ interface EntityDetailHeaderProps {
 
 export function EntityDetailHeader({ note, actions }: EntityDetailHeaderProps) {
   const noteAdapter = useNoteAdapter();
+  const indexer = useOptionalIndexer();
   const [title, setTitle] = useState(note.title);
 
   // Sync local state when note changes (e.g., switching notes)
@@ -24,6 +45,12 @@ export function EntityDetailHeader({ note, actions }: EntityDetailHeaderProps) {
     if (trimmedTitle !== note.title) {
       await noteAdapter.update(note.id, { title: trimmedTitle });
       entityActions.updateNote(note.id, { title: trimmedTitle, updated_at: new Date().toISOString() });
+
+      // Trigger re-indexing so suggestions update based on new title (WP 3.5)
+      if (indexer) {
+        const textContent = extractTextFromBlocks(note.content || [], trimmedTitle);
+        indexer.onNoteSaved(note.id, textContent);
+      }
     }
   };
 
