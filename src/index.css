@@ -156,3 +156,18 @@
 .react-flow__handle:hover {
   opacity: 1;
 }
+
+/* Edge/connection styling */
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3px;
+}
+
+/* Connection line while dragging */
+.react-flow__connection-line {
+  stroke: #3b82f6;
+  stroke-width: 2px;
+}

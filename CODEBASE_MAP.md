@@ -65,16 +65,19 @@ src/
 │       └── clusters.ts          # Cluster and ClusterMember types
 │
 ├── modules/
-│   ├── canvas/                  # Graph canvas workspace (WP 2.1-2.3)
+│   ├── canvas/                  # Graph canvas workspace (WP 2.1-2.4)
 │   │   ├── index.ts             # Module exports
 │   │   ├── components/
 │   │   │   ├── index.ts         # Component exports
 │   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
-│   │   │   └── EntityNode.tsx   # Custom node component (WP 2.2)
+│   │   │   ├── EntityNode.tsx   # Custom node component (WP 2.2)
+│   │   │   └── ConnectionEdge.tsx  # Custom edge component (WP 2.4)
 │   │   └── hooks/
 │   │       ├── index.ts         # Hook exports
-│   │       ├── useNotesAsNodes.ts     # Converts notes to React Flow nodes (WP 2.2)
-│   │       └── useNodePositionSync.ts # Persists node positions to SQLite (WP 2.3)
+│   │       ├── useNotesAsNodes.ts       # Converts notes to React Flow nodes (WP 2.2)
+│   │       ├── useNodePositionSync.ts   # Persists node positions to SQLite (WP 2.3)
+│   │       ├── useConnectionsAsEdges.ts # Converts connections to edges (WP 2.4)
+│   │       └── useConnectionHandlers.ts # Connection creation/deletion (WP 2.4)
 │   └── sophia/                  # Knowledge workspace (WP 1.2-1.4)
 │       ├── index.ts             # Module exports
 │       └── components/
@@ -148,6 +151,7 @@ src/
   - WP 2.1: React Flow setup (Complete)
   - WP 2.2: Entity nodes on canvas (Complete)
   - WP 2.3: Node positioning (Complete)
+  - WP 2.4: Blue connections (Complete)
 
 ### App Shell (`src/app/`)
 
@@ -161,13 +165,17 @@ src/
 - **Technology**: React Flow v12+ (@xyflow/react)
 - **GraphCanvas**: Main canvas component with pan/zoom
 - **EntityNode**: Custom node component with type badge and title (WP 2.2)
+- **ConnectionEdge**: Custom edge component with color-coded styling (WP 2.4)
 - **useNotesAsNodes**: Hook that converts store notes to React Flow nodes (WP 2.2)
 - **useNodePositionSync**: Hook to persist node positions to SQLite (WP 2.3)
-- **Features**: Background grid, Controls, MiniMap, node selection sync, drag-to-reposition, snap-to-grid
+- **useConnectionsAsEdges**: Hook that converts store connections to React Flow edges (WP 2.4)
+- **useConnectionHandlers**: Handles connection creation and deletion (WP 2.4)
+- **Features**: Background grid, Controls, MiniMap, node selection sync, drag-to-reposition, snap-to-grid, blue connections
 - **Layout**: 60/40 split with detail panel in Sophia workspace
 - **Theme**: Dark theme with custom colors from `src/shared/theme`
-- **Data Flow**: Store → useNotesAsNodes → GraphCanvas → EntityNode → Click → uiActions.selectEntity
+- **Node Data Flow**: Store → useNotesAsNodes → GraphCanvas → EntityNode → Click → uiActions.selectEntity
 - **Position Persistence**: onNodeDragStop → useNodePositionSync → noteAdapter.update + entityActions.updateNote
+- **Connection Data Flow**: onConnect → connectionAdapter.create → connectionActions.addConnection → useConnectionsAsEdges → render
 
 ### Theme (`src/shared/theme/`)
 

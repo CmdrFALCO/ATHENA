@@ -1,5 +1,35 @@
 # ATHENA Changelog
 
+## [2.4.0] - 2026-01-15
+
+### Added
+- **Blue Connections**: Create explicit connections by dragging between node handles
+  - `ConnectionEdge.tsx` - Custom edge component with color-coded styling
+  - `useConnectionsAsEdges.ts` - Converts store connections to React Flow edges
+  - `useConnectionHandlers.ts` - Handles connection creation and deletion
+- **Connection Features**:
+  - Drag from source handle (bottom) to target handle (top) to create connection
+  - Blue bezier curve for explicit user connections
+  - Optional label display on edge center
+  - Edge selection with visual feedback (thicker stroke)
+  - Delete connections with backspace/delete key
+
+### Changed
+- `GraphCanvas.tsx` - Added edge types, onConnect, onEdgesDelete handlers
+- `index.css` - Added edge hover and selection styles
+
+### Fixed
+- Infinite loop when syncing React Flow edges with store
+  - Same root cause as WP 2.2: `useEffect` triggering on every render due to array reference changes
+  - Solution: Track edge IDs with ref, only sync when edges actually added/removed
+
+### Technical
+- Connections persist to SQLite via `connectionAdapter.create()`
+- Store sync via `connectionActions.addConnection()`
+- Self-connections prevented
+- Color mapping: blue→explicit, green→semantic, red→error, amber→warning
+- Data flow: onConnect → connectionAdapter.create → connectionActions.addConnection → useConnectionsAsEdges → render
+
 ## [2.3.0] - 2026-01-15
 
 ### Added

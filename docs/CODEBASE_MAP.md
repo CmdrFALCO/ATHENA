@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 2.3 (Node Positioning) |
+| **Last WP Completed** | 2.4 (Blue Connections) |
 | **Last Updated** | January 2026 |
 | **Phase** | 2 (Graph Visualization) - In Progress |
 
@@ -70,16 +70,19 @@ athena/
 │   │   └── DevSettingsPanel.tsx  # UI panel (Ctrl+Shift+D)
 │   │
 │   ├── modules/
-│   │   ├── canvas/               # ✅ WP 2.1-2.3 - React Flow graph canvas
+│   │   ├── canvas/               # ✅ WP 2.1-2.4 - React Flow graph canvas
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts      # Component exports
 │   │   │   │   ├── GraphCanvas.tsx  # React Flow canvas component
-│   │   │   │   └── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
+│   │   │   │   ├── EntityNode.tsx   # ✅ WP 2.2 - Custom node component
+│   │   │   │   └── ConnectionEdge.tsx  # ✅ WP 2.4 - Custom edge component
 │   │   │   └── hooks/
 │   │   │       ├── index.ts      # Hook exports
 │   │   │       ├── useNotesAsNodes.ts      # ✅ WP 2.2 - Converts notes to nodes
-│   │   │       └── useNodePositionSync.ts  # ✅ WP 2.3 - Persists node positions
+│   │   │       ├── useNodePositionSync.ts  # ✅ WP 2.3 - Persists node positions
+│   │   │       ├── useConnectionsAsEdges.ts  # ✅ WP 2.4 - Converts connections to edges
+│   │   │       └── useConnectionHandlers.ts  # ✅ WP 2.4 - Connection creation/deletion
 │   │   ├── sophia/               # ✅ WP 1.2-1.5 - Knowledge workspace
 │   │   │   ├── index.ts          # Module barrel export
 │   │   │   └── components/
@@ -267,21 +270,24 @@ function MyComponent() {
 
 ### Canvas Module (`src/modules/canvas/`)
 
-**Status:** ✅ Implemented in WP 2.1-2.3
+**Status:** ✅ Implemented in WP 2.1-2.4
 
 **Components:**
 - `GraphCanvas` - React Flow canvas with Background, Controls, MiniMap
 - `EntityNode` - Custom node with type badge, icon, and title (WP 2.2)
+- `ConnectionEdge` - Custom edge with color-coded styling (WP 2.4)
 
 **Hooks:**
 - `useNotesAsNodes` - Converts store notes to React Flow nodes (WP 2.2)
 - `useNodePositionSync` - Persists node positions to SQLite (WP 2.3)
+- `useConnectionsAsEdges` - Converts store connections to React Flow edges (WP 2.4)
+- `useConnectionHandlers` - Handles connection creation and deletion (WP 2.4)
 
 **Exports:**
 ```typescript
 // src/modules/canvas/index.ts
-export { GraphCanvas, EntityNode } from './components';
-export { useNotesAsNodes, useNodePositionSync } from './hooks';
+export { GraphCanvas, EntityNode, ConnectionEdge } from './components';
+export { useNotesAsNodes, useNodePositionSync, useConnectionsAsEdges, useConnectionHandlers } from './hooks';
 ```
 
 **Usage:**
@@ -307,8 +313,10 @@ import { GraphCanvas } from '@/modules/canvas';
 - Entity nodes with type badges and selection sync (WP 2.2)
 - Drag-to-reposition nodes with persistent storage (WP 2.3)
 - Snap-to-grid (20px) for cleaner layouts (WP 2.3)
+- Blue connections via drag between handles (WP 2.4)
+- Connection deletion with backspace/delete (WP 2.4)
 
-**Data Flow (WP 2.2-2.3):**
+**Data Flow (WP 2.2-2.4):**
 ```
 Store (notes) → useNotesAsNodes() → GraphCanvas → EntityNode
      ↑                                              ↓
@@ -316,6 +324,9 @@ uiActions.selectEntity() ←────── onNodeClick ──────┘
 
 Drag → onNodeDragStop → useNodePositionSync.saveNodePosition
     → noteAdapter.update() + entityActions.updateNote()
+
+Connect → onConnect → connectionAdapter.create() → connectionActions.addConnection()
+    → useConnectionsAsEdges() → GraphCanvas renders ConnectionEdge
 ```
 
 ---
@@ -684,6 +695,7 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 2.1: React Flow setup (Complete)
   - WP 2.2: Entity nodes on canvas (Complete)
   - WP 2.3: Node positioning (Complete)
+  - WP 2.4: Blue connections (Complete)
 
 ## Known Issues
 
