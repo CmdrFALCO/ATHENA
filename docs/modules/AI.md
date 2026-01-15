@@ -1,7 +1,7 @@
 # AI Module
 
 **Location:** `src/modules/ai/`
-**Status:** Implemented in WP 3.1-3.5
+**Status:** Implemented in WP 3.1-3.6
 
 ## Purpose
 
@@ -27,6 +27,7 @@ Flexible AI backend abstraction for embeddings, text generation, embedding stora
 | `hooks/useIdleDetection.ts` | User activity detection (WP 3.3) |
 | `hooks/useSimilarNotes.ts` | Similar notes discovery hook (WP 3.4) |
 | `hooks/useSuggestions.ts` | Suggestion management hook (WP 3.5) |
+| `hooks/useSuggestionActions.ts` | Accept/dismiss actions hook (WP 3.6) |
 
 ---
 
@@ -43,6 +44,7 @@ export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
 export { useIdleDetection, type IdleDetectionOptions } from './hooks';
 export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './hooks';
 export { useSuggestions, useOptionalSuggestions, type UseSuggestionsResult } from './hooks';
+export { useSuggestionActions, type UseSuggestionActionsResult } from './hooks';
 export { IndexerService, type IndexerStatus, type IndexerConfig } from './IndexerService';
 export { SuggestionService, type ISuggestionService, type SuggestionConfig } from './SuggestionService';
 ```
@@ -397,6 +399,82 @@ useEffect(() => {
     generateForNote(lastIndexedNoteId);
   }
 }, [lastIndexedNoteId]);
+```
+
+---
+
+## Accept/Dismiss Suggestions (WP 3.6)
+
+### useSuggestionActions Hook
+
+Hook for accepting or dismissing AI suggestions with human-in-the-loop decision.
+
+```typescript
+interface UseSuggestionActionsResult {
+  isAccepting: boolean;
+  error: string | null;
+  acceptSuggestion: (
+    suggestionId: string,
+    sourceId: string,
+    targetId: string,
+    similarity: number
+  ) => Promise<Connection | null>;
+  dismissSuggestion: (suggestionId: string) => void;
+}
+```
+
+### Accept Flow
+
+When user clicks Accept:
+1. Check if connection already exists between entities
+2. Create persisted blue connection via `connectionAdapter.create()`
+3. Add to Legend-State store via `connectionActions.addConnection()`
+4. Remove suggestion via `suggestionActions.removeSuggestion()`
+
+```typescript
+// Connection created with these fields
+{
+  source_id: sourceId,
+  target_id: targetId,
+  type: 'semantic',       // Indicates AI origin
+  color: 'blue',          // Now explicit/accepted
+  label: null,            // User can add label later
+  confidence: similarity, // Preserve score
+  created_by: 'ai',       // Audit trail
+}
+```
+
+### Dismiss Flow
+
+When user clicks Dismiss:
+- Simply removes suggestion from state
+- Suggestion is NOT persisted (ephemeral)
+
+### Usage
+
+```typescript
+import { useSuggestionActions } from '@/modules/ai';
+
+function SuggestionPopover({ suggestionId, sourceId, targetId, similarity }) {
+  const { acceptSuggestion, dismissSuggestion, isAccepting } = useSuggestionActions();
+
+  const handleAccept = async () => {
+    await acceptSuggestion(suggestionId, sourceId, targetId, similarity);
+  };
+
+  const handleDismiss = () => {
+    dismissSuggestion(suggestionId);
+  };
+
+  return (
+    <div>
+      <button onClick={handleAccept} disabled={isAccepting}>
+        {isAccepting ? 'Accepting...' : 'Accept'}
+      </button>
+      <button onClick={handleDismiss}>Dismiss</button>
+    </div>
+  );
+}
 ```
 
 ---

@@ -1,5 +1,38 @@
 # ATHENA Changelog
 
+## [3.6.0] - 2026-01-15
+
+### Added
+- **Accept/Reject UI for Green Suggestions**: Human-in-the-loop decision point for AI suggestions
+  - `SuggestionPopover.tsx` - Popover with Accept/Dismiss buttons
+  - `useSuggestionActions.ts` - Hook for accept (persist) and dismiss logic
+  - Click green edge label → popover appears with similarity score
+  - Accept → Creates blue persisted connection in SQLite, removes suggestion
+  - Dismiss → Removes suggestion from state
+- **ConnectionEdge Enhancement**: Updated to handle suggestion interactions
+  - Added `sourceId`/`targetId` to edge data for accept flow
+  - `nodrag nopan` CSS classes to prevent React Flow click interception
+  - Inline popover rendering below edge label
+
+### Changed
+- `useSuggestedEdges.ts` - Pass source/target IDs to edge data
+- `hooks/index.ts` (AI) - Export new `useSuggestionActions` hook
+- `ai/index.ts` - Export new hook
+
+### Technical
+- React Flow click handling: `nodrag nopan` classes + `onMouseDown` stopPropagation
+- Accept flow: connectionAdapter.create() → connectionActions.addConnection() → suggestionActions.removeSuggestion()
+- Dismiss flow: suggestionActions.removeSuggestion()
+- Duplicate connection check before accepting
+
+### Phase 3 Complete
+- WP 3.1: AI backend interface ✅
+- WP 3.2: Embedding storage ✅
+- WP 3.3: Background indexer ✅
+- WP 3.4: Similarity query ✅
+- WP 3.5: Green suggestions ✅
+- WP 3.6: Accept/reject UI ✅
+
 ## [2.5.0] - 2026-01-15
 
 ### Added

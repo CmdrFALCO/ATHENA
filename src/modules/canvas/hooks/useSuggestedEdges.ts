@@ -29,6 +29,9 @@ export function useSuggestedEdges() {
         color: 'green' as const,
         isSuggested: true,
         similarity: suggestion.similarity,
+        // WP 3.6: Pass source/target IDs for accept flow
+        sourceId: suggestion.sourceId,
+        targetId: suggestion.targetId,
       },
     }));
   }, [suggestions, showGreenConnections, enableAI]);

@@ -1,7 +1,7 @@
 # Canvas Module
 
 **Location:** `src/modules/canvas/`
-**Status:** Implemented in WP 2.1-2.5, WP 3.5
+**Status:** Implemented in WP 2.1-2.5, WP 3.5-3.6
 
 ## Purpose
 
@@ -19,6 +19,7 @@ React Flow based graph visualization for displaying entities as nodes and connec
 | `components/EntityNode.tsx` | Custom node component (WP 2.2) |
 | `components/ConnectionEdge.tsx` | Custom edge component (WP 2.4, WP 3.5) |
 | `components/ConnectionInspector.tsx` | Connection detail panel (WP 2.5) |
+| `components/SuggestionPopover.tsx` | Accept/dismiss popover (WP 3.6) |
 | `hooks/index.ts` | Hook exports |
 | `hooks/useNotesAsNodes.ts` | Converts notes to nodes (WP 2.2) |
 | `hooks/useNodePositionSync.ts` | Persists node positions (WP 2.3) |
@@ -118,13 +119,14 @@ function CustomCanvas() {
 - Editable connection labels with auto-save
 - Connection metadata display
 
-### Green Suggestions (WP 3.5)
+### Green Suggestions (WP 3.5-3.6)
 - AI-suggested connections displayed as green dashed edges
 - Generated when a note is selected
 - Updated when note content/title changes
 - Similarity score displayed as label (e.g., "87%")
-- Click doesn't open inspector (suggestions not persisted)
-- Accept/dismiss UI planned for WP 3.6
+- Click opens accept/dismiss popover (WP 3.6)
+  - Accept → Creates blue persisted connection
+  - Dismiss → Removes suggestion from state
 
 ---
 
@@ -166,6 +168,17 @@ Note Content Change → IndexerService.embedNote() → indexerActions.noteIndexe
     → regenerates suggestions if selected note was indexed
 ```
 
+### Accept/Dismiss (WP 3.6)
+```
+Click green edge label → SuggestionPopover appears
+  ├─ Accept → useSuggestionActions.acceptSuggestion()
+  │     → connectionAdapter.create() → connectionActions.addConnection()
+  │     → suggestionActions.removeSuggestion() → green edge becomes blue
+  │
+  └─ Dismiss → useSuggestionActions.dismissSuggestion()
+        → suggestionActions.removeSuggestion() → green edge removed
+```
+
 ---
 
 ## Component Details
@@ -203,7 +216,7 @@ Visual elements:
 
 ### ConnectionEdge
 
-Custom edge renderer with styling and suggestion support.
+Custom edge renderer with styling, suggestion support, and accept/dismiss popover.
 
 ```typescript
 interface ConnectionEdgeData {
@@ -212,12 +225,34 @@ interface ConnectionEdgeData {
   color: ConnectionColor;       // 'blue' | 'green' | 'red' | 'amber'
   isSuggested?: boolean;        // WP 3.5 - true for green suggestions
   similarity?: number;          // WP 3.5 - 0-1 for suggestions
+  sourceId?: string;            // WP 3.6 - for accept flow
+  targetId?: string;            // WP 3.6 - for accept flow
 }
 
 // Styling differences
 // - Blue edges: solid, 2px stroke
 // - Green suggestions: dashed (8,4), 75% opacity, similarity label
+// - Click green label → shows SuggestionPopover (WP 3.6)
 ```
+
+### SuggestionPopover (WP 3.6)
+
+Popover for accepting or dismissing green suggestions.
+
+```typescript
+interface SuggestionPopoverProps {
+  similarity: number;
+  isAccepting: boolean;
+  onAccept: () => void;
+  onDismiss: () => void;
+}
+```
+
+Features:
+- Similarity badge showing percentage
+- Accept button (green) with loading state
+- Dismiss button (gray)
+- Uses `nodrag nopan` classes for React Flow click handling
 
 ### ConnectionInspector
 

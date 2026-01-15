@@ -7,6 +7,7 @@ export { useIndexer, useOptionalIndexer, type UseIndexerResult } from './hooks';
 export { useIdleDetection, type IdleDetectionOptions } from './hooks';
 export { useSimilarNotes, useOptionalSimilarNotes, type SimilarNote, type UseSimilarNotesResult } from './hooks';
 export { useSuggestions, useOptionalSuggestions, type UseSuggestionsResult } from './hooks';
+export { useSuggestionActions, type UseSuggestionActionsResult } from './hooks';
 export {
   IndexerService,
   type IndexerStatus,

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -7,6 +7,8 @@ import {
 } from '@xyflow/react';
 import { ATHENA_COLORS } from '@/shared/theme';
 import type { ConnectionColor } from '@/shared/types';
+import { SuggestionPopover } from './SuggestionPopover';
+import { useSuggestionActions } from '@/modules/ai/hooks/useSuggestionActions';
 
 // Map connection color to theme key
 const colorToThemeKey: Record<ConnectionColor, keyof typeof ATHENA_COLORS.connection> = {
@@ -22,6 +24,9 @@ export interface ConnectionEdgeData extends Record<string, unknown> {
   color: ConnectionColor;
   isSuggested?: boolean;  // WP 3.5: Green suggested connections
   similarity?: number;    // WP 3.5: Similarity score (0-1) for suggestions
+  // WP 3.6: Source/target IDs for suggestion accept flow
+  sourceId?: string;
+  targetId?: string;
 }
 
 export const ConnectionEdge = memo(function ConnectionEdge({
@@ -35,6 +40,9 @@ export const ConnectionEdge = memo(function ConnectionEdge({
   data,
   selected,
 }: EdgeProps) {
+  const [showPopover, setShowPopover] = useState(false);
+  const { acceptSuggestion, dismissSuggestion, isAccepting } = useSuggestionActions();
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -61,6 +69,45 @@ export const ConnectionEdge = memo(function ConnectionEdge({
       : null
   );
 
+  // Handle click on suggested edge label to show popover
+  const handleLabelClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isSuggested) {
+        e.stopPropagation();
+        setShowPopover(true);
+      }
+    },
+    [isSuggested]
+  );
+
+  // Handle accept action
+  const handleAccept = useCallback(async () => {
+    if (!edgeData?.sourceId || !edgeData?.targetId || edgeData?.similarity === undefined) {
+      console.error('[ConnectionEdge] Missing data for accepting suggestion');
+      return;
+    }
+    try {
+      await acceptSuggestion(
+        edgeData.connectionId,
+        edgeData.sourceId,
+        edgeData.targetId,
+        edgeData.similarity
+      );
+    } catch (err) {
+      console.error('[ConnectionEdge] acceptSuggestion error:', err);
+    }
+    setShowPopover(false);
+  }, [edgeData, acceptSuggestion]);
+
+  // Handle dismiss action
+  const handleDismiss = useCallback(() => {
+    dismissSuggestion(edgeData?.connectionId ?? id);
+    setShowPopover(false);
+  }, [edgeData?.connectionId, id, dismissSuggestion]);
+
+  // Close popover when clicking elsewhere on the canvas
+  // (handled by GraphCanvas pane click which will trigger re-render)
+
   return (
     <>
       <BaseEdge
@@ -76,23 +123,48 @@ export const ConnectionEdge = memo(function ConnectionEdge({
       />
       {displayLabel && (
         <EdgeLabelRenderer>
+          {/* Container for label and popover */}
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               pointerEvents: 'all',
-              backgroundColor: isSuggested
-                ? ATHENA_COLORS.connection.semantic + '20' // Green with transparency
-                : ATHENA_COLORS.surface.panel,
-              color: isSuggested
-                ? ATHENA_COLORS.connection.semantic
-                : ATHENA_COLORS.text.secondary,
-              border: `1px solid ${isSuggested ? ATHENA_COLORS.connection.semantic : ATHENA_COLORS.surface.nodeBorder}`,
-              opacity: isSuggested ? 0.9 : 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
             }}
-            className="px-2 py-0.5 rounded text-xs font-medium"
+            className="nodrag nopan"
           >
-            {displayLabel}
+            {/* Edge label */}
+            <div
+              style={{
+                backgroundColor: isSuggested
+                  ? ATHENA_COLORS.connection.semantic + '20'
+                  : ATHENA_COLORS.surface.panel,
+                color: isSuggested
+                  ? ATHENA_COLORS.connection.semantic
+                  : ATHENA_COLORS.text.secondary,
+                border: `1px solid ${isSuggested ? ATHENA_COLORS.connection.semantic : ATHENA_COLORS.surface.nodeBorder}`,
+                opacity: isSuggested ? 0.9 : 1,
+                cursor: isSuggested ? 'pointer' : 'default',
+                pointerEvents: 'all',
+              }}
+              className="px-2 py-0.5 rounded text-xs font-medium nodrag nopan"
+              onClick={handleLabelClick}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {displayLabel}
+            </div>
+
+            {/* WP 3.6: Suggestion accept/dismiss popover */}
+            {isSuggested && showPopover && edgeData?.similarity !== undefined && (
+              <SuggestionPopover
+                similarity={edgeData.similarity}
+                isAccepting={isAccepting}
+                onAccept={handleAccept}
+                onDismiss={handleDismiss}
+              />
+            )}
           </div>
         </EdgeLabelRenderer>
       )}

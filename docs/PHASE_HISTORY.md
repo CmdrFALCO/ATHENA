@@ -11,7 +11,7 @@ This document archives all completed phases, work packages, bug fixes, and known
 | 0 | Foundation | ✅ Complete | Project scaffold, database, data models, state layer |
 | 1 | Core UI | ✅ Complete | App shell, routing, entity views, rich text editor |
 | 2 | Graph Visualization | ✅ Complete | React Flow canvas, nodes, connections, inspector |
-| 3 | AI Layer | 🔄 In Progress | AI backends, embeddings, indexing, similarity |
+| 3 | AI Layer | ✅ Complete | AI backends, embeddings, indexing, similarity, accept/reject |
 | 4 | Search | ⏳ Planned | Full-text search + vector search |
 | 5 | Validation | ⏳ Planned | CPN validation engine |
 | 6 | Plans & Documents | ⏳ Planned | Pronoia and Ergane modules |
@@ -143,7 +143,7 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 ## Phase 3: AI Layer
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete
 
 ### WP 3.1: AI Backend Interface ✅
 - SecureStorage service (Web Crypto API + IndexedDB)
@@ -275,6 +275,24 @@ This document archives all completed phases, work packages, bug fixes, and known
   - Already triggers indexer on content change
   - Suggestions update when content changes
 
+### WP 3.6: Accept/Reject UI ✅
+- SuggestionPopover component
+  - Accept/Dismiss buttons
+  - Similarity percentage display
+  - Loading state for accept action
+- useSuggestionActions hook
+  - acceptSuggestion: persist to SQLite → add to store → remove suggestion
+  - dismissSuggestion: remove from state
+  - Duplicate connection detection
+- ConnectionEdge enhancement
+  - Added sourceId/targetId to edge data
+  - Click green label → shows popover
+  - `nodrag nopan` classes for React Flow click handling
+- useSuggestedEdges update
+  - Pass source/target IDs to edge data
+- Module exports
+  - Export useSuggestionActions from AI module
+
 ---
 
 ## Bug Fixes
@@ -346,11 +364,10 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 | WP | What's Added |
 |----|--------------|
-| **3.6** | Accept/Reject green suggestions UI |
-| **3.x** | Additional AI backends (Ollama, Anthropic, OpenAI, Mistral) |
 | **4.x** | Full-text search + vector search |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents (Pronoia, Ergane modules) |
+| **Future** | Additional AI backends (Ollama, Anthropic, OpenAI, Mistral) |
 
 ---
 
