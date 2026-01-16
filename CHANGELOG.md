@@ -1,5 +1,55 @@
 # ATHENA Changelog
 
+## [4.3.0] - 2026-01-16
+
+### Added
+- **ISearchAdapter Interface**: Search abstraction layer
+  - `src/adapters/ISearchAdapter.ts` - Interface with `keywordSearch()` method
+  - `SearchResult` type with entityId, title, type, snippet, score, matchType
+  - `SearchOptions` for limit, offset, and entity type filtering
+- **SQLiteSearchAdapter**: FTS5 full-text search implementation
+  - `src/adapters/sqlite/SQLiteSearchAdapter.ts` - Query FTS5 virtual table
+  - BM25 relevance ranking (more negative = more relevant)
+  - Snippet extraction with `<mark>` highlighting
+  - Query sanitization to prevent FTS5 syntax errors
+- **KeywordSearchService**: Business logic layer for search
+  - `src/modules/search/services/KeywordSearchService.ts` - Wraps adapter
+  - Default limit of 10 results
+- **useKeywordSearch Hook**: React hook for search state
+  - `src/modules/search/hooks/useKeywordSearch.ts`
+  - Manages results, isSearching, error state
+  - Provides search() and clear() methods
+
+### Changed
+- **Command Palette Upgraded to FTS5**: Now searches content, not just titles
+  - `useCommandPalette.ts` - Uses FTS5 search with 300ms debounce
+  - Shows recent notes when query empty, search results when typing
+  - Returns `CommandPaletteResult` type with optional snippet
+- **CommandPalette.tsx**: Updated UI for search results
+  - Loading spinner while searching (Loader2 icon)
+  - Snippet display below title with highlighted matches
+  - "Searching..." state message
+- **Adapter Provider**: Added search adapter to context
+  - `context.ts` - Added `search: ISearchAdapter` to Adapters interface
+  - `hooks.ts` - Added `useSearchAdapter()` hook
+  - `App.tsx` - Instantiates `SQLiteSearchAdapter`
+
+### Technical
+- **FTS5 Query Sanitization**: Wraps each word in quotes to prevent syntax errors
+  - `"hello" "world"` for multi-word queries
+  - Escapes internal double quotes
+- **BM25 Scoring**: Results sorted by relevance (ascending = most relevant)
+- **Debounced Search**: 300ms delay to reduce DB queries while typing
+- **Snippet Column Index**: Uses column 2 (content_text) for snippet extraction
+
+### Phase 4 Progress
+- WP 4.1: Command Palette ✅
+- WP 4.2: FTS Schema ✅
+- WP 4.2.1: Custom sql.js with FTS5 ✅
+- WP 4.3: Keyword Search ✅
+- WP 4.4: Semantic Search ⏳
+- WP 4.5: Hybrid Search ⏳
+
 ## [4.2.1] - 2026-01-16
 
 ### Added

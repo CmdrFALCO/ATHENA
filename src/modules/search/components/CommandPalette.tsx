@@ -1,15 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { FileText, ClipboardList, FileEdit, Search } from 'lucide-react';
-import { useCommandPalette } from '../hooks';
+import { FileText, ClipboardList, FileEdit, Search, Loader2 } from 'lucide-react';
+import { useCommandPalette, type CommandPaletteResult } from '../hooks';
 import { uiActions } from '@/store';
-import type { Note } from '@/shared/types';
+import type { EntityType } from '@/shared/types';
 
 /**
  * Format a date for display in the command palette.
  * Shows relative time for recent dates, or month/day for older dates.
  */
 function formatDate(dateString: string): string {
+  if (!dateString) return '';
+
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -29,7 +31,7 @@ function formatDate(dateString: string): string {
 /**
  * Get the icon for an entity type.
  */
-function getEntityIcon(type: Note['type']) {
+function getEntityIcon(type: EntityType) {
   switch (type) {
     case 'note':
       return <FileText className="w-4 h-4" />;
@@ -43,12 +45,12 @@ function getEntityIcon(type: Note['type']) {
 }
 
 interface ResultItemProps {
-  note: Note;
+  result: CommandPaletteResult;
   isSelected: boolean;
   onClick: () => void;
 }
 
-function ResultItem({ note, isSelected, onClick }: ResultItemProps) {
+function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
   const itemRef = useRef<HTMLButtonElement>(null);
 
   // Scroll into view when selected
@@ -62,19 +64,32 @@ function ResultItem({ note, isSelected, onClick }: ResultItemProps) {
     <button
       ref={itemRef}
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+      className={`w-full flex flex-col gap-1 px-3 py-2 text-left transition-colors ${
         isSelected
           ? 'bg-zinc-700 text-white'
           : 'text-zinc-300 hover:bg-zinc-800'
       }`}
     >
-      <span className="text-zinc-400 flex-shrink-0">
-        {getEntityIcon(note.type)}
-      </span>
-      <span className="flex-1 truncate">{note.title || 'Untitled'}</span>
-      <span className="text-xs text-zinc-500 flex-shrink-0">
-        {formatDate(note.updated_at)}
-      </span>
+      {/* Title row */}
+      <div className="flex items-center gap-3">
+        <span className="text-zinc-400 flex-shrink-0">
+          {getEntityIcon(result.type)}
+        </span>
+        <span className="flex-1 truncate">{result.title}</span>
+        {result.updatedAt && (
+          <span className="text-xs text-zinc-500 flex-shrink-0">
+            {formatDate(result.updatedAt)}
+          </span>
+        )}
+      </div>
+
+      {/* Snippet row (only for search results) */}
+      {result.snippet && (
+        <div
+          className="pl-7 text-sm text-zinc-400 truncate"
+          dangerouslySetInnerHTML={{ __html: result.snippet }}
+        />
+      )}
     </button>
   );
 }
@@ -85,6 +100,7 @@ export function CommandPalette() {
     query,
     results,
     selectedIndex,
+    isSearching,
     close,
     setQuery,
     selectNext,
@@ -153,9 +169,9 @@ export function CommandPalette() {
 
   // Handle result click
   const handleResultClick = (index: number) => {
-    const note = results[index];
-    if (note) {
-      uiActions.selectEntity(note.id);
+    const result = results[index];
+    if (result) {
+      uiActions.selectEntity(result.id);
       close();
     }
   };
@@ -170,7 +186,11 @@ export function CommandPalette() {
       <div className="w-full max-w-xl bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl overflow-hidden">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-700">
-          <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+          {isSearching ? (
+            <Loader2 className="w-5 h-5 text-zinc-400 flex-shrink-0 animate-spin" />
+          ) : (
+            <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+          )}
           <input
             ref={inputRef}
             type="text"
@@ -187,17 +207,17 @@ export function CommandPalette() {
         {/* Results list */}
         <div className="max-h-80 overflow-y-auto">
           {results.length > 0 ? (
-            results.map((note, index) => (
+            results.map((result, index) => (
               <ResultItem
-                key={note.id}
-                note={note}
+                key={result.id}
+                result={result}
                 isSelected={index === selectedIndex}
                 onClick={() => handleResultClick(index)}
               />
             ))
           ) : (
             <div className="px-4 py-8 text-center text-zinc-500">
-              {query ? 'No results found' : 'No notes yet'}
+              {isSearching ? 'Searching...' : query ? 'No results found' : 'No notes yet'}
             </div>
           )}
         </div>

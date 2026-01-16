@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.2.1 (Custom sql.js with FTS5) |
+| **Last WP Completed** | 4.3 (Keyword Search) |
 | **Last Updated** | January 2026 |
 | **Phase** | 4 (Search) - In Progress |
 
@@ -51,7 +51,7 @@ athena/
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ⏳ CPN engine
-│   │   └── search/               # ⏳ FTS + vector
+│   │   └── search/               # ✅ FTS5 keyword search + Command Palette
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -92,6 +92,7 @@ athena/
 | App Shell | `src/app/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
+| Search | `src/modules/search/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -135,6 +136,7 @@ athena/
 | Connection | `src/shared/types/connections.ts` | Entity relationships with tri-color |
 | Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
 | Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
+| SearchResult | `src/adapters/ISearchAdapter.ts` | FTS5 search result with snippet and BM25 score |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
 
 ---
@@ -170,8 +172,8 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **4.3** | Keyword search service (query FTS5 with bm25 ranking) |
-| **4.4** | Vector search integration |
+| **4.4** | Semantic search (vector similarity with embeddings) |
+| **4.5** | Hybrid search (combine keyword + semantic results) |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents |
 

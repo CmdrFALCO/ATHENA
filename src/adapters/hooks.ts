@@ -4,6 +4,7 @@ import type { INoteAdapter } from './INoteAdapter';
 import type { IConnectionAdapter } from './IConnectionAdapter';
 import type { IEmbeddingAdapter } from './IEmbeddingAdapter';
 import type { IClusterAdapter } from './IClusterAdapter';
+import type { ISearchAdapter } from './ISearchAdapter';
 
 export function useAdapters(): Adapters {
   const ctx = useContext(AdapterContext);
@@ -27,4 +28,8 @@ export function useEmbeddingAdapter(): IEmbeddingAdapter {
 
 export function useClusterAdapter(): IClusterAdapter {
   return useAdapters().clusters;
+}
+
+export function useSearchAdapter(): ISearchAdapter {
+  return useAdapters().search;
 }

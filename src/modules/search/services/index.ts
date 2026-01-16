@@ -1,0 +1,1 @@
+export { KeywordSearchService } from './KeywordSearchService';
