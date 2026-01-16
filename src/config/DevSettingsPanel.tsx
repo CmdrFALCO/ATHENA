@@ -1,4 +1,4 @@
-import { useDevSettings, useDevSettingsOpen, uiActions } from '@/store';
+import { useDevSettings, useDevSettingsOpen, uiActions, useNotes, entityActions } from '@/store';
 import { devSettingsActions, type FeatureFlags } from './devSettings';
 import { useEffect, useState, useCallback } from 'react';
 import {
@@ -8,6 +8,8 @@ import {
   PROVIDER_NAMES,
   PROVIDER_MODELS,
 } from '@/modules/ai';
+import { useNoteAdapter } from '@/adapters';
+import { seedTestNotes, deleteTestNotes, countTestNotes } from './seedTestNotes';
 
 interface FlagRowProps {
   label: string;
@@ -234,6 +236,96 @@ function IndexerStatusSection() {
           {isIndexing ? 'Indexing...' : 'Index All Unembedded Notes'}
         </button>
       </div>
+    </div>
+  );
+}
+
+function TestDataSection() {
+  const noteAdapter = useNoteAdapter();
+  const notes = useNotes();
+  const indexer = useOptionalIndexer();
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [lastResult, setLastResult] = useState<{ action: string; count: number } | null>(null);
+
+  const testNoteCount = countTestNotes(notes);
+
+  const handleSeedNotes = useCallback(async () => {
+    setIsSeeding(true);
+    setLastResult(null);
+    try {
+      const result = await seedTestNotes(noteAdapter, entityActions.addNote);
+      setLastResult({ action: 'seeded', count: result.created });
+
+      // Trigger indexing for all new notes if indexer is available
+      if (indexer && result.notes.length > 0) {
+        console.log('[TestDataSection] Triggering index for new notes...');
+        await indexer.indexAll();
+      }
+    } catch (error) {
+      console.error('[TestDataSection] Seed failed:', error);
+      setLastResult({ action: 'error', count: 0 });
+    } finally {
+      setIsSeeding(false);
+    }
+  }, [noteAdapter, indexer]);
+
+  const handleDeleteNotes = useCallback(async () => {
+    setIsDeleting(true);
+    setLastResult(null);
+    try {
+      const deleted = await deleteTestNotes(noteAdapter, () => notes, entityActions.removeNote);
+      setLastResult({ action: 'deleted', count: deleted });
+    } catch (error) {
+      console.error('[TestDataSection] Delete failed:', error);
+      setLastResult({ action: 'error', count: 0 });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [noteAdapter, notes]);
+
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-medium text-gray-400 mb-2">Test Data (Hybrid Search)</h3>
+
+      <div className="flex items-center justify-between py-2 border-b border-gray-700">
+        <span className="text-sm text-gray-300">Test Notes</span>
+        <span className="text-sm text-gray-400">{testNoteCount} / 20</span>
+      </div>
+
+      <div className="pt-3 space-y-2">
+        <button
+          onClick={handleSeedNotes}
+          disabled={isSeeding || isDeleting}
+          className="w-full px-3 py-2 text-sm bg-amber-700 border border-amber-600 rounded hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSeeding ? 'Seeding...' : 'Seed 20 Test Notes'}
+        </button>
+
+        <button
+          onClick={handleDeleteNotes}
+          disabled={isSeeding || isDeleting || testNoteCount === 0}
+          className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isDeleting ? 'Deleting...' : `Delete Test Notes (${testNoteCount})`}
+        </button>
+
+        {lastResult && (
+          <p
+            className={`text-xs mt-2 ${
+              lastResult.action === 'error' ? 'text-red-400' : 'text-green-400'
+            }`}
+          >
+            {lastResult.action === 'seeded' && `Created ${lastResult.count} notes`}
+            {lastResult.action === 'deleted' && `Deleted ${lastResult.count} notes`}
+            {lastResult.action === 'error' && 'Operation failed'}
+          </p>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-500 mt-2">
+        Seeds diverse notes for testing keyword, semantic, and hybrid search.
+      </p>
     </div>
   );
 }
@@ -536,6 +628,9 @@ export function DevSettingsPanel() {
               value={settings.flags.showValidationPanel}
             />
           </div>
+
+          {/* Test Data Section */}
+          <TestDataSection />
 
           {/* Debug Section */}
           <div className="mb-4">
