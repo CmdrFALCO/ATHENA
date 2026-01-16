@@ -1,5 +1,7 @@
-import initSqlJs, { type Database, type SqlValue } from 'sql.js';
+import initSqlJs, { type Database, type SqlValue } from '@/vendor/sql.js';
 import { CREATE_TABLES } from './schema';
+import { setupFTS5, migrateExistingToFTS, populateContentText } from './migrations';
+import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
 export interface DatabaseConnection {
   exec<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -27,9 +29,10 @@ export async function initDatabase(): Promise<DatabaseConnection> {
 }
 
 async function createDatabase(): Promise<DatabaseConnection> {
-  // Initialize sql.js - load WASM from CDN
+  // Initialize sql.js with custom build (FTS5 + JSON1 enabled)
+  // WASM binary served from public/vendor/sql.js/
   const SQL = await initSqlJs({
-    locateFile: (file) => `https://sql.js.org/dist/${file}`,
+    locateFile: (file) => `/vendor/sql.js/${file}`,
   });
 
   // Create in-memory database
@@ -82,6 +85,19 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Run schema creation
   await connection.run(CREATE_TABLES);
+
+  // Set up FTS5 (idempotent)
+  await setupFTS5(connection);
+
+  // One-time migration: populate content_text for existing entities
+  const populated = await populateContentText(connection, extractTextFromTiptap);
+  if (populated > 0) {
+    console.log(`Populated content_text for ${populated} entities`);
+
+    // Rebuild FTS index with the new content_text values
+    const indexed = await migrateExistingToFTS(connection);
+    console.log(`Rebuilt FTS index with ${indexed} entities`);
+  }
 
   return connection;
 }

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Custom sql.js build directory (large, rebuild from tools/sql.js-custom)
+tools/sql.js-custom/

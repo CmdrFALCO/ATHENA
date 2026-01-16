@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.5 (Green Suggestions) |
+| **Last WP Completed** | 4.2.1 (Custom sql.js with FTS5) |
 | **Last Updated** | January 2026 |
-| **Phase** | 3 (AI Layer) - In Progress |
+| **Phase** | 4 (Search) - In Progress |
 
 ---
 
@@ -29,13 +29,16 @@
 athena/
 ├── src/
 │   ├── database/                 # SQLite WASM
+│   │   └── migrations/           # Schema migrations (FTS5, etc.)
 │   ├── adapters/                 # Database adapters
 │   │   └── sqlite/               # SQLite implementations
+│   ├── vendor/                   # Vendored dependencies
+│   │   └── sql.js/               # Custom sql.js build (FTS5+JSON1)
 │   ├── shared/
 │   │   ├── components/           # Generic UI components
 │   │   ├── hooks/                # Shared React hooks
 │   │   ├── theme/                # Theme constants
-│   │   ├── utils/                # Utility functions
+│   │   ├── utils/                # Utility functions (formatTime, extractTextFromTiptap)
 │   │   └── types/                # TypeScript types
 │   ├── store/                    # Legend-State
 │   ├── config/                   # DevSettings
@@ -55,6 +58,11 @@ athena/
 │   ├── App.tsx                   # Root component
 │   ├── main.tsx                  # Entry point
 │   └── index.css                 # Tailwind imports
+├── public/
+│   └── vendor/
+│       └── sql.js/               # Custom WASM binary
+├── tools/
+│   └── sql.js-custom/            # sql.js build config (git-ignored)
 ├── docs/
 │   ├── modules/                  # Module documentation
 │   ├── PATTERNS.md               # Code patterns
@@ -84,6 +92,7 @@ athena/
 | App Shell | `src/app/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
+| Vendor | `src/vendor/` | — | ✅ |
 
 ---
 
@@ -111,6 +120,8 @@ athena/
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
 | Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation) |
+| FTS5 full-text search | `src/database/migrations/` | Sync triggers + content_text extraction + bm25() ranking |
+| Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -159,8 +170,8 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **3.6** | Accept/Reject green suggestions UI |
-| **4.x** | Full-text search + vector search |
+| **4.3** | Keyword search service (query FTS5 with bm25 ranking) |
+| **4.4** | Vector search integration |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents |
 

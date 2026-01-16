@@ -1,5 +1,97 @@
 # ATHENA Changelog
 
+## [4.2.1] - 2026-01-16
+
+### Added
+- **Custom sql.js Build with FTS5**: Full-text search upgrade from FTS3 to FTS5
+  - `tools/sql.js-custom/` - Custom sql.js build configuration
+  - `src/vendor/sql.js/` - Vendored sql.js with ES module export
+  - `public/vendor/sql.js/sql-wasm.wasm` - Custom WASM binary
+- **FTS5 Features Now Available**:
+  - `bm25()` ranking for relevance scoring
+  - `highlight()` for marking matches in results
+  - `snippet()` for extracting context around matches
+  - `UNINDEXED` columns (id stored but not searchable)
+  - `porter unicode61` tokenizer for stemming + international text
+- **JSON1 Extension**: `json_extract()` and other JSON functions enabled
+
+### Changed
+- `src/database/init.ts` - Now uses custom vendor sql.js build
+- `src/database/migrations/fts5.ts` - Upgraded from FTS3 to FTS5 schema
+- `locateFile` points to `/vendor/sql.js/` instead of CDN
+
+### Technical
+- **Custom Build Process**:
+  1. Clone sql.js repo to `tools/sql.js-custom/`
+  2. Modify Makefile: add `-DSQLITE_ENABLE_FTS5` and `-DSQLITE_ENABLE_JSON1`
+  3. Build with Docker: `emscripten/emsdk:3.1.45`
+  4. Copy `dist/sql-wasm.js` → `src/vendor/sql.js/`
+  5. Copy `dist/sql-wasm.wasm` → `public/vendor/sql.js/`
+
+### Bug Fixes During Implementation
+- **ES Module Compatibility**: sql.js custom build uses CommonJS exports
+  - Error: "does not provide an export named 'default'"
+  - Fix: Added `export default initSqlJs;` at end of sql-wasm.js
+- **CommonJS `module` Reference**: Browser throws "module is not defined"
+  - Error: `ReferenceError: module is not defined`
+  - Fix: Removed CommonJS export block, wrapped `module = undefined;` in try-catch
+- **WASM File Location**: Must be served from `public/` for Vite
+
+### File Structure
+```
+src/vendor/sql.js/
+├── index.ts          # Re-export with types
+└── sql-wasm.js       # Custom build (ES module patched)
+
+public/vendor/sql.js/
+└── sql-wasm.wasm     # Custom WASM binary (~1.3MB with FTS5)
+
+tools/sql.js-custom/  # Build directory (git-ignored)
+└── Makefile          # Modified with FTS5+JSON1 flags
+```
+
+## [4.2.0] - 2026-01-16
+
+### Added
+- **FTS3 Full-Text Search Schema**: SQLite full-text search infrastructure
+  - `src/database/migrations/fts5.ts` - FTS3 setup, triggers, and migration functions
+  - `src/database/migrations/index.ts` - Barrel export for migrations
+  - `entities_fts` virtual table for searchable title and content
+  - Sync triggers for INSERT, UPDATE, DELETE, and soft-delete operations
+- **Text Extraction Utility**: Extract plain text from Tiptap JSON
+  - `src/shared/utils/extractTextFromTiptap.ts` - Recursive text extractor
+  - Handles nested Tiptap blocks, formatting marks, JSON strings
+  - Used for FTS indexing of rich text content
+- **Content Text Column**: `content_text` column on entities table
+  - Stores extracted plain text for FTS indexing
+  - Automatically populated on note create/update
+
+### Changed
+- `src/database/init.ts` - Calls FTS3 setup after schema creation
+- `src/adapters/sqlite/SQLiteNoteAdapter.ts` - Extracts content_text on create/update
+- `src/shared/utils/index.ts` - Exports extractTextFromTiptap
+
+### Technical
+- **FTS3 vs FTS5**: Using FTS3 instead of FTS5 because sql.js default build doesn't include FTS5
+  - FTS3 is compiled into the standard sql.js WASM
+  - FTS5 requires custom compilation with `-DSQLITE_ENABLE_FTS5` flag
+  - FTS3 provides basic full-text search (no BM25 ranking, no UNINDEXED columns)
+- Triggers handle bi-temporal soft deletes (remove from FTS when `invalid_at` is set)
+- Migration is idempotent (safe to run multiple times)
+
+### Bug Fixes During Implementation
+- **"no such module: fts5"**: sql.js CDN and npm builds don't include FTS5
+  - Attempted fixes: jsDelivr CDN, local WASM import via Vite
+  - Solution: Use FTS3 which IS included in standard sql.js build
+- **Version mismatch error**: "z is not a function" when WASM version didn't match npm package
+  - Ensure CDN version matches installed sql.js version (1.13.0)
+
+### Phase 4 Progress
+- WP 4.1: Command Palette ✅
+- WP 4.2: FTS Schema ✅
+- WP 4.3: Keyword Search Service ⏳
+- WP 4.4: Vector Search Integration ⏳
+
 ## [4.1.0] - 2026-01-16
 
 ### Added

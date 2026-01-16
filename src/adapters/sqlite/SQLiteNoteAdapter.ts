@@ -1,6 +1,7 @@
 import type { Note, EntityType } from '@/shared/types';
 import type { INoteAdapter } from '../INoteAdapter';
 import type { DatabaseConnection } from '@/database';
+import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
 export class SQLiteNoteAdapter implements INoteAdapter {
   private db: DatabaseConnection;
@@ -29,15 +30,17 @@ export class SQLiteNoteAdapter implements INoteAdapter {
   ): Promise<Note> {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const contentText = extractTextFromTiptap(note.content);
 
     await this.db.run(
-      `INSERT INTO entities (id, type, subtype, title, content, metadata, created_at, updated_at, valid_at, position_x, position_y)
-       VALUES (?, 'note', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO entities (id, type, subtype, title, content, content_text, metadata, created_at, updated_at, valid_at, position_x, position_y)
+       VALUES (?, 'note', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         note.subtype,
         note.title,
         JSON.stringify(note.content),
+        contentText,
         JSON.stringify(note.metadata),
         now,
         now,
@@ -70,6 +73,9 @@ export class SQLiteNoteAdapter implements INoteAdapter {
     if (updates.content !== undefined) {
       setClauses.push('content = ?');
       values.push(JSON.stringify(updates.content));
+      // Also update content_text for FTS indexing
+      setClauses.push('content_text = ?');
+      values.push(extractTextFromTiptap(updates.content));
     }
     if (updates.metadata !== undefined) {
       setClauses.push('metadata = ?');
