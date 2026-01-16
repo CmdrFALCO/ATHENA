@@ -24,7 +24,9 @@
       "Bash(git stash pop:*)",
       "Bash(npm run:*)",
       "Bash(git rm:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm ls:*)",
+      "Bash(docker --version:*)"
     ]
   }
 }

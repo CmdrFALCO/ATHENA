@@ -13,6 +13,7 @@ export interface CommandPaletteResult {
   title: string;
   type: EntityType;
   snippet?: string; // Highlighted match context (only for search results)
+  matchType?: 'keyword' | 'semantic' | 'hybrid'; // Search match type
   updatedAt: string;
   isSearchResult: boolean;
 }
@@ -78,6 +79,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     title: result.title,
     type: result.type,
     snippet: result.snippet,
+    matchType: result.matchType,
     updatedAt: '', // Search results are sorted by relevance, not date
     isSearchResult: true,
   }), []);
@@ -100,10 +102,10 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     // Start searching indicator
     setIsSearching(true);
 
-    // Debounce the search
+    // Debounce the search (hybrid search combines keyword + semantic)
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const results = await searchAdapter.keywordSearch(trimmedQuery, {
+        const results = await searchAdapter.hybridSearch(trimmedQuery, {
           limit: MAX_RESULTS,
         });
         setSearchResults(results);

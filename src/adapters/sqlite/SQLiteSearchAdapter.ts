@@ -1,5 +1,6 @@
 import type { EntityType } from '@/shared/types';
-import type { ISearchAdapter, SearchResult, SearchOptions } from '../ISearchAdapter';
+import type { ISearchAdapter, SearchResult, SearchOptions, HybridSearchOptions } from '../ISearchAdapter';
+import { applyRRF } from '@/modules/search/services/HybridSearchService';
 import type { DatabaseConnection } from '@/database';
 import type { IEmbeddingAdapter } from '../IEmbeddingAdapter';
 import type { INoteAdapter } from '../INoteAdapter';
@@ -200,5 +201,56 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
     const text = extractTextFromTiptap(content);
     if (text.length <= 100) return text;
     return text.substring(0, 100).trim() + '...';
+  }
+
+  /**
+   * Hybrid search combining keyword (FTS5/BM25) and semantic (vector) search.
+   * Uses Reciprocal Rank Fusion (RRF) to combine and re-rank results.
+   *
+   * Entities appearing in BOTH result sets rank higher than those in only one.
+   * Falls back to keyword-only if semantic search is unavailable.
+   */
+  async hybridSearch(
+    query: string,
+    options: HybridSearchOptions = {}
+  ): Promise<SearchResult[]> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    const {
+      limit = 20,
+      k = 60,
+      keywordWeight = 1.0,
+      semanticWeight = 1.0,
+      entityTypes,
+    } = options;
+
+    // Fetch more results than limit to allow for better RRF merging
+    const fetchLimit = Math.min(limit * 2, 50);
+
+    // Run both searches in parallel
+    const [keywordResults, semanticResults] = await Promise.all([
+      this.keywordSearch(query, { limit: fetchLimit, entityTypes }),
+      this.semanticSearch(query, { limit: fetchLimit, entityTypes }).catch((err) => {
+        // Graceful degradation: if semantic search fails, continue with keyword only
+        console.warn('Semantic search failed, using keyword-only results:', err);
+        return [] as SearchResult[];
+      }),
+    ]);
+
+    // If no semantic results (AI unavailable or no embeddings), return keyword results
+    if (semanticResults.length === 0) {
+      return keywordResults.slice(0, limit);
+    }
+
+    // Apply RRF to merge and re-rank results
+    return applyRRF(keywordResults, semanticResults, {
+      limit,
+      k,
+      keywordWeight,
+      semanticWeight,
+    });
   }
 }

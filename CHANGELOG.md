@@ -1,5 +1,52 @@
 # ATHENA Changelog
 
+## [4.5.0] - 2026-01-16
+
+### Added
+- **Hybrid Search (RRF)**: Combines keyword and semantic search using Reciprocal Rank Fusion
+  - `ISearchAdapter.hybridSearch()` - New interface method for hybrid search
+  - `HybridSearchOptions` - Options including RRF parameters (k, keywordWeight, semanticWeight)
+  - Entities appearing in BOTH keyword and semantic results rank higher
+- **HybridSearchService**: RRF algorithm implementation
+  - `src/modules/search/services/HybridSearchService.ts` - Core RRF logic
+  - `applyRRF()` - Exported function for merging and re-ranking results
+  - Default k=60 smoothing constant, weights=1.0 for balanced results
+- **useHybridSearch Hook**: React hook for hybrid search state
+  - `src/modules/search/hooks/useHybridSearch.ts`
+  - Same API as keyword/semantic hooks for consistency
+- **Search Config in DevSettings**: Configurable RRF parameters
+  - `search.defaultMode` - Choose 'keyword', 'semantic', or 'hybrid'
+  - `search.rrf.k` - RRF smoothing constant (higher = flatter curve)
+  - `search.rrf.keywordWeight` - Weight for keyword results
+  - `search.rrf.semanticWeight` - Weight for semantic results
+  - `search.debounceMs` - Search input debounce delay
+
+### Changed
+- **Command Palette**: Now uses hybrid search by default
+  - `useCommandPalette.ts` - Calls `hybridSearch()` instead of `keywordSearch()`
+  - `CommandPaletteResult` - Added `matchType` field for display
+- **CommandPalette.tsx**: Match type badges for search results
+  - Purple badge for 'hybrid' (matched in both keyword AND semantic)
+  - Blue badge for 'keyword' (matched only in FTS5)
+  - Green badge for 'semantic' (matched only in vector search)
+
+### Technical
+- **RRF Formula**: `score = Σ (weight / (k + rank))` where rank is 1-indexed
+  - Rank-based scoring normalizes incompatible score ranges (BM25 negative, cosine 0-1)
+  - k=60 provides good balance between top rank dominance and flatness
+- **Graceful Degradation**: Falls back to keyword-only if semantic search unavailable
+- **Parallel Execution**: Keyword and semantic searches run concurrently via `Promise.all()`
+- **Snippet Strategy**: Prefers keyword snippets (have `<mark>` highlighting)
+
+### Phase 4 Progress
+- WP 4.1: Command Palette ✅
+- WP 4.2: FTS Schema ✅
+- WP 4.2.1: Custom sql.js with FTS5 ✅
+- WP 4.3: Keyword Search ✅
+- WP 4.4: Semantic Search ✅
+- WP 4.5: Hybrid Search ✅
+- WP 4.6: Faceted Search Panel ⏳
+
 ## [4.4.0] - 2026-01-16
 
 ### Added
@@ -47,7 +94,7 @@
 - WP 4.2.1: Custom sql.js with FTS5 ✅
 - WP 4.3: Keyword Search ✅
 - WP 4.4: Semantic Search ✅
-- WP 4.5: Hybrid Search ⏳
+- WP 4.5: Hybrid Search ✅
 
 ## [4.3.0] - 2026-01-16
 

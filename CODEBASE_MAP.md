@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.4 (Semantic Search) |
+| **Last WP Completed** | 4.5 (Hybrid Search with RRF) |
 | **Last Updated** | January 2026 |
 | **Phase** | 4 (Search) - In Progress |
 
@@ -51,7 +51,7 @@ athena/
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ⏳ CPN engine
-│   │   └── search/               # ✅ FTS5 keyword + semantic search + Command Palette
+│   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -123,6 +123,7 @@ athena/
 | Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation) |
 | FTS5 full-text search | `src/database/migrations/` | Sync triggers + content_text extraction + bm25() ranking |
 | Semantic search | `src/adapters/sqlite/` | Embed query → find similar → map to SearchResult |
+| Hybrid search (RRF) | `src/modules/search/services/` | Reciprocal Rank Fusion to combine keyword + semantic results |
 | Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -173,8 +174,7 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **4.5** | Hybrid search (combine keyword + semantic with RRF) |
-| **4.6** | Search UI integration (Command Palette uses hybrid search) |
+| **4.6** | Faceted Search Panel (advanced filters, search modes) |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents |
 

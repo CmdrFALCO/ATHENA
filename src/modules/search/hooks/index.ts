@@ -5,3 +5,4 @@ export {
 } from './useCommandPalette';
 export { useKeywordSearch, type UseKeywordSearchReturn } from './useKeywordSearch';
 export { useSemanticSearch, type UseSemanticSearchReturn } from './useSemanticSearch';
+export { useHybridSearch, type UseHybridSearchReturn } from './useHybridSearch';

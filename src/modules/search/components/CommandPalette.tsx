@@ -50,6 +50,23 @@ interface ResultItemProps {
   onClick: () => void;
 }
 
+/**
+ * Get CSS classes for match type badge.
+ */
+function getMatchTypeBadgeClasses(matchType?: 'keyword' | 'semantic' | 'hybrid'): string {
+  const base = 'text-xs px-1.5 py-0.5 rounded font-medium';
+  switch (matchType) {
+    case 'hybrid':
+      return `${base} bg-purple-900/50 text-purple-300`;
+    case 'keyword':
+      return `${base} bg-blue-900/50 text-blue-300`;
+    case 'semantic':
+      return `${base} bg-green-900/50 text-green-300`;
+    default:
+      return '';
+  }
+}
+
 function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
   const itemRef = useRef<HTMLButtonElement>(null);
 
@@ -76,6 +93,12 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
           {getEntityIcon(result.type)}
         </span>
         <span className="flex-1 truncate">{result.title}</span>
+        {/* Match type badge (only for search results) */}
+        {result.matchType && (
+          <span className={getMatchTypeBadgeClasses(result.matchType)}>
+            {result.matchType}
+          </span>
+        )}
         {result.updatedAt && (
           <span className="text-xs text-zinc-500 flex-shrink-0">
             {formatDate(result.updatedAt)}

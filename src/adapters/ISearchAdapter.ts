@@ -15,6 +15,15 @@ export interface SearchOptions {
   entityTypes?: EntityType[]; // Filter by type
 }
 
+export interface HybridSearchOptions extends SearchOptions {
+  /** RRF smoothing constant (default: 60) */
+  k?: number;
+  /** Weight for keyword results (default: 1.0) */
+  keywordWeight?: number;
+  /** Weight for semantic results (default: 1.0) */
+  semanticWeight?: number;
+}
+
 export interface ISearchAdapter {
   /**
    * Full-text search using FTS5
@@ -30,4 +39,13 @@ export interface ISearchAdapter {
    * @param options - Search options (limit, entityTypes)
    */
   semanticSearch(query: string, options?: SearchOptions): Promise<SearchResult[]>;
+
+  /**
+   * Hybrid search combining keyword (FTS5/BM25) and semantic (vector) search.
+   * Uses Reciprocal Rank Fusion (RRF) to combine results, boosting entities
+   * that appear in both result sets.
+   * @param query - Search terms
+   * @param options - Hybrid search options including RRF parameters
+   */
+  hybridSearch(query: string, options?: HybridSearchOptions): Promise<SearchResult[]>;
 }
