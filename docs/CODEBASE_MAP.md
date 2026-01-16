@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 3.2 (Embedding Storage) |
+| **Last WP Completed** | 4.1 (Command Palette) |
 | **Last Updated** | January 2026 |
-| **Phase** | 3 (AI Layer) - In Progress |
+| **Phase** | 4 (Search) - In Progress |
 
 ---
 
@@ -115,10 +115,17 @@ athena/
 │   │   │   └── hooks/            # ✅ WP 3.2 - AI hooks
 │   │   │       ├── index.ts      # Hook exports
 │   │   │       └── useEmbeddings.ts  # ✅ Embedding operations hook
+│   │   ├── search/               # ✅ WP 4.1 - Search module
+│   │   │   ├── index.ts          # Module barrel export
+│   │   │   ├── components/
+│   │   │   │   ├── index.ts      # Component exports
+│   │   │   │   └── CommandPalette.tsx  # ✅ WP 4.1 - Cmd+K overlay
+│   │   │   └── hooks/
+│   │   │       ├── index.ts      # Hook exports
+│   │   │       └── useCommandPalette.ts  # ✅ WP 4.1 - Palette state hook
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
-│   │   ├── validation/           # ⏳ Phase 5 (CPN engine)
-│   │   └── search/               # ⏳ Phase 4 (FTS + vector)
+│   │   └── validation/           # ⏳ Phase 5 (CPN engine)
 │   │
 │   ├── app/                      # ✅ WP 1.1 - App shell
 │   │   ├── index.ts              # Barrel export
@@ -173,6 +180,7 @@ athena/
 | `src/modules/canvas/index.ts` | Canvas module exports |
 | `src/modules/sophia/index.ts` | Sophia module exports |
 | `src/modules/ai/index.ts` | AI module exports |
+| `src/modules/search/index.ts` | Search module exports (WP 4.1) |
 | `src/services/secureStorage/index.ts` | Secure storage exports |
 | `src/shared/theme/index.ts` | Theme constants exports |
 | `src/shared/utils/index.ts` | Utility function exports |
@@ -950,21 +958,24 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
   - WP 2.4: Blue connections (Complete)
   - WP 2.5: Connection inspector (Complete)
 
-- **Phase 3** (AI Layer): In Progress
+- **Phase 3** (AI Layer): Complete
   - WP 3.1: AI backend interface (Complete)
-    - SecureStorage service (Web Crypto API + IndexedDB)
-    - AI types and interfaces (IAIBackend, AISettings, etc.)
-    - GeminiBackend implementation (embed + generate)
-    - AIService orchestrator
-    - AIContext React context (AIProvider, useAI)
-    - DevSettings AI configuration UI
   - WP 3.2: Embedding storage (Complete)
-    - Enhanced IEmbeddingAdapter interface (store, getForEntity, getAllForEntity, findSimilar, deleteForEntity, deleteByModel, hasEmbedding, getCount)
-    - SQLiteEmbeddingAdapter with cosine similarity
-    - AIService integration (embedAndStore, findSimilarNotes, handleModelChange)
-    - useEmbeddings hook for React components
-    - Updated EmbeddingRecord and SimilarityResult types
-  - WP 3.3: Background indexer (Pending)
+  - WP 3.3: Background indexer (Complete)
+  - WP 3.4: Similarity query (Complete)
+  - WP 3.5: Green suggestions (Complete)
+  - WP 3.6: Accept/reject UI (Complete)
+
+- **Phase 4** (Search): In Progress
+  - WP 4.1: Command palette (Complete)
+    - CommandPalette component with Cmd+K shortcut
+    - useCommandPalette hook for state management
+    - Case-insensitive title filtering
+    - Keyboard navigation (↑/↓/Enter/Escape)
+    - Recent notes shown when query is empty
+  - WP 4.2: FTS5 full-text search (Pending)
+  - WP 4.3: Search result snippets (Pending)
+  - WP 4.4: Semantic search (Pending)
 
 ## Known Issues
 
@@ -976,10 +987,11 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
-| **3.x** | AI backends integration |
-| **4.x** | Full-text search + vector search |
+| **4.2** | FTS5 full-text search |
+| **4.3** | Search result snippets with highlighting |
+| **4.4** | Semantic/vector search |
 | **5.x** | CPN validation engine |
-| **6.x** | Plans and documents |
+| **6.x** | Plans and documents (Pronoia, Ergane) |
 
 ---
 

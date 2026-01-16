@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { StoreInitializer } from './StoreInitializer';
 import { DevSettingsPanel } from '@/config';
 import { useIdleDetection, useOptionalIndexer } from '@/modules/ai';
+import { CommandPalette } from '@/modules/search';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -48,6 +49,9 @@ export function AppLayout() {
 
       {/* DevSettings Modal - continues to work as overlay */}
       <DevSettingsPanel />
+
+      {/* Command Palette - global search overlay (WP 4.1) */}
+      <CommandPalette />
     </div>
   );
 }

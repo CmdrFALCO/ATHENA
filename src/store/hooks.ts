@@ -16,6 +16,11 @@ export function useSelectedEntityIds(): string[] {
   return useSelector(() => appState$.ui.selectedEntityIds.get());
 }
 
+// WP 4.1: Command palette
+export function useCommandPaletteOpen(): boolean {
+  return useSelector(() => appState$.ui.commandPaletteOpen.get());
+}
+
 // Entity hooks
 export function useNotes(): Note[] {
   return useSelector(() => Object.values(appState$.entities.notes.get()));
@@ -92,6 +97,19 @@ export const uiActions = {
     } else {
       appState$.ui.selectedEntityIds.set([...current, id]);
     }
+  },
+
+  // WP 4.1: Command palette
+  openCommandPalette() {
+    appState$.ui.commandPaletteOpen.set(true);
+  },
+
+  closeCommandPalette() {
+    appState$.ui.commandPaletteOpen.set(false);
+  },
+
+  toggleCommandPalette() {
+    appState$.ui.commandPaletteOpen.set((v) => !v);
   },
 };
 

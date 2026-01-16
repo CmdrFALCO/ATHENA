@@ -1,5 +1,33 @@
 # ATHENA Changelog
 
+## [4.1.0] - 2026-01-16
+
+### Added
+- **Command Palette (Cmd+K)**: Quick-jump search overlay for fast navigation
+  - `src/modules/search/` - New search module
+  - `CommandPalette.tsx` - Modal overlay with search input and results
+  - `useCommandPalette.ts` - State management hook for palette
+- **Keyboard Navigation**:
+  - `Cmd+K` / `Ctrl+K` to open palette
+  - `Escape` to close
+  - `↑` / `↓` to navigate results
+  - `Enter` to select and navigate to entity
+- **Search Features**:
+  - Case-insensitive title filtering
+  - Recent notes shown when query is empty (last 10)
+  - Entity type icons (note, plan, document)
+  - Relative date display (Today, Yesterday, X days ago)
+
+### Changed
+- `src/store/state.ts` - Added `commandPaletteOpen` to UIState
+- `src/store/hooks.ts` - Added `useCommandPaletteOpen` hook and palette actions
+- `src/app/layout/AppLayout.tsx` - Integrated CommandPalette component
+
+### Technical
+- React portal rendering to document.body for z-index handling
+- Scroll-into-view for keyboard navigation
+- Click-outside to close via backdrop
+
 ## [3.6.0] - 2026-01-15
 
 ### Added

@@ -15,6 +15,7 @@ export interface UIState {
   activePanelId: string | null;
   selectedEntityIds: string[];
   devSettingsOpen: boolean;
+  commandPaletteOpen: boolean;  // WP 4.1: Command palette visibility
 }
 
 // Suggested Connection (WP 3.5 - Green Connections)
@@ -43,6 +44,7 @@ export const appState$ = observable({
     activePanelId: null as string | null,
     selectedEntityIds: [] as string[],
     devSettingsOpen: false,
+    commandPaletteOpen: false,
   } as UIState,
 
   // Entity cache (loaded from SQLite on init)

@@ -12,7 +12,7 @@ This document archives all completed phases, work packages, bug fixes, and known
 | 1 | Core UI | ✅ Complete | App shell, routing, entity views, rich text editor |
 | 2 | Graph Visualization | ✅ Complete | React Flow canvas, nodes, connections, inspector |
 | 3 | AI Layer | ✅ Complete | AI backends, embeddings, indexing, similarity, accept/reject |
-| 4 | Search | ⏳ Planned | Full-text search + vector search |
+| 4 | Search | 🔄 In Progress | Command palette, full-text search, vector search |
 | 5 | Validation | ⏳ Planned | CPN validation engine |
 | 6 | Plans & Documents | ⏳ Planned | Pronoia and Ergane modules |
 
@@ -295,6 +295,39 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 ---
 
+## Phase 4: Search
+
+**Status:** 🔄 In Progress
+
+### WP 4.1: Command Palette ✅
+- CommandPalette component
+  - Cmd+K / Ctrl+K to open globally
+  - Modal overlay with search input
+  - Entity type icons (note, plan, document)
+  - Relative date display (Today, Yesterday, X days ago)
+- useCommandPalette hook
+  - Query state and filtering
+  - Keyboard navigation (↑/↓/Enter/Escape)
+  - Entity selection via uiActions.selectEntity()
+- Keyboard behavior
+  - Escape to close
+  - Arrow keys to navigate results
+  - Enter to select and navigate
+  - Click outside to close
+- Search features
+  - Case-insensitive title filtering
+  - Recent notes shown when query is empty (last 10)
+  - Max 10 results displayed
+- Store updates
+  - Added commandPaletteOpen to UIState
+  - Added useCommandPaletteOpen hook
+  - Added palette actions (open/close/toggle)
+- AppLayout integration
+  - CommandPalette rendered at root level
+  - Uses React portal for z-index handling
+
+---
+
 ## Bug Fixes
 
 ### Post WP 3.5
@@ -364,7 +397,9 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 | WP | What's Added |
 |----|--------------|
-| **4.x** | Full-text search + vector search |
+| **4.2** | FTS5 full-text search |
+| **4.3** | Search result snippets with highlighting |
+| **4.4** | Semantic/vector search |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents (Pronoia, Ergane modules) |
 | **Future** | Additional AI backends (Ollama, Anthropic, OpenAI, Mistral) |
