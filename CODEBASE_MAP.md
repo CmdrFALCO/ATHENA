@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.3 (Keyword Search) |
+| **Last WP Completed** | 4.4 (Semantic Search) |
 | **Last Updated** | January 2026 |
 | **Phase** | 4 (Search) - In Progress |
 
@@ -51,7 +51,7 @@ athena/
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ⏳ CPN engine
-│   │   └── search/               # ✅ FTS5 keyword search + Command Palette
+│   │   └── search/               # ✅ FTS5 keyword + semantic search + Command Palette
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -122,6 +122,7 @@ athena/
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
 | Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation) |
 | FTS5 full-text search | `src/database/migrations/` | Sync triggers + content_text extraction + bm25() ranking |
+| Semantic search | `src/adapters/sqlite/` | Embed query → find similar → map to SearchResult |
 | Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -136,7 +137,7 @@ athena/
 | Connection | `src/shared/types/connections.ts` | Entity relationships with tri-color |
 | Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
 | Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
-| SearchResult | `src/adapters/ISearchAdapter.ts` | FTS5 search result with snippet and BM25 score |
+| SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, and matchType (keyword/semantic/hybrid) |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
 
 ---
@@ -172,8 +173,8 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **4.4** | Semantic search (vector similarity with embeddings) |
-| **4.5** | Hybrid search (combine keyword + semantic results) |
+| **4.5** | Hybrid search (combine keyword + semantic with RRF) |
+| **4.6** | Search UI integration (Command Palette uses hybrid search) |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents |
 

@@ -50,12 +50,19 @@ export class IndexerService {
   private onStatusChange?: (status: IndexerStatus) => void;
   private onNoteIndexed?: (noteId: string) => void;
 
+  private aiService: IAIService;
+  private embeddingAdapter: IEmbeddingAdapter;
+  private noteAdapter: INoteAdapter;
+
   constructor(
-    private aiService: IAIService,
-    private embeddingAdapter: IEmbeddingAdapter,
-    private noteAdapter: INoteAdapter,
+    aiService: IAIService,
+    embeddingAdapter: IEmbeddingAdapter,
+    noteAdapter: INoteAdapter,
     config?: Partial<IndexerConfig>
   ) {
+    this.aiService = aiService;
+    this.embeddingAdapter = embeddingAdapter;
+    this.noteAdapter = noteAdapter;
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 

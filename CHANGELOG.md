@@ -1,5 +1,54 @@
 # ATHENA Changelog
 
+## [4.4.0] - 2026-01-16
+
+### Added
+- **Semantic Search**: Vector similarity search using embeddings
+  - `ISearchAdapter.semanticSearch()` - New interface method for semantic search
+  - `SQLiteSearchAdapter.semanticSearch()` - Embeds query, finds similar notes
+  - Returns results with `matchType: 'semantic'` and cosine similarity scores (0-1)
+- **SemanticSearchService**: Business logic layer for semantic search
+  - `src/modules/search/services/SemanticSearchService.ts` - Wraps adapter
+  - Default limit of 10 results, 0.5 similarity threshold
+- **useSemanticSearch Hook**: React hook for semantic search state
+  - `src/modules/search/hooks/useSemanticSearch.ts`
+  - Manages results, isSearching, error state
+  - Provides search() and clear() methods
+
+### Changed
+- **SQLiteSearchAdapter Constructor**: Now accepts optional dependencies
+  - `embeddingAdapter` - For finding similar embeddings
+  - `noteAdapter` - For fetching entity details
+  - Uses `getAIService()` singleton for query embedding
+- **App.tsx**: Updated adapter initialization
+  - Creates noteAdapter and embeddingAdapter first
+  - Passes them to SQLiteSearchAdapter constructor
+
+### Technical
+- **Graceful Degradation**: Returns empty results when:
+  - AI not configured (no API key)
+  - No active embedding model
+  - Embedding index is empty
+  - Query embedding fails
+- **Snippet Generation**: First 100 chars of content, no highlighting (no exact match to highlight)
+- **Score Interpretation**:
+  - Keyword search (BM25): Negative scores, more negative = more relevant
+  - Semantic search (cosine): 0-1 scores, higher = more similar
+
+### Bug Fixes
+- **IndexerService**: Fixed TS1294 error with `erasableSyntaxOnly`
+  - Converted parameter properties to explicit property declarations
+- **useSuggestionActions**: Fixed TS2322 type mismatch
+  - Added `?? null` coalescing for array indexing
+
+### Phase 4 Progress
+- WP 4.1: Command Palette ✅
+- WP 4.2: FTS Schema ✅
+- WP 4.2.1: Custom sql.js with FTS5 ✅
+- WP 4.3: Keyword Search ✅
+- WP 4.4: Semantic Search ✅
+- WP 4.5: Hybrid Search ⏳
+
 ## [4.3.0] - 2026-01-16
 
 ### Added

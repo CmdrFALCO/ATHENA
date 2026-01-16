@@ -22,4 +22,12 @@ export interface ISearchAdapter {
    * @param options - Search options
    */
   keywordSearch(query: string, options?: SearchOptions): Promise<SearchResult[]>;
+
+  /**
+   * Semantic search using vector similarity
+   * Embeds the query and finds conceptually related notes even when exact words don't match.
+   * @param query - Natural language query to embed and search
+   * @param options - Search options (limit, entityTypes)
+   */
+  semanticSearch(query: string, options?: SearchOptions): Promise<SearchResult[]>;
 }

@@ -41,7 +41,7 @@ export function useSuggestionActions(): UseSuggestionActionsResult {
         if (existing.length > 0) {
           // Connection already exists, just remove the suggestion
           suggestionActions.removeSuggestion(suggestionId);
-          return existing[0];
+          return existing[0] ?? null;
         }
 
         // Create persisted connection (blue)

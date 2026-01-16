@@ -1,6 +1,10 @@
 import type { EntityType } from '@/shared/types';
 import type { ISearchAdapter, SearchResult, SearchOptions } from '../ISearchAdapter';
 import type { DatabaseConnection } from '@/database';
+import type { IEmbeddingAdapter } from '../IEmbeddingAdapter';
+import type { INoteAdapter } from '../INoteAdapter';
+import { getAIService } from '@/modules/ai/AIService';
+import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
 /**
  * Sanitize user query for FTS5 to prevent syntax errors.
@@ -24,9 +28,17 @@ function sanitizeQuery(query: string): string {
 
 export class SQLiteSearchAdapter implements ISearchAdapter {
   private db: DatabaseConnection;
+  private embeddingAdapter: IEmbeddingAdapter | null;
+  private noteAdapter: INoteAdapter | null;
 
-  constructor(db: DatabaseConnection) {
+  constructor(
+    db: DatabaseConnection,
+    embeddingAdapter?: IEmbeddingAdapter,
+    noteAdapter?: INoteAdapter
+  ) {
     this.db = db;
+    this.embeddingAdapter = embeddingAdapter ?? null;
+    this.noteAdapter = noteAdapter ?? null;
   }
 
   async keywordSearch(query: string, options?: SearchOptions): Promise<SearchResult[]> {
@@ -94,5 +106,99 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
       score: row.score as number,
       matchType: 'keyword',
     };
+  }
+
+  async semanticSearch(query: string, options?: SearchOptions): Promise<SearchResult[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    // Check if we have the required adapters
+    if (!this.embeddingAdapter || !this.noteAdapter) {
+      console.warn('Semantic search requires embedding and note adapters');
+      return [];
+    }
+
+    const limit = options?.limit ?? 10;
+    const threshold = 0.5; // Minimum similarity score
+    const entityTypes = options?.entityTypes;
+
+    try {
+      const aiService = getAIService();
+
+      // Check if AI is configured
+      if (!aiService.isConfigured()) {
+        console.warn('AI not configured, cannot perform semantic search');
+        return [];
+      }
+
+      // 1. Embed the query
+      const embeddingResult = await aiService.embed(trimmed);
+      if (!embeddingResult.vector || embeddingResult.vector.length === 0) {
+        console.warn('Failed to embed query');
+        return [];
+      }
+
+      // 2. Get current embedding model
+      const model = aiService.getActiveEmbeddingModel();
+      if (!model) {
+        console.warn('No active embedding model');
+        return [];
+      }
+
+      // 3. Find similar embeddings (fetch extra for type filtering)
+      const similarResults = await this.embeddingAdapter.findSimilar(
+        embeddingResult.vector,
+        model,
+        limit * 2,
+        threshold
+      );
+
+      if (similarResults.length === 0) {
+        return [];
+      }
+
+      // 4. Map to SearchResult format
+      const results: SearchResult[] = [];
+
+      for (const similar of similarResults) {
+        // Get entity details
+        const entity = await this.noteAdapter.getById(similar.entity_id);
+        if (!entity) continue;
+
+        // Skip soft-deleted (double-check, though getById should handle this)
+        if (entity.invalid_at) continue;
+
+        // Apply type filter
+        if (entityTypes && entityTypes.length > 0 && !entityTypes.includes(entity.type)) {
+          continue;
+        }
+
+        results.push({
+          entityId: similar.entity_id,
+          title: entity.title || 'Untitled',
+          type: entity.type,
+          snippet: this.generateSnippet(entity.content),
+          score: similar.similarity, // Already 0-1 range
+          matchType: 'semantic',
+        });
+
+        if (results.length >= limit) break;
+      }
+
+      return results;
+    } catch (error) {
+      console.error('Semantic search error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Generate a plain text snippet from entity content.
+   * No highlighting for semantic search (no exact match to highlight).
+   */
+  private generateSnippet(content: unknown): string {
+    const text = extractTextFromTiptap(content);
+    if (text.length <= 100) return text;
+    return text.substring(0, 100).trim() + '...';
   }
 }

@@ -21,12 +21,14 @@ function App() {
     async function init() {
       try {
         const db = await initDatabase();
+        const noteAdapter = new SQLiteNoteAdapter(db);
+        const embeddingAdapter = new SQLiteEmbeddingAdapter(db);
         setAdapters({
-          notes: new SQLiteNoteAdapter(db),
+          notes: noteAdapter,
           connections: new SQLiteConnectionAdapter(db),
-          embeddings: new SQLiteEmbeddingAdapter(db),
+          embeddings: embeddingAdapter,
           clusters: new SQLiteClusterAdapter(db),
-          search: new SQLiteSearchAdapter(db),
+          search: new SQLiteSearchAdapter(db, embeddingAdapter, noteAdapter),
         });
       } catch (err) {
         setError(String(err));
