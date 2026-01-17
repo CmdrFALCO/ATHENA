@@ -36,3 +36,18 @@ export type {
   ClusterMemberWithClusterId,
   ReportBuilderInput,
 } from './engine';
+
+// Rules
+export {
+  // Structural
+  orphanNoteRule,
+  selfLoopRule,
+  duplicateConnectionRule,
+  bidirectionalConnectionRule,
+  // Quality
+  weaklyConnectedRule,
+  staleSuggestionRule,
+  // All MVP rules + registration helper
+  mvpRules,
+  registerMvpRules,
+} from './rules';

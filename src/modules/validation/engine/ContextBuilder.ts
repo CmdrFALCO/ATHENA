@@ -1,6 +1,7 @@
 import type { Entity } from '@/shared/types/entities';
 import type { Connection } from '@/shared/types/connections';
 import type { Cluster, ClusterMember } from '@/shared/types/clusters';
+import type { SuggestedConnection } from '@/store/state';
 import type { ValidationContext } from '../types';
 
 /**
@@ -17,6 +18,8 @@ export interface ContextBuilderInput {
   connections: Connection[];
   clusters: Cluster[];
   clusterMembers: ClusterMemberWithClusterId[];
+  /** Optional: ephemeral AI suggestions for staleSuggestion rule */
+  suggestedConnections?: SuggestedConnection[];
 }
 
 /**
@@ -24,7 +27,7 @@ export interface ContextBuilderInput {
  * All indexes are built once for O(1) lookups during rule evaluation.
  */
 export function buildValidationContext(input: ContextBuilderInput): ValidationContext {
-  const { entities, connections, clusters, clusterMembers } = input;
+  const { entities, connections, clusters, clusterMembers, suggestedConnections } = input;
 
   // Build entityById index
   const entityById = new Map<string, Entity>();
@@ -68,6 +71,7 @@ export function buildValidationContext(input: ContextBuilderInput): ValidationCo
     connections,
     clusters,
     clusterMembers,
+    suggestedConnections,
     entityById,
     connectionsBySource,
     connectionsByTarget,

@@ -1,6 +1,7 @@
 import type { Entity } from '@/shared/types/entities';
 import type { Connection } from '@/shared/types/connections';
 import type { Cluster, ClusterMember } from '@/shared/types/clusters';
+import type { SuggestedConnection } from '@/store/state';
 import type { Violation } from './violations';
 
 /**
@@ -22,6 +23,9 @@ export interface ValidationContext {
   connections: Connection[];
   clusters: Cluster[];
   clusterMembers: ClusterMember[];
+
+  // Ephemeral AI suggestions (for staleSuggestion rule)
+  suggestedConnections?: SuggestedConnection[];
 
   // Pre-built indexes for O(1) lookups
   entityById: Map<string, Entity>;

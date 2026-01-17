@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.2 (Rules Engine) |
+| **Last WP Completed** | 5.3 (MVP Rules) |
 | **Last Updated** | January 2026 |
 | **Phase** | 5 (Validation) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
@@ -51,7 +51,7 @@ athena/
 │   │   ├── ai/                   # AI backend
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
-│   │   ├── validation/           # 🔄 Types, interfaces & Rules Engine
+│   │   ├── validation/           # 🔄 Types, Engine & 6 MVP Rules
 │   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -94,7 +94,7 @@ athena/
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
-| Validation | `src/modules/validation/` | — | 🔄 Types + Engine |
+| Validation | `src/modules/validation/` | — | 🔄 Engine + 6 Rules |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -131,6 +131,7 @@ athena/
 | SHACL-inspired validation | `src/modules/validation/` | Pure evaluation functions returning violations |
 | Bridge interface | `src/modules/validation/interfaces/` | IValidationService allows Phase 5A/5B impl swap |
 | Rules Engine | `src/modules/validation/engine/` | Stateless rule evaluation with context indexes |
+| MVP Rules | `src/modules/validation/rules/` | 6 validation rules (orphan, self-loop, duplicate, bidirectional, weakly-connected, stale) |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
