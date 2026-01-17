@@ -67,6 +67,8 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
         e.id,
         e.title,
         e.type,
+        e.created_at,
+        e.updated_at,
         snippet(entities_fts, 2, '<mark>', '</mark>', '...', 32) as snippet,
         bm25(entities_fts) as score
       FROM entities_fts
@@ -106,6 +108,8 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
       snippet: (row.snippet as string) || '',
       score: row.score as number,
       matchType: 'keyword',
+      createdAt: row.created_at as string | undefined,
+      updatedAt: row.updated_at as string | undefined,
     };
   }
 
@@ -181,6 +185,8 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
           snippet: this.generateSnippet(entity.content),
           score: similar.similarity, // Already 0-1 range
           matchType: 'semantic',
+          createdAt: entity.created_at,
+          updatedAt: entity.updated_at,
         });
 
         if (results.length >= limit) break;

@@ -12,7 +12,7 @@ This document archives all completed phases, work packages, bug fixes, and known
 | 1 | Core UI | ✅ Complete | App shell, routing, entity views, rich text editor |
 | 2 | Graph Visualization | ✅ Complete | React Flow canvas, nodes, connections, inspector |
 | 3 | AI Layer | ✅ Complete | AI backends, embeddings, indexing, similarity, accept/reject |
-| 4 | Search | 🔄 In Progress | Command palette, full-text search, vector search |
+| 4 | Search | ✅ Complete | Command palette, FTS5, semantic search, hybrid RRF, faceted search |
 | 5 | Validation | ⏳ Planned | CPN validation engine |
 | 6 | Plans & Documents | ⏳ Planned | Pronoia and Ergane modules |
 
@@ -297,7 +297,7 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 ## Phase 4: Search
 
-**Status:** 🔄 In Progress
+**Status:** ✅ Complete — **Usability Milestone Reached**
 
 ### WP 4.1: Command Palette ✅
 - CommandPalette component
@@ -325,6 +325,71 @@ This document archives all completed phases, work packages, bug fixes, and known
 - AppLayout integration
   - CommandPalette rendered at root level
   - Uses React portal for z-index handling
+
+### WP 4.2: FTS5 Full-Text Search Schema ✅
+- Custom sql.js build with FTS5+JSON1 extensions
+  - `tools/sql.js-custom/` - Build configuration
+  - `src/vendor/sql.js/` - Vendored ES module patched build
+  - `public/vendor/sql.js/sql-wasm.wasm` - Custom WASM binary
+- FTS5 virtual table `entities_fts`
+  - UNINDEXED id column
+  - Title and content_text searchable columns
+  - Porter unicode61 tokenizer for stemming
+- Sync triggers for INSERT, UPDATE, DELETE
+- `content_text` column for plain text extraction
+
+### WP 4.3: Keyword Search ✅
+- ISearchAdapter interface with `keywordSearch()` method
+- SQLiteSearchAdapter implementation
+  - FTS5 MATCH queries with BM25 ranking
+  - Query sanitization (quote wrapping)
+  - Snippet extraction with `<mark>` highlighting
+- KeywordSearchService business logic layer
+- useKeywordSearch React hook
+- Command Palette upgraded to use FTS5 search
+
+### WP 4.4: Semantic Search ✅
+- ISearchAdapter.semanticSearch() method
+- SQLiteSearchAdapter.semanticSearch() implementation
+  - Embeds query via AIService
+  - Finds similar via embeddingAdapter.findSimilar()
+  - Maps to SearchResult with cosine similarity scores
+- SemanticSearchService business logic layer
+- useSemanticSearch React hook
+- Graceful degradation when AI unavailable
+
+### WP 4.5: Hybrid Search with RRF ✅
+- ISearchAdapter.hybridSearch() method
+- HybridSearchService with Reciprocal Rank Fusion
+  - `applyRRF()` function for merging results
+  - k=60 smoothing constant, configurable weights
+  - Entities in BOTH result sets rank higher
+- useHybridSearch React hook
+- Command Palette uses hybrid search by default
+- Match type badges (purple=hybrid, blue=keyword, green=semantic)
+- DevSettings search configuration (RRF parameters)
+
+### WP 4.6: Faceted Search Panel ✅
+- SearchPanel component (Cmd+Shift+K)
+  - Full-screen modal with facet sidebar + results
+  - Debounced hybrid search (300ms)
+  - "Show on Canvas" action per result
+- FacetSidebar component
+  - Type facet: filter by note/plan/document
+  - Created facet: filter by Today/This Week/This Month/Older
+  - Checkbox UI with counts
+  - "Clear all" button
+- FacetService
+  - extractFacets() - count values from results
+  - applyFacets() - filter with OR within / AND across
+  - Date bucket calculation for created facet
+- SearchResults component
+  - Match type badges
+  - Snippet display with highlighting
+  - Score display
+- useSearchPanel hook with keyboard shortcuts
+- SearchResult extended with createdAt/updatedAt
+- Header search icon enabled
 
 ---
 
@@ -397,9 +462,6 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 | WP | What's Added |
 |----|--------------|
-| **4.2** | FTS5 full-text search |
-| **4.3** | Search result snippets with highlighting |
-| **4.4** | Semantic/vector search |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents (Pronoia, Ergane modules) |
 | **Future** | Additional AI backends (Ollama, Anthropic, OpenAI, Mistral) |

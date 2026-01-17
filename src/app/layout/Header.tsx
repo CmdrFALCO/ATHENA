@@ -1,7 +1,11 @@
 import { Menu, Search, Settings } from 'lucide-react';
 import { uiActions } from '@/store';
 
-export function Header() {
+interface HeaderProps {
+  onSearchClick?: () => void;
+}
+
+export function Header({ onSearchClick }: HeaderProps) {
   return (
     <header className="h-12 bg-athena-surface border-b border-athena-border flex items-center px-4 shrink-0">
       <button
@@ -18,9 +22,10 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         <button
-          disabled
-          className="p-2 text-athena-muted cursor-not-allowed opacity-50 rounded-md"
-          aria-label="Search (coming soon)"
+          onClick={onSearchClick}
+          className="p-2 text-athena-text hover:bg-athena-border rounded-md transition-colors"
+          aria-label="Search (Cmd+Shift+K)"
+          title="Search (Cmd+Shift+K)"
         >
           <Search className="w-5 h-5" />
         </button>

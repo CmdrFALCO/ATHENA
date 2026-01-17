@@ -17,6 +17,7 @@ This document describes the key patterns used throughout the ATHENA codebase wit
 9. [Embedding Storage](#embedding-storage)
 10. [Background Indexer](#background-indexer)
 11. [Global Event Broadcasting](#global-event-broadcasting)
+12. [Faceted Search](#faceted-search)
 
 ---
 
@@ -799,6 +800,104 @@ useEffect(() => {
 - Events that multiple components need to react to
 - Cross-cutting concerns where prop drilling is impractical
 - When class instances can't share state through React context
+
+---
+
+## Faceted Search
+
+**Location:** `src/modules/search/`
+
+**Purpose:** Extract facets from search results and apply filters with OR within / AND across logic.
+
+### Implementation
+
+```typescript
+// src/modules/search/types/facets.ts
+export interface Facet {
+  id: string;           // e.g., 'type', 'created'
+  label: string;        // e.g., 'Type', 'Created'
+  type: 'exact' | 'date_range';
+  values: FacetValue[];
+}
+
+export interface FacetValue {
+  value: string;        // e.g., 'note', 'today'
+  label: string;        // e.g., 'Note', 'Today'
+  count: number;        // Number of results with this value
+  selected: boolean;
+}
+
+export interface FacetSelection {
+  [facetId: string]: string[];  // e.g., { type: ['note'], created: ['today'] }
+}
+
+// src/modules/search/services/FacetService.ts
+export class FacetService {
+  /**
+   * Extract facets from search results.
+   * Counts occurrences of each facet value.
+   */
+  extractFacets(results: SearchResult[], selection: FacetSelection = {}): Facet[] {
+    return [
+      this.buildTypeFacet(results, selection.type || []),
+      this.buildDateFacet(results, selection.created || []),
+    ].filter(f => f.values.length > 0);
+  }
+
+  /**
+   * Apply selected facets to filter results.
+   * Multiple selections within a facet = OR (expands)
+   * Selections across facets = AND (narrows)
+   */
+  applyFacets(results: SearchResult[], selection: FacetSelection): SearchResult[] {
+    return results.filter(result => {
+      for (const [facetId, values] of Object.entries(selection)) {
+        if (!values || values.length === 0) continue;
+
+        // Within a facet, use OR logic
+        let passed = false;
+        if (facetId === 'type') {
+          passed = values.includes(result.type);
+        } else if (facetId === 'created') {
+          const bucket = this.getDateBucket(new Date(result.createdAt));
+          passed = values.includes(bucket);
+        }
+
+        if (!passed) return false; // AND across facets
+      }
+      return true;
+    });
+  }
+}
+```
+
+### Usage
+
+```typescript
+import { FacetService } from '@/modules/search/services/FacetService';
+
+const facetService = new FacetService();
+
+// Extract facets from all results
+const facets = facetService.extractFacets(results, currentSelection);
+
+// Apply filters to get visible results
+const filteredResults = facetService.applyFacets(results, selection);
+```
+
+### Filter Logic
+
+| Scenario | Logic | Example |
+|----------|-------|---------|
+| Multiple values in same facet | OR | `type: ['note', 'plan']` → notes OR plans |
+| Values in different facets | AND | `type: ['note'], created: ['today']` → notes AND today |
+| No values selected in facet | Skip | `type: []` → no filter applied |
+
+### When to Use
+
+- Search interfaces with multiple filter categories
+- Drill-down exploration of result sets
+- Datasette-style faceted navigation
 
 ---
 

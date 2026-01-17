@@ -17,9 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.5 (Hybrid Search with RRF) |
+| **Last WP Completed** | 4.6 (Faceted Search Panel) |
 | **Last Updated** | January 2026 |
-| **Phase** | 4 (Search) - In Progress |
+| **Phase** | 4 (Search) - **COMPLETE** |
+| **Milestone** | Usability Milestone - Daily use viable |
 
 ---
 
@@ -51,7 +52,7 @@ athena/
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ⏳ CPN engine
-│   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette
+│   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -124,6 +125,7 @@ athena/
 | FTS5 full-text search | `src/database/migrations/` | Sync triggers + content_text extraction + bm25() ranking |
 | Semantic search | `src/adapters/sqlite/` | Embed query → find similar → map to SearchResult |
 | Hybrid search (RRF) | `src/modules/search/services/` | Reciprocal Rank Fusion to combine keyword + semantic results |
+| Faceted search | `src/modules/search/` | FacetService extracts facets, applies filters with OR within / AND across |
 | Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -138,7 +140,8 @@ athena/
 | Connection | `src/shared/types/connections.ts` | Entity relationships with tri-color |
 | Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
 | Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
-| SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, and matchType (keyword/semantic/hybrid) |
+| SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, matchType, createdAt, updatedAt |
+| Facet | `src/modules/search/types/facets.ts` | Facet definition with values and counts for filtering |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
 
 ---
@@ -174,7 +177,6 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **4.6** | Faceted Search Panel (advanced filters, search modes) |
 | **5.x** | CPN validation engine |
 | **6.x** | Plans and documents |
 

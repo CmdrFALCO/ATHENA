@@ -1,5 +1,52 @@
 # ATHENA Changelog
 
+## [4.6.0] - 2026-01-16
+
+### Added
+- **Faceted Search Panel**: Power search interface with filters (Cmd+Shift+K)
+  - `SearchPanel.tsx` - Main search panel with facet sidebar and results list
+  - `FacetSidebar.tsx` - Filter sidebar with checkboxes for each facet value
+  - `SearchResults.tsx` - Results list with match type badges and "Show on Canvas" action
+  - `useSearchPanel.ts` - Hook for panel open/close state with keyboard shortcuts
+- **FacetService**: Extract and apply facets to search results
+  - `src/modules/search/services/FacetService.ts` - Core facet logic
+  - Type facet: Filter by note, plan, document
+  - Created facet: Filter by Today, This Week, This Month, Older
+  - Multiple selections within a facet = OR (expands results)
+  - Selections across facets = AND (narrows results)
+- **Facet Types**: TypeScript definitions for faceted search
+  - `src/modules/search/types/facets.ts` - Facet, FacetValue, FacetSelection types
+  - DateRangeBucket type for date categorization
+- **Search Result Metadata**: Extended SearchResult for faceting
+  - Added `createdAt` and `updatedAt` optional fields to SearchResult
+  - SQLiteSearchAdapter now includes timestamps in results
+- **cn Utility**: Conditional class name helper
+  - `src/shared/utils/cn.ts` - Minimal clsx-like implementation
+
+### Changed
+- **Header.tsx**: Search icon now opens Search Panel
+  - Added `onSearchClick` prop to Header component
+  - Enabled search button (previously disabled placeholder)
+- **AppLayout.tsx**: Integrated Search Panel
+  - Added useSearchPanel hook and SearchPanel component
+  - Connected header search button to panel open action
+
+### Keyboard Shortcuts
+- `Cmd+K` / `Ctrl+K`: Quick jump (Command Palette)
+- `Cmd+Shift+K` / `Ctrl+Shift+K`: Advanced search (Search Panel)
+- `Escape`: Close either panel
+
+### Phase 4 Complete - Usability Milestone
+- WP 4.1: Command Palette ✅
+- WP 4.2: FTS Schema ✅
+- WP 4.2.1: Custom sql.js with FTS5 ✅
+- WP 4.3: Keyword Search ✅
+- WP 4.4: Semantic Search ✅
+- WP 4.5: Hybrid Search ✅
+- WP 4.6: Faceted Search Panel ✅
+
+**ATHENA is now ready for daily knowledge work!**
+
 ## [4.5.0] - 2026-01-16
 
 ### Added
@@ -38,14 +85,13 @@
 - **Parallel Execution**: Keyword and semantic searches run concurrently via `Promise.all()`
 - **Snippet Strategy**: Prefers keyword snippets (have `<mark>` highlighting)
 
-### Phase 4 Progress
+### Phase 4 Progress (as of 4.5)
 - WP 4.1: Command Palette ✅
 - WP 4.2: FTS Schema ✅
 - WP 4.2.1: Custom sql.js with FTS5 ✅
 - WP 4.3: Keyword Search ✅
 - WP 4.4: Semantic Search ✅
 - WP 4.5: Hybrid Search ✅
-- WP 4.6: Faceted Search Panel ⏳
 
 ## [4.4.0] - 2026-01-16
 

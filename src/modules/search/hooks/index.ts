@@ -6,3 +6,4 @@ export {
 export { useKeywordSearch, type UseKeywordSearchReturn } from './useKeywordSearch';
 export { useSemanticSearch, type UseSemanticSearchReturn } from './useSemanticSearch';
 export { useHybridSearch, type UseHybridSearchReturn } from './useHybridSearch';
+export { useSearchPanel, type UseSearchPanelReturn } from './useSearchPanel';

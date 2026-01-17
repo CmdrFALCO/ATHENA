@@ -5,7 +5,7 @@ import { Sidebar } from './Sidebar';
 import { StoreInitializer } from './StoreInitializer';
 import { DevSettingsPanel } from '@/config';
 import { useIdleDetection, useOptionalIndexer } from '@/modules/ai';
-import { CommandPalette } from '@/modules/search';
+import { CommandPalette, SearchPanel, useSearchPanel } from '@/modules/search';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -33,9 +33,12 @@ export function AppLayout() {
   // Connect idle detection with background indexer
   useIndexerIdleDetection();
 
+  // WP 4.6: Search Panel state
+  const { isOpen: isSearchPanelOpen, open: openSearchPanel, close: closeSearchPanel } = useSearchPanel();
+
   return (
     <div className="h-screen flex flex-col bg-athena-bg text-athena-text">
-      <Header />
+      <Header onSearchClick={openSearchPanel} />
 
       <div className="flex flex-1 min-h-0">
         <Sidebar />
@@ -50,8 +53,11 @@ export function AppLayout() {
       {/* DevSettings Modal - continues to work as overlay */}
       <DevSettingsPanel />
 
-      {/* Command Palette - global search overlay (WP 4.1) */}
+      {/* Command Palette - quick jump overlay (WP 4.1) - Cmd+K */}
       <CommandPalette />
+
+      {/* Search Panel - faceted search overlay (WP 4.6) - Cmd+Shift+K */}
+      <SearchPanel isOpen={isSearchPanelOpen} onClose={closeSearchPanel} />
     </div>
   );
 }

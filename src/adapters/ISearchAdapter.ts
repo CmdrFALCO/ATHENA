@@ -7,6 +7,9 @@ export interface SearchResult {
   snippet: string; // Highlighted match context with <mark> tags
   score: number; // BM25 relevance score (more negative = more relevant)
   matchType: 'keyword' | 'semantic' | 'hybrid';
+  // WP 4.6: Metadata for faceted search
+  createdAt?: string;  // ISO date string
+  updatedAt?: string;  // ISO date string
 }
 
 export interface SearchOptions {
