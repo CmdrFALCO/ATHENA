@@ -27,7 +27,7 @@ import { useConnectionHandlers } from '../hooks/useConnectionHandlers';
 import { useSelectedConnection } from '../hooks/useSelectedConnection';
 import { useSuggestedEdges } from '../hooks/useSuggestedEdges';
 import { useOptionalSuggestions } from '@/modules/ai/hooks/useSuggestions';
-import { useLastIndexedNoteId } from '@/store';
+import { useLastIndexedNoteId, useCanvasConfig, uiActions } from '@/store';
 
 // Register custom node types - must be outside component or memoized
 const nodeTypes: NodeTypes = {
@@ -51,6 +51,7 @@ export function GraphCanvas() {
   } = useSelectedConnection();
   const { generateForNote, clearSuggestions } = useOptionalSuggestions();
   const lastIndexedNoteId = useLastIndexedNoteId();
+  const showAiSuggestions = useCanvasConfig('showAiSuggestions');
 
   // Combine explicit connections (blue) with suggestions (green)
   const allEdges = useMemo<Edge<ConnectionEdgeData>[]>(() => {
@@ -66,6 +67,7 @@ export function GraphCanvas() {
   const prevEdgeIdsRef = useRef<string>(allEdges.map((e) => e.id).sort().join(','));
 
   // Generate suggestions when a note is selected (WP 3.5)
+  // WP 5.1.1: Respect showAiSuggestions setting
   const prevSelectedNodeRef = useRef<string | null>(null);
   useEffect(() => {
     if (selectedNodeId && selectedNodeId !== prevSelectedNodeRef.current) {
@@ -73,11 +75,14 @@ export function GraphCanvas() {
       // Generate suggestions for the newly selected note
       generateForNote(selectedNodeId);
     } else if (!selectedNodeId && prevSelectedNodeRef.current) {
-      // Clear suggestions when deselecting
       prevSelectedNodeRef.current = null;
-      clearSuggestions();
+      // Only clear suggestions when deselecting if setting is 'on-select'
+      // When 'always', suggestions persist and accumulate as you select notes
+      if (showAiSuggestions === 'on-select') {
+        clearSuggestions();
+      }
     }
-  }, [selectedNodeId, generateForNote, clearSuggestions]);
+  }, [selectedNodeId, generateForNote, clearSuggestions, showAiSuggestions]);
 
   // Regenerate suggestions when the selected note is re-indexed (WP 3.5)
   // Uses global Legend-State observable to detect when ANY indexer instance indexes a note
@@ -91,7 +96,6 @@ export function GraphCanvas() {
 
     // If the currently selected note was just re-indexed, regenerate suggestions
     if (lastIndexedNoteId === prevSelectedNodeRef.current) {
-      console.log(`[GraphCanvas] Note ${lastIndexedNoteId} re-indexed, regenerating suggestions`);
       generateForNote(lastIndexedNoteId);
     }
   }, [lastIndexedNoteId, generateForNote]);
@@ -169,6 +173,7 @@ export function GraphCanvas() {
 
   const handlePaneClick = useCallback(() => {
     clearConnectionSelection();
+    uiActions.clearSelection(); // Deselect nodes when clicking canvas background
   }, [clearConnectionSelection]);
 
   const handleNodeDragStop: OnNodeDrag = useCallback(

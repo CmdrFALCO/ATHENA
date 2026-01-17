@@ -1,7 +1,7 @@
 # Store Module
 
 **Location:** `src/store/`
-**Status:** Implemented in WP 0.4, extended in WP 0.5, WP 3.5
+**Status:** Implemented in WP 0.4, extended in WP 0.5, WP 3.5, WP 5.1.1
 
 ## Purpose
 
@@ -42,7 +42,7 @@ export {
   useClusters, useCluster, useClustersForEntity, useClustersLoading,
 
   // Settings hooks
-  useFeatureFlag, useDevSettings,
+  useFeatureFlag, useCanvasConfig, useDevSettings,
 
   // Suggestions (WP 3.5)
   useSuggestedConnections, usePendingSuggestions,
@@ -206,17 +206,20 @@ interface SuggestedConnection {
 | `updateCluster(id, updates)` | Update cluster properties |
 | `removeCluster(id)` | Remove cluster from state |
 
-### suggestionActions (WP 3.5)
+### suggestionActions (WP 3.5, WP 5.1.1)
 
 | Action | Description |
 |--------|-------------|
-| `setSuggestions(suggestions, sourceNoteId)` | Set suggestions for a note |
+| `setSuggestions(suggestions, sourceNoteId)` | Replace all suggestions for a note |
+| `appendSuggestions(suggestions, sourceNoteId)` | Append suggestions avoiding duplicates (WP 5.1.1) |
 | `addSuggestion(suggestion)` | Add a single suggestion |
 | `dismissSuggestion(id)` | Mark suggestion as dismissed |
 | `clearSuggestions()` | Clear all suggestions |
 | `setGenerating(isGenerating)` | Set generation status |
 | `removeSuggestion(id)` | Remove a suggestion |
 | `removeSuggestionsForEntity(entityId)` | Remove suggestions involving entity |
+
+**Note:** `appendSuggestions` uses normalized pair keys (sorted A-B) to detect duplicates in both directions. Used when canvas config `showAiSuggestions` is `'always'` to accumulate suggestions across note selections.
 
 ### indexerActions (WP 3.5)
 

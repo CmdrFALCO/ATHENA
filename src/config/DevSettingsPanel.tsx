@@ -596,6 +596,31 @@ export function DevSettingsPanel() {
           {/* AI Configuration Section */}
           <AIConfigSection />
 
+          {/* Canvas Settings Section */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Canvas</h3>
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">AI Suggestions</span>
+              <select
+                value={settings.canvas.showAiSuggestions}
+                onChange={(e) =>
+                  devSettingsActions.setShowAiSuggestions(
+                    e.target.value as 'always' | 'on-select'
+                  )
+                }
+                className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+              >
+                <option value="always">Always visible</option>
+                <option value="on-select">On select only</option>
+              </select>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {settings.canvas.showAiSuggestions === 'always'
+                ? 'Green connections persist across note selections'
+                : 'Green connections clear when you deselect a note'}
+            </p>
+          </div>
+
           {/* Background Indexer Section */}
           <IndexerStatusSection />
 

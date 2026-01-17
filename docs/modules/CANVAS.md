@@ -1,7 +1,7 @@
 # Canvas Module
 
 **Location:** `src/modules/canvas/`
-**Status:** Implemented in WP 2.1-2.5, WP 3.5-3.6
+**Status:** Implemented in WP 2.1-2.5, WP 3.5-3.6, WP 5.1.1
 
 ## Purpose
 
@@ -119,7 +119,7 @@ function CustomCanvas() {
 - Editable connection labels with auto-save
 - Connection metadata display
 
-### Green Suggestions (WP 3.5-3.6)
+### Green Suggestions (WP 3.5-3.6, WP 5.1.1)
 - AI-suggested connections displayed as green dashed edges
 - Generated when a note is selected
 - Updated when note content/title changes
@@ -127,6 +127,11 @@ function CustomCanvas() {
 - Click opens accept/dismiss popover (WP 3.6)
   - Accept → Creates blue persisted connection
   - Dismiss → Removes suggestion from state
+- Persistent visibility (WP 5.1.1):
+  - Canvas config `showAiSuggestions: 'always' | 'on-select'` controls behavior
+  - In `'always'` mode, suggestions accumulate as you select different notes
+  - In `'on-select'` mode, suggestions are replaced when selecting a new note
+  - Click canvas background to deselect nodes (clears in 'on-select' mode only)
 
 ---
 
@@ -157,10 +162,17 @@ EdgeClick → selectConnection → ConnectionInspector renders
     → label edit → connectionAdapter.update() + connectionActions.updateConnection()
 ```
 
-### Suggestion Rendering (WP 3.5)
+### Suggestion Rendering (WP 3.5, WP 5.1.1)
 ```
 Note Selection → useSuggestions.generateForNote() → SuggestionService
     → AIService.findSimilarNotes() → suggestions stored in Legend-State
+    │
+    ├─ showAiSuggestions === 'always' → suggestionActions.appendSuggestions()
+    │     → merges with existing, avoids duplicates
+    │
+    └─ showAiSuggestions === 'on-select' → suggestionActions.setSuggestions()
+          → replaces all suggestions
+
     → useSuggestedEdges() → green dashed edges rendered
 
 Note Content Change → IndexerService.embedNote() → indexerActions.noteIndexed()

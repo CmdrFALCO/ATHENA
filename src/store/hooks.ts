@@ -1,6 +1,6 @@
 import { useSelector } from '@legendapp/state/react';
 import { appState$, type SuggestedConnection } from './state';
-import { devSettings$, type FeatureFlags } from '@/config';
+import { devSettings$, type FeatureFlags, type CanvasConfig } from '@/config';
 import type { Note, Connection, Cluster } from '@/shared/types';
 
 // UI State hooks
@@ -54,6 +54,11 @@ export function useConnectionsFor(entityId: string): Connection[] {
 // Feature flag hooks
 export function useFeatureFlag<K extends keyof FeatureFlags>(flag: K): FeatureFlags[K] {
   return useSelector(() => devSettings$.flags[flag].get()) as FeatureFlags[K];
+}
+
+// Canvas config hooks
+export function useCanvasConfig<K extends keyof CanvasConfig>(key: K): CanvasConfig[K] {
+  return useSelector(() => devSettings$.canvas[key].get()) as CanvasConfig[K];
 }
 
 export function useDevSettings() {
@@ -262,6 +267,35 @@ export function useSuggestionsSourceNote(): string | null {
 export const suggestionActions = {
   setSuggestions(suggestions: SuggestedConnection[], sourceNoteId: string) {
     appState$.suggestions.connections.set(suggestions);
+    appState$.suggestions.sourceNoteId.set(sourceNoteId);
+    appState$.suggestions.lastGeneratedAt.set(new Date().toISOString());
+  },
+
+  /**
+   * Append new suggestions to existing ones, avoiding duplicates.
+   * Used in 'always' mode where suggestions accumulate across note selections.
+   */
+  appendSuggestions(suggestions: SuggestedConnection[], sourceNoteId: string) {
+    const current = appState$.suggestions.connections.get();
+
+    // Create a set of existing pair keys to detect duplicates
+    const existingPairs = new Set<string>();
+    for (const s of current) {
+      // Normalize pair key (sorted) to catch both A→B and B→A
+      const pairKey = [s.sourceId, s.targetId].sort().join('-');
+      existingPairs.add(pairKey);
+    }
+
+    // Filter out duplicates from new suggestions
+    const newUnique = suggestions.filter((s) => {
+      const pairKey = [s.sourceId, s.targetId].sort().join('-');
+      return !existingPairs.has(pairKey);
+    });
+
+    // Append unique suggestions
+    if (newUnique.length > 0) {
+      appState$.suggestions.connections.set([...current, ...newUnique]);
+    }
     appState$.suggestions.sourceNoteId.set(sourceNoteId);
     appState$.suggestions.lastGeneratedAt.set(new Date().toISOString());
   },

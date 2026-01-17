@@ -22,6 +22,16 @@ export interface FeatureFlags {
   logAdapterCalls: boolean;
 }
 
+// Canvas configuration
+export interface CanvasConfig {
+  /**
+   * When to show AI-suggested (green) connections
+   * 'always' = visible permanently on canvas (accumulate as you select notes)
+   * 'on-select' = only when source/target note is selected (cleared on deselect)
+   */
+  showAiSuggestions: 'always' | 'on-select';
+}
+
 // Search configuration (RRF parameters)
 export interface SearchConfig {
   /** Default search mode for Command Palette */
@@ -39,6 +49,10 @@ export interface SearchConfig {
   debounceMs: number;
 }
 
+const DEFAULT_CANVAS_CONFIG: CanvasConfig = {
+  showAiSuggestions: 'always',
+};
+
 const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   defaultMode: 'hybrid',
   rrf: {
@@ -54,7 +68,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
   enableAI: false,
   aiBackend: 'none',
-  showGreenConnections: false,
+  showGreenConnections: true,  // Show green connections when AI is enabled
 
   // Search (off until Phase 4)
   enableSemanticSearch: false,
@@ -73,6 +87,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
 // DevSettings store
 export const devSettings$ = observable({
   flags: { ...DEFAULT_FLAGS } as FeatureFlags,
+  canvas: { ...DEFAULT_CANVAS_CONFIG } as CanvasConfig,
   search: { ...DEFAULT_SEARCH_CONFIG } as SearchConfig,
 
   // Metadata
@@ -99,6 +114,7 @@ export const devSettingsActions = {
 
   resetToDefaults() {
     devSettings$.flags.set({ ...DEFAULT_FLAGS });
+    devSettings$.canvas.set({ ...DEFAULT_CANVAS_CONFIG });
     devSettings$.search.set({ ...DEFAULT_SEARCH_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
@@ -114,6 +130,12 @@ export const devSettingsActions = {
     devSettings$.flags.showDebugInfo.set(false);
     devSettings$.flags.logStateChanges.set(false);
     devSettings$.flags.logAdapterCalls.set(false);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Canvas config actions
+  setShowAiSuggestions(mode: CanvasConfig['showAiSuggestions']) {
+    devSettings$.canvas.showAiSuggestions.set(mode);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 

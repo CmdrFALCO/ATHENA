@@ -6,6 +6,7 @@ import { devSettings$ } from '@/config';
 import {
   usePendingSuggestions,
   useSuggestionsGenerating,
+  useCanvasConfig,
   suggestionActions,
   type SuggestedConnection,
 } from '@/store';
@@ -28,6 +29,9 @@ export function useSuggestions(): UseSuggestionsResult {
   // Get settings from devSettings
   const enableAI = useSelector(() => devSettings$.flags.enableAI.get());
   const showGreenConnections = useSelector(() => devSettings$.flags.showGreenConnections.get());
+
+  // Get canvas config for suggestion behavior
+  const showAiSuggestions = useCanvasConfig('showAiSuggestions');
 
   // Get suggestions from store
   const suggestions = usePendingSuggestions();
@@ -80,7 +84,12 @@ export function useSuggestions(): UseSuggestionsResult {
         const newSuggestions = await service.generateForNote(noteId, config);
 
         // Update store with new suggestions
-        suggestionActions.setSuggestions(newSuggestions, noteId);
+        // In 'always' mode, accumulate suggestions; in 'on-select' mode, replace
+        if (showAiSuggestions === 'always') {
+          suggestionActions.appendSuggestions(newSuggestions, noteId);
+        } else {
+          suggestionActions.setSuggestions(newSuggestions, noteId);
+        }
       } catch (err) {
         console.error('Failed to generate suggestions:', err);
         errorRef.current = err instanceof Error ? err.message : 'Failed to generate suggestions';
@@ -89,7 +98,7 @@ export function useSuggestions(): UseSuggestionsResult {
         suggestionActions.setGenerating(false);
       }
     },
-    [enableAI, showGreenConnections, getService, getConfig]
+    [enableAI, showGreenConnections, showAiSuggestions, getService, getConfig]
   );
 
   const generateForCanvas = useCallback(

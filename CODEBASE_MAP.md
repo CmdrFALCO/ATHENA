@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.6 (Faceted Search Panel) |
+| **Last WP Completed** | 5.1.1 (Persistent Green Connection Visibility) |
 | **Last Updated** | January 2026 |
-| **Phase** | 4 (Search) - **COMPLETE** |
+| **Phase** | 5 (Validation) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
 
 ---
@@ -51,7 +51,7 @@ athena/
 │   │   ├── ai/                   # AI backend
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
-│   │   ├── validation/           # ⏳ CPN engine
+│   │   ├── validation/           # 🔄 Types & interfaces (Phase 5A rules engine coming)
 │   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -94,6 +94,7 @@ athena/
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
+| Validation | `src/modules/validation/` | — | 🔄 Types only |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -127,6 +128,8 @@ athena/
 | Hybrid search (RRF) | `src/modules/search/services/` | Reciprocal Rank Fusion to combine keyword + semantic results |
 | Faceted search | `src/modules/search/` | FacetService extracts facets, applies filters with OR within / AND across |
 | Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
+| SHACL-inspired validation | `src/modules/validation/` | Pure evaluation functions returning violations |
+| Bridge interface | `src/modules/validation/interfaces/` | IValidationService allows Phase 5A/5B impl swap |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -143,6 +146,11 @@ athena/
 | SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, matchType, createdAt, updatedAt |
 | Facet | `src/modules/search/types/facets.ts` | Facet definition with values and counts for filtering |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
+| ValidationRule | `src/modules/validation/types/rules.ts` | SHACL-inspired rule definition with evaluate function |
+| ValidationContext | `src/modules/validation/types/rules.ts` | Graph snapshot with pre-built indexes for rule evaluation |
+| Violation | `src/modules/validation/types/violations.ts` | Validation result with focus node, message, and fix suggestion |
+| ValidationReport | `src/modules/validation/types/reports.ts` | Complete validation run results with summary stats |
+| IValidationService | `src/modules/validation/interfaces/` | Bridge interface for Phase 5A/5B swap |
 
 ---
 

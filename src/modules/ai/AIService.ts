@@ -306,13 +306,13 @@ class AIServiceImpl implements IAIService {
     threshold = 0.7
   ): Promise<SimilarityResult[]> {
     if (!this.embeddingAdapter) {
-      console.warn('Embedding adapter not set');
+      console.warn('[AIService.findSimilarNotes] Embedding adapter not set');
       return [];
     }
 
     const model = this.getActiveEmbeddingModel();
     if (!model) {
-      console.warn('No active embedding model');
+      console.warn('[AIService.findSimilarNotes] No active embedding model');
       return [];
     }
 
@@ -322,15 +322,16 @@ class AIServiceImpl implements IAIService {
         return [];
       }
 
-      return await this.embeddingAdapter.findSimilar(
+      const results = await this.embeddingAdapter.findSimilar(
         embedding.vector,
         model,
         limit,
         threshold,
         [entityId] // Exclude the source entity
       );
+      return results;
     } catch (error) {
-      console.error('Failed to find similar notes:', error);
+      console.error('[AIService.findSimilarNotes] Failed:', error);
       return [];
     }
   }

@@ -1,5 +1,25 @@
 # ATHENA Changelog
 
+## [5.1.1] - 2026-01-17
+
+### Added
+- **Persistent Green Connection Visibility**: AI-suggested connections now accumulate on canvas
+  - `appendSuggestions` action - Merges new suggestions without duplicates
+  - Canvas config `showAiSuggestions: 'always' | 'on-select'` controls behavior
+  - In 'always' mode, suggestions persist as you select different notes
+  - Duplicate detection uses normalized pair keys (catches both A→B and B→A)
+- **Canvas Background Deselection**: Click canvas background to deselect nodes
+  - `handlePaneClick` now calls `uiActions.clearSelection()`
+
+### Changed
+- `useSuggestions.ts` - Uses `appendSuggestions` in 'always' mode, `setSuggestions` in 'on-select' mode
+- `devSettings$.flags.showGreenConnections` - Default changed from `false` to `true`
+
+### Technical
+- Suggestions store tracks `sourceNoteId` for the most recent generation source
+- `appendSuggestions` filters duplicates before appending to existing suggestions
+- Canvas config persisted to localStorage via Legend-State `persistObservable`
+
 ## [3.2.0] - 2026-01-15
 
 ### Added

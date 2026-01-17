@@ -18,6 +18,7 @@ export {
   useClustersForEntity,
   useClustersLoading,
   useFeatureFlag,
+  useCanvasConfig,
   useDevSettings,
   uiActions,
   entityActions,
