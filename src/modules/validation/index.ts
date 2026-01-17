@@ -23,3 +23,16 @@ export type {
 
 // Interface
 export type { IValidationService } from './interfaces/IValidationService';
+
+// Engine
+export {
+  RulesEngine,
+  rulesEngine,
+  buildValidationContext,
+  buildValidationReport,
+} from './engine';
+export type {
+  ContextBuilderInput,
+  ClusterMemberWithClusterId,
+  ReportBuilderInput,
+} from './engine';

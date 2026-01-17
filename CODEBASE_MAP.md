@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.1.1 (Persistent Green Connection Visibility) |
+| **Last WP Completed** | 5.2 (Rules Engine) |
 | **Last Updated** | January 2026 |
 | **Phase** | 5 (Validation) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
@@ -51,7 +51,7 @@ athena/
 │   │   ├── ai/                   # AI backend
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
-│   │   ├── validation/           # 🔄 Types & interfaces (Phase 5A rules engine coming)
+│   │   ├── validation/           # 🔄 Types, interfaces & Rules Engine
 │   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -94,7 +94,7 @@ athena/
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
-| Validation | `src/modules/validation/` | — | 🔄 Types only |
+| Validation | `src/modules/validation/` | — | 🔄 Types + Engine |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -130,6 +130,7 @@ athena/
 | Vendor modules | `src/vendor/` | Custom builds (sql.js with FTS5+JSON1) |
 | SHACL-inspired validation | `src/modules/validation/` | Pure evaluation functions returning violations |
 | Bridge interface | `src/modules/validation/interfaces/` | IValidationService allows Phase 5A/5B impl swap |
+| Rules Engine | `src/modules/validation/engine/` | Stateless rule evaluation with context indexes |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -151,6 +152,8 @@ athena/
 | Violation | `src/modules/validation/types/violations.ts` | Validation result with focus node, message, and fix suggestion |
 | ValidationReport | `src/modules/validation/types/reports.ts` | Complete validation run results with summary stats |
 | IValidationService | `src/modules/validation/interfaces/` | Bridge interface for Phase 5A/5B swap |
+| RulesEngine | `src/modules/validation/engine/` | Stateless engine for rule registration and evaluation |
+| ContextBuilderInput | `src/modules/validation/engine/` | Input for building ValidationContext with O(1) indexes |
 
 ---
 
