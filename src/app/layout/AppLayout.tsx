@@ -6,6 +6,7 @@ import { StoreInitializer } from './StoreInitializer';
 import { DevSettingsPanel } from '@/config';
 import { useIdleDetection, useOptionalIndexer } from '@/modules/ai';
 import { CommandPalette, SearchPanel, useSearchPanel } from '@/modules/search';
+import { ValidationPanel, useValidationPanel } from '@/modules/validation';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -36,6 +37,9 @@ export function AppLayout() {
   // WP 4.6: Search Panel state
   const { isOpen: isSearchPanelOpen, open: openSearchPanel, close: closeSearchPanel } = useSearchPanel();
 
+  // WP 5.6: Validation Panel state (Ctrl+Shift+V)
+  const { isOpen: isValidationPanelOpen, close: closeValidationPanel } = useValidationPanel();
+
   return (
     <div className="h-screen flex flex-col bg-athena-bg text-athena-text">
       <Header onSearchClick={openSearchPanel} />
@@ -58,6 +62,9 @@ export function AppLayout() {
 
       {/* Search Panel - faceted search overlay (WP 4.6) - Cmd+Shift+K */}
       <SearchPanel isOpen={isSearchPanelOpen} onClose={closeSearchPanel} />
+
+      {/* Validation Panel - validation violations overlay (WP 5.6) - Ctrl+Shift+V */}
+      <ValidationPanel isOpen={isValidationPanelOpen} onClose={closeValidationPanel} />
     </div>
   );
 }

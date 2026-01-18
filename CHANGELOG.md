@@ -1,5 +1,58 @@
 # ATHENA Changelog
 
+## [5.6.0] - 2026-01-18
+
+### Added
+- **Validation Panel UI**: Sidebar panel for managing violations (Ctrl+Shift+V)
+  - `ValidationPanel.tsx` - Main floating panel component
+  - `ValidationSummary.tsx` - Header showing validation status and run button
+  - `ViolationFilters.tsx` - Severity and rule filter dropdowns
+  - `ViolationList.tsx` - Grouped list with collapsible error/warning sections
+  - `ViolationCard.tsx` - Individual violation card with Show/Fix/Dismiss actions
+  - `useValidationPanel.ts` - Hook for panel state with keyboard shortcut
+
+### Changed
+- **AppLayout.tsx**: Integrated validation panel as floating overlay
+  - Toggle with Ctrl+Shift+V keyboard shortcut
+  - Panel appears on right side of screen
+  - ESC key or backdrop click to close
+
+### Features
+- **Run Validation**: Button to trigger validation and update violation counts
+- **Filter Violations**: By severity (errors/warnings) or by rule type
+- **Show on Canvas**: Click "Show" to navigate to and select the affected entity
+- **Auto-Fix**: Click "Fix" on violations with auto-applicable suggestions
+- **Dismiss**: Mark violations as dismissed (won't reappear on next run)
+- **Grouped Display**: Violations grouped by severity with collapsible sections
+
+### Technical
+- Uses portal rendering for floating panel overlay
+- Respects Legend-State reactivity for violation updates
+- Entity titles resolved from notes store
+- Connection violations show source → target format
+
+### Fixed
+- **GraphCanvas.tsx**: Wrapped component with `ReactFlowProvider` to enable external navigation
+  - "Show" button in validation panel now correctly centers canvas on selected node
+  - Created `ExternalSelectionHandler` component inside ReactFlow context
+  - Tracks internal vs external selection to avoid unnecessary centering on node clicks
+  - Also fixes Search Panel's "Show on Canvas" functionality
+
+### Phase 5A Complete
+- WP 5.1: Validation Types ✅
+- WP 5.2: Rules Engine ✅
+- WP 5.3: MVP Validation Rules ✅
+- WP 5.4: Validation Service & Store ✅
+- WP 5.5: Violation Display (Canvas) ✅
+- WP 5.6: Validation Panel UI ✅
+
+**Phase 5A (Basic Validation) is complete.** The system now has:
+- Complete tri-color connection system (blue, green, red/amber)
+- 6 validation rules checking graph quality
+- Visual indicators on canvas (edges + node badges)
+- Control panel for managing violations
+- Auto-fix for applicable rules (self-loop, duplicate connection)
+
 ## [5.5.0] - 2026-01-18
 
 ### Added
@@ -39,13 +92,12 @@
 | Node badge | AlertCircle icon, count | AlertTriangle icon, count |
 | Node glow | Red glow (40% opacity) | Amber glow (40% opacity) |
 
-### Phase 5 Progress
+### Phase 5 Progress (at this version)
 - WP 5.1: Validation Types ✅
 - WP 5.2: Rules Engine ✅
 - WP 5.3: MVP Validation Rules ✅
 - WP 5.4: Validation Service & Store ✅
 - WP 5.5: Violation Display (Canvas) ✅
-- WP 5.6: Validation Panel UI ⏳
 
 ## [4.6.0] - 2026-01-16
 

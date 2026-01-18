@@ -65,8 +65,22 @@ export {
 } from './store';
 
 // Hooks
-export { useValidation, useViolations, useViolationsFor } from './hooks';
+export {
+  useValidation,
+  useViolations,
+  useViolationsFor,
+  useValidationPanel,
+} from './hooks';
 export type { UseViolationsOptions, UseViolationsForOptions } from './hooks';
 
 // Service
 export { SimpleValidationService, validationService } from './services';
+
+// Components
+export {
+  ValidationPanel,
+  ValidationSummary as ValidationSummaryUI, // Renamed to avoid conflict with type
+  ViolationFilters,
+  ViolationList,
+  ViolationCard,
+} from './components';

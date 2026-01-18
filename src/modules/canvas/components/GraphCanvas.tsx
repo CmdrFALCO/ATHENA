@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   type NodeTypes,
@@ -38,7 +40,50 @@ const edgeTypes: EdgeTypes = {
   connection: ConnectionEdge,
 };
 
-export function GraphCanvas() {
+/**
+ * Helper component that handles centering on externally selected nodes.
+ * Must be rendered inside ReactFlow to use useReactFlow hook.
+ */
+function ExternalSelectionHandler({
+  selectedNodeId,
+  internalClickRef,
+}: {
+  selectedNodeId: string | null;
+  internalClickRef: React.MutableRefObject<boolean>;
+}) {
+  const reactFlowInstance = useReactFlow();
+
+  // WP 5.6: Center on selected node when selection comes from external source (validation panel, search)
+  useEffect(() => {
+    if (!selectedNodeId) {
+      internalClickRef.current = false;
+      return;
+    }
+
+    // If selection was from internal node click, skip centering (user is already looking there)
+    if (internalClickRef.current) {
+      internalClickRef.current = false;
+      return;
+    }
+
+    // Selection came from external source - center on the node
+    const node = reactFlowInstance.getNode(selectedNodeId);
+    if (node) {
+      // Small delay to ensure React Flow state is synced
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: selectedNodeId }],
+          padding: 0.5,
+          duration: 300,
+        });
+      }, 50);
+    }
+  }, [selectedNodeId, reactFlowInstance, internalClickRef]);
+
+  return null;
+}
+
+function GraphCanvasInner() {
   const { nodes: storeNodes, onNodeSelect, selectedNodeId } = useNotesAsNodes();
   const { edges: storeEdges } = useConnectionsAsEdges();
   const { edges: suggestedEdges } = useSuggestedEdges();
@@ -65,6 +110,9 @@ export function GraphCanvas() {
   const prevNodeIdsRef = useRef<string>(storeNodes.map((n) => n.id).sort().join(','));
   const prevNodeDataRef = useRef<string>(JSON.stringify(storeNodes.map((n) => ({ id: n.id, data: n.data }))));
   const prevEdgeIdsRef = useRef<string>(allEdges.map((e) => e.id).sort().join(','));
+
+  // Track if selection was triggered by internal node click (vs external source like validation panel)
+  const internalClickRef = useRef<boolean>(false);
 
   // Generate suggestions when a note is selected (WP 3.5)
   // WP 5.1.1: Respect showAiSuggestions setting
@@ -153,6 +201,7 @@ export function GraphCanvas() {
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
       const data = node.data as EntityNodeData;
+      internalClickRef.current = true; // Mark as internal click (no need to center)
       onNodeSelect(data.entityId);
       clearConnectionSelection(); // Clear edge selection when clicking node
     },
@@ -236,6 +285,11 @@ export function GraphCanvas() {
             return ATHENA_COLORS.node[data.type] || ATHENA_COLORS.node.note;
           }}
         />
+        {/* Handler for external selection (validation panel, search) */}
+        <ExternalSelectionHandler
+          selectedNodeId={selectedNodeId}
+          internalClickRef={internalClickRef}
+        />
       </ReactFlow>
 
       {/* Connection Inspector Panel */}
@@ -246,5 +300,16 @@ export function GraphCanvas() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * GraphCanvas - Main canvas component wrapped in ReactFlowProvider
+ */
+export function GraphCanvas() {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner />
+    </ReactFlowProvider>
   );
 }

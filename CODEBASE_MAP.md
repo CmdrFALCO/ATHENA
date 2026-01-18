@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.5 (Violation Display - Canvas) |
+| **Last WP Completed** | 5.6 (Validation Panel UI) |
 | **Last Updated** | January 2026 |
-| **Phase** | 5 (Validation) - In Progress |
+| **Phase** | 5 (Validation) - Phase 5A Complete |
 | **Milestone** | Usability Milestone - Daily use viable |
 
 ---
@@ -51,7 +51,7 @@ athena/
 │   │   ├── ai/                   # AI backend
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
-│   │   ├── validation/           # 🔄 Types, Engine, Rules, Service, Store, Hooks
+│   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
 │   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -137,6 +137,9 @@ athena/
 | Validation Hooks | `src/modules/validation/hooks/` | useValidation, useViolations, useViolationsFor for React components |
 | Violation Display | `src/modules/canvas/components/` | ViolationBadge, ViolationTooltip for canvas visualization |
 | Canvas Violation Hooks | `src/modules/canvas/hooks/` | useNodeViolations, useEdgeViolations for per-element violations |
+| Validation Panel | `src/modules/validation/components/` | ValidationPanel, ViolationCard, ViolationList for managing violations |
+| Validation Panel Hook | `src/modules/validation/hooks/` | useValidationPanel for panel state with Ctrl+Shift+V shortcut |
+| External Canvas Navigation | `src/modules/canvas/components/GraphCanvas.tsx` | ReactFlowProvider wrapper + ExternalSelectionHandler for centering on external selection |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
