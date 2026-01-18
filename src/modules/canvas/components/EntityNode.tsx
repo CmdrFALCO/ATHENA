@@ -1,9 +1,13 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { FileText, Target, FileOutput } from 'lucide-react';
 import { ATHENA_COLORS } from '@/shared/theme';
 import { useSelectedEntityIds } from '@/store';
+import { useViolations } from '@/modules/validation';
 import type { EntityType } from '@/shared/types';
+import { useNodeViolations } from '../hooks/useNodeViolations';
+import { ViolationBadge } from './ViolationBadge';
+import { ViolationTooltip } from './ViolationTooltip';
 
 export interface EntityNodeData extends Record<string, unknown> {
   entityId: string;
@@ -31,11 +35,29 @@ export const EntityNode = memo(function EntityNode({
   const selectedIds = useSelectedEntityIds();
   const isStoreSelected = selectedIds.includes(entityId);
 
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Get violations for this node
+  const { errorCount, warningCount, hasErrors, hasWarnings, violations } =
+    useNodeViolations(entityId);
+  const { applyFix } = useViolations();
+
   const borderColor = ATHENA_COLORS.node[type];
   const isHighlighted = selected || isStoreSelected;
 
+  // Determine glow style based on violations (errors take priority)
+  const getGlowStyle = (): React.CSSProperties => {
+    if (hasErrors) {
+      return { boxShadow: `0 0 0 2px ${ATHENA_COLORS.validation.errorGlow}` };
+    }
+    if (hasWarnings) {
+      return { boxShadow: `0 0 0 2px ${ATHENA_COLORS.validation.warningGlow}` };
+    }
+    return {};
+  };
+
   return (
-    <>
+    <div className="relative">
       {/* Input handle (top) */}
       <Handle
         type="target"
@@ -55,6 +77,7 @@ export const EntityNode = memo(function EntityNode({
         style={{
           backgroundColor: ATHENA_COLORS.surface.node,
           borderLeft: `3px solid ${borderColor}`,
+          ...getGlowStyle(),
         }}
       >
         {/* Header with type badge */}
@@ -84,12 +107,31 @@ export const EntityNode = memo(function EntityNode({
         </div>
       </div>
 
+      {/* Violation badge */}
+      <ViolationBadge
+        errorCount={errorCount}
+        warningCount={warningCount}
+        onClick={() => setShowTooltip(!showTooltip)}
+      />
+
+      {/* Violation tooltip */}
+      {showTooltip && (
+        <ViolationTooltip
+          violations={violations}
+          onClose={() => setShowTooltip(false)}
+          onApplyFix={async (id) => {
+            await applyFix(id);
+            setShowTooltip(false);
+          }}
+        />
+      )}
+
       {/* Output handle (bottom) */}
       <Handle
         type="source"
         position={Position.Bottom}
         className="!bg-neutral-500 !w-2 !h-2"
       />
-    </>
+    </div>
   );
 });

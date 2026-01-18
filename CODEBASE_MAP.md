@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.4 (Validation Service & Store) |
+| **Last WP Completed** | 5.5 (Violation Display - Canvas) |
 | **Last Updated** | January 2026 |
 | **Phase** | 5 (Validation) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
@@ -135,6 +135,8 @@ athena/
 | Validation Store | `src/modules/validation/store/` | Legend-State slice for violations, reports, dismissed IDs |
 | Validation Service | `src/modules/validation/services/` | SimpleValidationService implements IValidationService interface |
 | Validation Hooks | `src/modules/validation/hooks/` | useValidation, useViolations, useViolationsFor for React components |
+| Violation Display | `src/modules/canvas/components/` | ViolationBadge, ViolationTooltip for canvas visualization |
+| Canvas Violation Hooks | `src/modules/canvas/hooks/` | useNodeViolations, useEdgeViolations for per-element violations |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 

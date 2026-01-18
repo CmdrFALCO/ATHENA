@@ -8,6 +8,14 @@ export const ATHENA_COLORS = {
     warning: '#f59e0b',     // Amber - validation warnings
   },
 
+  // Validation visual effects
+  validation: {
+    error: '#ef4444',
+    errorGlow: 'rgba(239, 68, 68, 0.4)',
+    warning: '#f59e0b',
+    warningGlow: 'rgba(245, 158, 11, 0.4)',
+  },
+
   // Node colors by entity type
   node: {
     note: '#3b82f6',        // Blue

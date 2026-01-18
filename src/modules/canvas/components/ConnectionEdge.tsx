@@ -9,6 +9,7 @@ import { ATHENA_COLORS } from '@/shared/theme';
 import type { ConnectionColor } from '@/shared/types';
 import { SuggestionPopover } from './SuggestionPopover';
 import { useSuggestionActions } from '@/modules/ai/hooks/useSuggestionActions';
+import { useEdgeViolations } from '../hooks/useEdgeViolations';
 
 // Map connection color to theme key
 const colorToThemeKey: Record<ConnectionColor, keyof typeof ATHENA_COLORS.connection> = {
@@ -53,13 +54,35 @@ export const ConnectionEdge = memo(function ConnectionEdge({
   });
 
   const edgeData = data as ConnectionEdgeData | undefined;
-  const isSuggested = edgeData?.isSuggested ?? false;
-  const themeKey = colorToThemeKey[edgeData?.color ?? 'blue'];
-  const color = ATHENA_COLORS.connection[themeKey];
-  const strokeWidth = selected ? 3 : 2;
+  const connectionId = edgeData?.connectionId ?? id;
 
-  // Suggested edges have dashed styling and reduced opacity
-  const strokeDasharray = isSuggested ? '8,4' : undefined;
+  // Check for violations on this connection
+  const { hasErrors, hasWarnings, edgeStyle } = useEdgeViolations(connectionId);
+
+  const isSuggested = edgeData?.isSuggested ?? false;
+
+  // Determine color: violations override normal color
+  const getEdgeColor = () => {
+    if (hasErrors) return ATHENA_COLORS.validation.error;
+    if (hasWarnings) return ATHENA_COLORS.validation.warning;
+    // Fall back to normal color based on connection type
+    const themeKey = colorToThemeKey[edgeData?.color ?? 'blue'];
+    return ATHENA_COLORS.connection[themeKey];
+  };
+
+  const color = getEdgeColor();
+
+  // Stroke width: slightly thicker when there are violations
+  const strokeWidth = selected ? 3 : edgeStyle ? 2.5 : 2;
+
+  // Suggested edges have dashed styling; warnings also use dashed
+  const getStrokeDasharray = () => {
+    if (isSuggested) return '8,4';
+    if (hasWarnings && !hasErrors) return '5,5';
+    return undefined;
+  };
+
+  const strokeDasharray = getStrokeDasharray();
   const opacity = isSuggested ? 0.75 : 1;
 
   // For suggestions, show similarity percentage if no label is provided

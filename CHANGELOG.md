@@ -1,5 +1,52 @@
 # ATHENA Changelog
 
+## [5.5.0] - 2026-01-18
+
+### Added
+- **Violation Display on Canvas**: Visual indicators for validation violations
+  - `ViolationBadge.tsx` - Badge component showing violation counts on nodes
+  - `ViolationTooltip.tsx` - Popover showing violation details with fix actions
+  - `useNodeViolations.ts` - Hook to get violations for a specific entity node
+  - `useEdgeViolations.ts` - Hook to get violations for a specific connection edge
+- **Validation Colors**: Extended theme colors for validation glow effects
+  - `ATHENA_COLORS.validation.error` - Red (#ef4444)
+  - `ATHENA_COLORS.validation.errorGlow` - Red glow (40% opacity)
+  - `ATHENA_COLORS.validation.warning` - Amber (#f59e0b)
+  - `ATHENA_COLORS.validation.warningGlow` - Amber glow (40% opacity)
+
+### Changed
+- **EntityNode.tsx**: Added violation badge and glow effect
+  - Shows red/amber badge in top-right corner when violations exist
+  - Errors take priority over warnings for badge display
+  - Click badge to see violation details tooltip
+  - Node has subtle glow matching worst violation severity
+- **ConnectionEdge.tsx**: Added violation styling for edges
+  - Red solid stroke for error violations
+  - Amber dashed stroke for warning violations
+  - Violations override normal connection color
+
+### Technical
+- Badge uses `nodrag nopan` CSS classes to allow React Flow click handling
+- Tooltip shows violation message, suggestion, and auto-fix button when available
+- Violations filter uses `useViolationsFor` hook from validation module
+- Edge violations check by connectionId for proper matching
+
+### Visual Specification
+| Element | Error | Warning |
+|---------|-------|---------|
+| Edge color | #ef4444 (red) | #f59e0b (amber) |
+| Edge stroke | Solid, 2.5px | Dashed (5,5), 2.5px |
+| Node badge | AlertCircle icon, count | AlertTriangle icon, count |
+| Node glow | Red glow (40% opacity) | Amber glow (40% opacity) |
+
+### Phase 5 Progress
+- WP 5.1: Validation Types ✅
+- WP 5.2: Rules Engine ✅
+- WP 5.3: MVP Validation Rules ✅
+- WP 5.4: Validation Service & Store ✅
+- WP 5.5: Violation Display (Canvas) ✅
+- WP 5.6: Validation Panel UI ⏳
+
 ## [4.6.0] - 2026-01-16
 
 ### Added
