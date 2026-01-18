@@ -7,7 +7,7 @@ export function useNotesAsNodes() {
   const selectedEntityIds = useSelectedEntityIds();
 
   // Get the first selected entity ID (single selection for now)
-  const selectedNodeId = selectedEntityIds.length > 0 ? selectedEntityIds[0] : null;
+  const selectedNodeId: string | null = selectedEntityIds.length > 0 ? (selectedEntityIds[0] ?? null) : null;
 
   // Only depend on notes - selection state is handled in EntityNode
   const nodes = useMemo<Node[]>(() => {

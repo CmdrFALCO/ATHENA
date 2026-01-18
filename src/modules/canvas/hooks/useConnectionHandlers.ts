@@ -19,6 +19,8 @@ export function useConnectionHandlers() {
         const newConnection = await connectionAdapter.create({
           source_id: params.source,
           target_id: params.target,
+          source_type: 'entity',
+          target_type: 'entity',
           type: 'explicit',
           color: 'blue',
           label: null,

@@ -48,6 +48,8 @@ export function useSuggestionActions(): UseSuggestionActionsResult {
         const connection = await connectionAdapter.create({
           source_id: sourceId,
           target_id: targetId,
+          source_type: 'entity',      // Entity to entity connection
+          target_type: 'entity',
           type: 'semantic',           // Was AI-suggested
           color: 'blue',              // Now explicit/accepted
           label: null,                // User can add label later

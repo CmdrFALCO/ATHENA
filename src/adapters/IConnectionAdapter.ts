@@ -1,4 +1,4 @@
-import type { Connection, ConnectionColor, ConnectionType } from '@/shared/types';
+import type { Connection, ConnectionColor, ConnectionType, NodeType } from '@/shared/types';
 
 export interface IConnectionAdapter {
   // Basic CRUD
@@ -15,6 +15,9 @@ export interface IConnectionAdapter {
   getConnectionsBetween(sourceId: string, targetId: string): Promise<Connection[]>;
   getOutgoing(entityId: string): Promise<Connection[]>;
   getIncoming(entityId: string): Promise<Connection[]>;
+
+  // Unified node lookup (for entities and resources)
+  getForNode(nodeType: NodeType, nodeId: string): Promise<Connection[]>;
 
   // Filtered queries
   getByColor(color: ConnectionColor): Promise<Connection[]>;

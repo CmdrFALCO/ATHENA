@@ -8,6 +8,7 @@ import {
   SQLiteEmbeddingAdapter,
   SQLiteClusterAdapter,
   SQLiteSearchAdapter,
+  SQLiteResourceAdapter,
   type Adapters,
 } from './adapters';
 import { router } from './app/routes';
@@ -32,6 +33,7 @@ function App() {
           embeddings: embeddingAdapter,
           clusters: new SQLiteClusterAdapter(db),
           search: new SQLiteSearchAdapter(db, embeddingAdapter, noteAdapter),
+          resources: new SQLiteResourceAdapter(db),
         });
       } catch (err) {
         setError(String(err));

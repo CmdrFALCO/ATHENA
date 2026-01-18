@@ -1,6 +1,6 @@
 import initSqlJs, { type Database, type SqlValue } from '@/vendor/sql.js';
 import { CREATE_TABLES } from './schema';
-import { setupFTS5, migrateExistingToFTS, populateContentText } from './migrations';
+import { setupFTS5, migrateExistingToFTS, populateContentText, setupResources, upgradeConnections } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
 export interface DatabaseConnection {
@@ -88,6 +88,12 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up FTS5 (idempotent)
   await setupFTS5(connection);
+
+  // Set up resources table (idempotent)
+  await setupResources(connection);
+
+  // Upgrade connections table with node type columns (idempotent)
+  await upgradeConnections(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

@@ -1,4 +1,4 @@
-import type { Connection, ConnectionColor, ConnectionType } from '@/shared/types';
+import type { Connection, ConnectionColor, ConnectionType, NodeType } from '@/shared/types';
 import type { IConnectionAdapter } from '../IConnectionAdapter';
 import type { DatabaseConnection } from '@/database';
 
@@ -31,12 +31,14 @@ export class SQLiteConnectionAdapter implements IConnectionAdapter {
     const now = new Date().toISOString();
 
     await this.db.run(
-      `INSERT INTO connections (id, source_id, target_id, type, color, label, confidence, created_by, created_at, valid_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO connections (id, source_id, target_id, source_type, target_type, type, color, label, confidence, created_by, created_at, valid_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         connection.source_id,
         connection.target_id,
+        connection.source_type,
+        connection.target_type,
         connection.type,
         connection.color,
         connection.label,
@@ -126,6 +128,20 @@ export class SQLiteConnectionAdapter implements IConnectionAdapter {
     return results.map((row) => this.mapToConnection(row));
   }
 
+  async getForNode(nodeType: NodeType, nodeId: string): Promise<Connection[]> {
+    const results = await this.db.exec<Record<string, unknown>>(
+      `SELECT * FROM connections
+       WHERE invalid_at IS NULL
+       AND (
+         (source_type = ? AND source_id = ?)
+         OR
+         (target_type = ? AND target_id = ?)
+       )`,
+      [nodeType, nodeId, nodeType, nodeId]
+    );
+    return results.map((row) => this.mapToConnection(row));
+  }
+
   async getByColor(color: ConnectionColor): Promise<Connection[]> {
     const results = await this.db.exec<Record<string, unknown>>(
       `SELECT * FROM connections WHERE color = ? AND invalid_at IS NULL`,
@@ -156,6 +172,8 @@ export class SQLiteConnectionAdapter implements IConnectionAdapter {
       id: row.id as string,
       source_id: row.source_id as string,
       target_id: row.target_id as string,
+      source_type: (row.source_type as NodeType) ?? 'entity',
+      target_type: (row.target_type as NodeType) ?? 'entity',
       type: row.type as ConnectionType,
       color: row.color as ConnectionColor,
       label: row.label as string | null,

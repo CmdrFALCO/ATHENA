@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.6 (Validation Panel UI) |
+| **Last WP Completed** | 6.1 (Resource Schema & Types) |
 | **Last Updated** | January 2026 |
-| **Phase** | 5 (Validation) - Phase 5A Complete |
+| **Phase** | 6 (Resources) - Starting |
 | **Milestone** | Usability Milestone - Daily use viable |
 
 ---
@@ -140,6 +140,8 @@ athena/
 | Validation Panel | `src/modules/validation/components/` | ValidationPanel, ViolationCard, ViolationList for managing violations |
 | Validation Panel Hook | `src/modules/validation/hooks/` | useValidationPanel for panel state with Ctrl+Shift+V shortcut |
 | External Canvas Navigation | `src/modules/canvas/components/GraphCanvas.tsx` | ReactFlowProvider wrapper + ExternalSelectionHandler for centering on external selection |
+| Unified Connections | `src/adapters/sqlite/SQLiteConnectionAdapter.ts` | `source_type`/`target_type` for entity↔entity, entity↔resource, resource↔resource |
+| Resource Adapter | `src/adapters/sqlite/SQLiteResourceAdapter.ts` | CRUD for resources with extraction status tracking |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -150,7 +152,8 @@ athena/
 | Type | Location | Description |
 |------|----------|-------------|
 | Entity | `src/shared/types/entities.ts` | Note, Plan, Document with bi-temporal |
-| Connection | `src/shared/types/connections.ts` | Entity relationships with tri-color |
+| Connection | `src/shared/types/connections.ts` | Entity/Resource relationships with tri-color + NodeType |
+| Resource | `src/shared/types/resources.ts` | PDF, DOCX, URL, etc. with extraction status |
 | Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
 | Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
 | SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, matchType, createdAt, updatedAt |
@@ -198,8 +201,9 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **5.x** | CPN validation engine |
-| **6.x** | Plans and documents |
+| **6.2** | Drag-and-drop upload, file storage |
+| **6.3** | Resource nodes on canvas |
+| **6.4** | Text extraction (browser-based) |
 
 ---
 

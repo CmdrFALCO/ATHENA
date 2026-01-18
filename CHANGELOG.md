@@ -1,5 +1,50 @@
 # ATHENA Changelog
 
+## [6.1.0] - 2026-01-18
+
+### Added
+- **Resource Schema & Types**: Data foundation for resources (Phase 6)
+  - `src/shared/types/resources.ts` - Resource type definitions (ResourceType, StorageType, ExtractionStatus, etc.)
+  - `src/database/migrations/006_resources.ts` - Resources table with bi-temporal support
+  - `src/database/migrations/007_connections_v2.ts` - Adds source_type/target_type to connections
+  - `src/adapters/IResourceAdapter.ts` - Interface for resource CRUD and queries
+  - `src/adapters/sqlite/SQLiteResourceAdapter.ts` - SQLite implementation
+- **Unified Connections**: Connections now support entity↔entity, entity↔resource, and resource↔resource
+  - `NodeType` union type: `'entity' | 'resource'`
+  - `Connection.source_type` and `Connection.target_type` fields
+  - `IConnectionAdapter.getForNode()` - Find all connections for a node regardless of type
+- **Resource Adapter Hooks**: React integration for resources
+  - `useResourceAdapter()` hook for accessing resource adapter
+  - Added to AdapterContext and AdapterProvider
+
+### Changed
+- `src/shared/types/connections.ts` - Added NodeType and source_type/target_type to Connection
+- `src/adapters/IConnectionAdapter.ts` - Added `getForNode(nodeType, nodeId)` method
+- `src/adapters/sqlite/SQLiteConnectionAdapter.ts` - Implements getForNode, stores source_type/target_type
+- `src/database/init.ts` - Runs new migrations (setupResources, upgradeConnections)
+- `src/App.tsx` - Instantiates SQLiteResourceAdapter
+
+### Technical
+- **Migration Safety**: Existing connections preserved with `source_type='entity'` and `target_type='entity'` defaults
+- **Bi-temporal Resources**: Resources use `valid_at`/`invalid_at` for soft delete pattern
+- **Indexed Lookups**: New composite indexes on `(source_type, source_id)` and `(target_type, target_id)`
+
+### Resource Types Supported
+| Type | Storage | Purpose |
+|------|---------|---------|
+| pdf | blob | PDF documents |
+| docx | blob | Word documents |
+| xlsx | blob | Excel spreadsheets |
+| md | inline | Markdown files |
+| image | blob | Images (PNG, JPG, etc.) |
+| url | url | Web references |
+
+### Phase 6 Progress
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Drag-and-Drop + Upload ⏳
+- WP 6.3: Canvas Display ⏳
+- WP 6.4: Text Extraction (Browser) ⏳
+
 ## [5.6.0] - 2026-01-18
 
 ### Added
