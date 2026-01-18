@@ -654,6 +654,38 @@ export function DevSettingsPanel() {
             />
           </div>
 
+          {/* Resources Section (Phase 6) */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Resources (Phase 6)</h3>
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Show on Canvas</span>
+              <Toggle
+                checked={settings.resources?.enabled ?? true}
+                onChange={(checked) => devSettingsActions.setResourcesEnabled(checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Node Color Scheme</span>
+              <select
+                value={settings.resources?.nodeColorScheme ?? 'per-type'}
+                onChange={(e) =>
+                  devSettingsActions.setResourceColorScheme(
+                    e.target.value as 'unified' | 'per-type'
+                  )
+                }
+                className="bg-gray-700 text-white text-sm rounded px-2 py-1"
+              >
+                <option value="per-type">Per type (colored)</option>
+                <option value="unified">Unified (purple)</option>
+              </select>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {settings.resources?.nodeColorScheme === 'unified'
+                ? 'All resources shown in purple'
+                : 'PDF=red, DOCX=blue, XLSX=green, etc.'}
+            </p>
+          </div>
+
           {/* Test Data Section */}
           <TestDataSection />
 

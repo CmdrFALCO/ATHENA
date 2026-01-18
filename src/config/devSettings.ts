@@ -32,6 +32,14 @@ export interface CanvasConfig {
   showAiSuggestions: 'always' | 'on-select';
 }
 
+// Resource configuration (WP 6.3)
+export interface ResourceConfig {
+  /** Whether resource nodes are enabled on canvas */
+  enabled: boolean;
+  /** Color scheme for resource nodes: 'unified' = all purple, 'per-type' = distinct colors per type */
+  nodeColorScheme: 'unified' | 'per-type';
+}
+
 // Search configuration (RRF parameters)
 export interface SearchConfig {
   /** Default search mode for Command Palette */
@@ -63,6 +71,11 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   debounceMs: 300,
 };
 
+const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
+  enabled: true,
+  nodeColorScheme: 'per-type', // Default to per-type for visual distinction
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -89,6 +102,7 @@ export const devSettings$ = observable({
   flags: { ...DEFAULT_FLAGS } as FeatureFlags,
   canvas: { ...DEFAULT_CANVAS_CONFIG } as CanvasConfig,
   search: { ...DEFAULT_SEARCH_CONFIG } as SearchConfig,
+  resources: { ...DEFAULT_RESOURCE_CONFIG } as ResourceConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -116,6 +130,7 @@ export const devSettingsActions = {
     devSettings$.flags.set({ ...DEFAULT_FLAGS });
     devSettings$.canvas.set({ ...DEFAULT_CANVAS_CONFIG });
     devSettings$.search.set({ ...DEFAULT_SEARCH_CONFIG });
+    devSettings$.resources.set({ ...DEFAULT_RESOURCE_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -153,6 +168,17 @@ export const devSettingsActions = {
 
   setSearchDebounce(ms: number) {
     devSettings$.search.debounceMs.set(ms);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Resource config actions (WP 6.3)
+  setResourcesEnabled(enabled: boolean) {
+    devSettings$.resources.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setResourceColorScheme(scheme: ResourceConfig['nodeColorScheme']) {
+    devSettings$.resources.nodeColorScheme.set(scheme);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

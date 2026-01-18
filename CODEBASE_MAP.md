@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 6.1 (Resource Schema & Types) |
+| **Last WP Completed** | 6.3 (Resource Nodes on Canvas) |
 | **Last Updated** | January 2026 |
-| **Phase** | 6 (Resources) - Starting |
+| **Phase** | 6 (Resources) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
 
 ---
@@ -44,7 +44,8 @@ athena/
 │   ├── store/                    # Legend-State
 │   ├── config/                   # DevSettings
 │   ├── services/
-│   │   └── secureStorage/        # Encrypted storage
+│   │   ├── secureStorage/        # Encrypted storage
+│   │   └── blobStorage/          # ✅ IndexedDB file storage (WP 6.2)
 │   ├── modules/
 │   │   ├── canvas/               # React Flow graph
 │   │   ├── sophia/               # Knowledge workspace
@@ -92,6 +93,7 @@ athena/
 | AI | `src/modules/ai/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | App Shell | `src/app/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
+| Blob Storage | `src/services/blobStorage/` | — | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
 | Validation | `src/modules/validation/` | [docs/modules/VALIDATION.md](docs/modules/VALIDATION.md) | ✅ |
@@ -142,6 +144,16 @@ athena/
 | External Canvas Navigation | `src/modules/canvas/components/GraphCanvas.tsx` | ReactFlowProvider wrapper + ExternalSelectionHandler for centering on external selection |
 | Unified Connections | `src/adapters/sqlite/SQLiteConnectionAdapter.ts` | `source_type`/`target_type` for entity↔entity, entity↔resource, resource↔resource |
 | Resource Adapter | `src/adapters/sqlite/SQLiteResourceAdapter.ts` | CRUD for resources with extraction status tracking |
+| Blob Storage | `src/services/blobStorage/` | IndexedDB-based binary file storage with IBlobStorage interface |
+| Resource State | `src/store/resourceState.ts` | Legend-State slice for resources with upload progress tracking |
+| Resource Actions | `src/store/resourceActions.ts` | Upload, delete, and blob retrieval actions |
+| Resource Upload UI | `src/modules/sophia/components/ResourceUploadDialog.tsx` | Drag-and-drop file upload dialog with validation |
+| Resource Node | `src/modules/canvas/components/ResourceNode.tsx` | Custom React Flow node for resources with type-based colors |
+| Resource Color Scheme | `src/shared/theme/resourceColors.ts` | Per-type and unified color schemes for resource nodes |
+| Resource Config | `src/config/devSettings.ts` | DevSettings section for resources (enabled, nodeColorScheme) |
+| Resource Nodes Hook | `src/modules/canvas/hooks/useResourcesAsNodes.ts` | Convert resources to React Flow nodes with `resource-` ID prefix |
+| Resource Detail Panel | `src/modules/sophia/components/ResourceDetailPanel.tsx` | View/edit resource metadata, download, delete |
+| Mixed Node Canvas | `src/modules/canvas/components/GraphCanvas.tsx` | Render both entity and resource nodes, handle mixed selections |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -167,6 +179,7 @@ athena/
 | RulesEngine | `src/modules/validation/engine/` | Stateless engine for rule registration and evaluation |
 | ContextBuilderInput | `src/modules/validation/engine/` | Input for building ValidationContext with O(1) indexes |
 | ValidationState | `src/modules/validation/store/` | Legend-State slice with violations, lastReport, dismissedIds |
+| ResourceState | `src/store/resourceState.ts` | Legend-State slice for resources with upload progress tracking |
 
 ---
 
@@ -201,9 +214,8 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **6.2** | Drag-and-drop upload, file storage |
-| **6.3** | Resource nodes on canvas |
 | **6.4** | Text extraction (browser-based) |
+| **6.5** | Resource search integration |
 
 ---
 
@@ -213,6 +225,7 @@ athena/
 window.__ATHENA_STATE__           // Main app state
 window.__ATHENA_DEV_SETTINGS__    // Feature flags
 window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
+window.__ATHENA_RESOURCE_STATE__  // Resource state (resources, upload progress)
 ```
 
 ---

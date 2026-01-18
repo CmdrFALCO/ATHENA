@@ -33,7 +33,26 @@ export {
   // Indexer events (WP 3.5)
   useLastIndexedNoteId,
   indexerActions,
+  // Resources (WP 6.2)
+  useResources,
+  useResource,
+  useResourcesLoading,
+  useSelectedResourceId,
+  useUploadProgress,
+  useIsResourceSelected, // WP 6.3
+  resourceActions,
+  setResourceAdapter,
+  loadResources,
+  uploadResource,
+  updateResource,
+  deleteResource,
+  getResourceBlob,
+  selectResource,
 } from './hooks';
+
+// Resource state (WP 6.2)
+export { resourceState$ } from './resourceState';
+export type { ResourceState } from './resourceState';
 
 // Initialization
 export { useInitializeStore } from './useInitializeStore';

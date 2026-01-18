@@ -18,22 +18,25 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { ATHENA_COLORS } from '@/shared/theme';
+import { ATHENA_COLORS, getResourceColors } from '@/shared/theme';
 import { EntityNode, type EntityNodeData } from './EntityNode';
+import { ResourceNode, type ResourceNodeData } from './ResourceNode';
 import { ConnectionEdge, type ConnectionEdgeData } from './ConnectionEdge';
 import { ConnectionInspector } from './ConnectionInspector';
 import { useNotesAsNodes } from '../hooks/useNotesAsNodes';
+import { useResourcesAsNodes } from '../hooks/useResourcesAsNodes';
 import { useConnectionsAsEdges } from '../hooks/useConnectionsAsEdges';
 import { useNodePositionSync } from '../hooks/useNodePositionSync';
 import { useConnectionHandlers } from '../hooks/useConnectionHandlers';
 import { useSelectedConnection } from '../hooks/useSelectedConnection';
 import { useSuggestedEdges } from '../hooks/useSuggestedEdges';
 import { useOptionalSuggestions } from '@/modules/ai/hooks/useSuggestions';
-import { useLastIndexedNoteId, useCanvasConfig, uiActions } from '@/store';
+import { useLastIndexedNoteId, useCanvasConfig, uiActions, selectResource, updateResource } from '@/store';
 
 // Register custom node types - must be outside component or memoized
 const nodeTypes: NodeTypes = {
   entity: EntityNode,
+  resource: ResourceNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -84,9 +87,16 @@ function ExternalSelectionHandler({
 }
 
 function GraphCanvasInner() {
-  const { nodes: storeNodes, onNodeSelect, selectedNodeId } = useNotesAsNodes();
+  const { nodes: entityNodes, onNodeSelect: onEntitySelect, selectedNodeId: selectedEntityNodeId } = useNotesAsNodes();
+  const { nodes: resourceNodes, onNodeSelect: onResourceSelect, selectedNodeId: selectedResourceNodeId } = useResourcesAsNodes();
   const { edges: storeEdges } = useConnectionsAsEdges();
   const { edges: suggestedEdges } = useSuggestedEdges();
+
+  // Combine entity and resource nodes
+  const storeNodes = useMemo(() => [...entityNodes, ...resourceNodes], [entityNodes, resourceNodes]);
+
+  // Get selected node ID (entity or resource)
+  const selectedNodeId = selectedEntityNodeId || selectedResourceNodeId;
   const { saveNodePosition } = useNodePositionSync();
   const { onConnect, onEdgesDelete } = useConnectionHandlers();
   const {
@@ -200,12 +210,21 @@ function GraphCanvasInner() {
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      const data = node.data as EntityNodeData;
       internalClickRef.current = true; // Mark as internal click (no need to center)
-      onNodeSelect(data.entityId);
       clearConnectionSelection(); // Clear edge selection when clicking node
+
+      // Check if this is a resource node (ID starts with 'resource-')
+      if (node.id.startsWith('resource-')) {
+        const resourceId = node.id.replace('resource-', '');
+        onResourceSelect(resourceId);
+        uiActions.clearSelection(); // Deselect any entity
+      } else {
+        const data = node.data as EntityNodeData;
+        onEntitySelect(data.entityId);
+        selectResource(null); // Deselect any resource
+      }
     },
-    [onNodeSelect, clearConnectionSelection]
+    [onEntitySelect, onResourceSelect, clearConnectionSelection]
   );
 
   const handleEdgeClick: EdgeMouseHandler = useCallback(
@@ -222,13 +241,23 @@ function GraphCanvasInner() {
 
   const handlePaneClick = useCallback(() => {
     clearConnectionSelection();
-    uiActions.clearSelection(); // Deselect nodes when clicking canvas background
+    uiActions.clearSelection(); // Deselect entity nodes when clicking canvas background
+    selectResource(null); // Deselect resource nodes
   }, [clearConnectionSelection]);
 
   const handleNodeDragStop: OnNodeDrag = useCallback(
     (_event, node) => {
-      const data = node.data as EntityNodeData;
-      saveNodePosition(data.entityId, node.position.x, node.position.y);
+      // Check if this is a resource node
+      if (node.id.startsWith('resource-')) {
+        const resourceId = node.id.replace('resource-', '');
+        updateResource(resourceId, {
+          positionX: Math.round(node.position.x),
+          positionY: Math.round(node.position.y),
+        });
+      } else {
+        const data = node.data as EntityNodeData;
+        saveNodePosition(data.entityId, node.position.x, node.position.y);
+      }
     },
     [saveNodePosition]
   );
@@ -281,6 +310,13 @@ function GraphCanvasInner() {
           }}
           maskColor="rgba(0, 0, 0, 0.8)"
           nodeColor={(node: Node) => {
+            // Handle resource nodes
+            if (node.id.startsWith('resource-')) {
+              const resourceData = node.data as ResourceNodeData;
+              const colors = getResourceColors(resourceData.resource.type, 'per-type');
+              return colors.accent;
+            }
+            // Handle entity nodes
             const data = node.data as EntityNodeData;
             return ATHENA_COLORS.node[data.type] || ATHENA_COLORS.node.note;
           }}

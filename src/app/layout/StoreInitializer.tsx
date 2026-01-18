@@ -3,6 +3,7 @@ import {
   useNoteAdapter,
   useConnectionAdapter,
   useClusterAdapter,
+  useResourceAdapter,
 } from '@/adapters';
 import { useInitializeStore } from '@/store';
 
@@ -14,10 +15,12 @@ export function StoreInitializer({ children }: StoreInitializerProps) {
   const noteAdapter = useNoteAdapter();
   const connectionAdapter = useConnectionAdapter();
   const clusterAdapter = useClusterAdapter();
+  const resourceAdapter = useResourceAdapter();
   const { isReady, error } = useInitializeStore({
     noteAdapter,
     connectionAdapter,
     clusterAdapter,
+    resourceAdapter,
   });
 
   if (error) {

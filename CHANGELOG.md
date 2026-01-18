@@ -1,5 +1,122 @@
 # ATHENA Changelog
 
+## [6.3.0] - 2026-01-18
+
+### Added
+- **Resource Nodes on Canvas**: Resources now appear as graph nodes alongside entities
+  - `src/modules/canvas/components/ResourceNode.tsx` - Custom React Flow node for resources
+  - Type-specific icons (FileText for PDF/DOCX/MD, FileSpreadsheet for XLSX, Image, Link)
+  - Extraction status badge (pending/complete/failed/skipped)
+  - File size display
+- **Resource Color Schemes**: Two color modes for resource nodes
+  - `src/shared/theme/resourceColors.ts` - Per-type and unified color schemes
+  - Per-type mode: Each resource type has distinct colors (PDF=red, DOCX=blue, XLSX=green, etc.)
+  - Unified mode: All resources use violet/purple color scheme
+  - Toggle via DevSettings: `resources.nodeColorScheme`
+- **Resource Config in DevSettings**: Configuration for resource display
+  - `resources.enabled` - Toggle resource nodes on/off
+  - `resources.nodeColorScheme` - 'per-type' or 'unified' color scheme
+  - UI section added to `DevSettingsPanel.tsx` under "Resources (Phase 6)"
+- **Resource-Aware Connections**: Create connections between entities and resources
+  - Updated `useConnectionsAsEdges.ts` - Handles `resource-` prefixed node IDs
+  - Updated `useConnectionHandlers.ts` - Detects node type and sets source_type/target_type
+  - Entity↔resource and resource↔resource connections fully supported
+- **Resource Detail Panel**: View and edit resource metadata
+  - `src/modules/sophia/components/ResourceDetailPanel.tsx` - Resource detail view
+  - Shows: name, type, size, added date, extraction status
+  - User notes textarea for annotations
+  - Download button for blob-stored resources
+  - Delete button with confirmation
+- **Resource Nodes Hook**: Convert resources to React Flow nodes
+  - `src/modules/canvas/hooks/useResourcesAsNodes.ts` - Transforms resources to nodes
+  - Uses `resource-{id}` prefix to avoid ID collision with entities
+  - Default grid positions offset from entity nodes
+- **Resource Selection Hook**: Check if specific resource is selected
+  - `useIsResourceSelected(id)` - Returns boolean for selection state
+
+### Changed
+- **GraphCanvas.tsx**: Now renders both entity and resource nodes
+  - Combines `entityNodes` and `resourceNodes` into single array
+  - Node click handler detects type by ID prefix and routes appropriately
+  - Drag stop handler persists resource positions to SQLite
+  - Pane click clears both entity and resource selection
+  - MiniMap shows resource nodes with type-specific colors
+- **SophiaPage.tsx**: Shows resource detail when resource selected
+  - Conditionally renders `ResourceDetailPanel` or `EntityDetail`
+  - Uses `useSelectedResourceId()` to determine which panel to show
+- **StoreInitializer.tsx**: Loads resources on app initialization
+  - Added `resourceAdapter` to initialization options
+  - Resources loaded alongside entities, connections, and clusters
+- **useInitializeStore.ts**: Now accepts and uses resource adapter
+  - Sets resource adapter for actions module
+  - Loads all resources into state on init
+
+### Technical
+- **Node ID Prefixing**: Resource nodes use `resource-{uuid}` format
+  - Prevents ID collision with entity UUIDs
+  - `parseNodeId()` helper extracts type and ID from React Flow node ID
+- **Mixed Node Canvas**: Single canvas with heterogeneous node types
+  - `nodeTypes` map includes both `entity` and `resource` types
+  - All handlers check node ID prefix to determine type
+- **Position Persistence**: Resource positions saved to SQLite
+  - Uses `updateResource()` with `positionX`/`positionY`
+
+### Phase 6 Progress
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Resource Upload & Storage ✅
+- WP 6.3: Resource Nodes on Canvas ✅
+- WP 6.4: Text Extraction (Browser) ⏳
+
+## [6.2.0] - 2026-01-18
+
+### Added
+- **Blob Storage Service**: IndexedDB-based binary file storage
+  - `src/services/blobStorage/IBlobStorage.ts` - Interface for blob operations
+  - `src/services/blobStorage/BlobStorageService.ts` - IndexedDB implementation
+  - `src/services/blobStorage/index.ts` - Exports with singleton instance
+- **Resource State Management**: Legend-State integration for resources
+  - `src/store/resourceState.ts` - Observable state slice for resources
+  - `src/store/resourceActions.ts` - Upload, delete, and retrieval actions
+  - Added `useResources`, `useResource`, `useResourcesLoading` hooks
+  - Added `uploadResource`, `deleteResource`, `getResourceBlob` actions
+- **Upload Dialog UI**: Drag-and-drop file upload interface
+  - `src/modules/sophia/components/ResourceUploadDialog.tsx` - Modal dialog component
+  - `src/modules/sophia/components/ResourceUploadButton.tsx` - Trigger button
+  - File validation (50MB max, supported types only)
+  - Progress indicator during upload
+  - User notes field for annotations
+
+### Changed
+- `src/app/layout/Sidebar.tsx` - Added ResourceUploadButton next to Notes header
+- `src/store/hooks.ts` - Added resource hooks and action exports
+- `src/store/index.ts` - Added resource state and action exports
+- `src/modules/sophia/components/index.ts` - Added ResourceUploadDialog and ResourceUploadButton exports
+
+### Technical
+- **Dual Storage Pattern**: SQLite metadata + IndexedDB blobs
+  - Resource records in SQLite with `storage_key` reference
+  - Binary file content in IndexedDB `athena-blobs` database
+  - Coordinated deletion removes both records
+- **Upload Flow**: File → IndexedDB → SQLite → State
+  - Blob stored first, storage key captured
+  - Resource record created with storage key
+  - State updated with new resource
+
+### File Types Supported
+| Type | MIME Types | Extensions |
+|------|------------|------------|
+| PDF | application/pdf | .pdf |
+| Word | application/vnd.openxmlformats-officedocument.wordprocessingml.document | .docx |
+| Excel | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | .xlsx, .xls |
+| Markdown | text/markdown | .md |
+| Images | image/jpeg, image/png, image/gif, image/webp | .jpg, .jpeg, .png, .gif, .webp |
+
+### Phase 6 Progress
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Resource Upload & Storage ✅
+- WP 6.3: Canvas Display ⏳
+- WP 6.4: Text Extraction (Browser) ⏳
+
 ## [6.1.0] - 2026-01-18
 
 ### Added
@@ -39,7 +156,7 @@
 | image | blob | Images (PNG, JPG, etc.) |
 | url | url | Web references |
 
-### Phase 6 Progress
+### Phase 6 Progress (as of 6.1)
 - WP 6.1: Resource Schema & Types ✅
 - WP 6.2: Drag-and-Drop + Upload ⏳
 - WP 6.3: Canvas Display ⏳

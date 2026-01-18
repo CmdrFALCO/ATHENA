@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { appState$ } from './state';
-import { entityActions, connectionActions, clusterActions } from './hooks';
-import type { INoteAdapter, IConnectionAdapter, IClusterAdapter } from '@/adapters';
+import { entityActions, connectionActions, clusterActions, resourceActions, setResourceAdapter } from './hooks';
+import type { INoteAdapter, IConnectionAdapter, IClusterAdapter, IResourceAdapter } from '@/adapters';
 
 interface InitializeOptions {
   noteAdapter: INoteAdapter;
   connectionAdapter: IConnectionAdapter;
   clusterAdapter: IClusterAdapter;
+  resourceAdapter: IResourceAdapter;
 }
 
 export function useInitializeStore({
   noteAdapter,
   connectionAdapter,
   clusterAdapter,
+  resourceAdapter,
 }: InitializeOptions) {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +77,11 @@ export function useInitializeStore({
         const clusters = await clusterAdapter.getAll();
         clusterActions.setClusters(clusters);
 
+        // WP 6.3: Load resources from SQLite
+        setResourceAdapter(resourceAdapter);
+        const resources = await resourceAdapter.getAll();
+        resourceActions.setResources(resources);
+
         // Mark as initialized
         appState$.initialized.set(true);
         setIsReady(true);
@@ -87,7 +94,7 @@ export function useInitializeStore({
     }
 
     initialize();
-  }, [noteAdapter, connectionAdapter, clusterAdapter]);
+  }, [noteAdapter, connectionAdapter, clusterAdapter, resourceAdapter]);
 
   return { isReady, error };
 }

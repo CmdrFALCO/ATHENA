@@ -354,3 +354,49 @@ export const indexerActions = {
     appState$.indexer.lastIndexedAt.set(null);
   },
 };
+
+// ============================================
+// Resources (WP 6.2 - Resource Upload & Storage)
+// ============================================
+
+import { resourceState$ } from './resourceState';
+import type { Resource } from '@/shared/types/resources';
+
+export function useResources(): Resource[] {
+  return useSelector(() => Object.values(resourceState$.resources.get()));
+}
+
+export function useResource(id: string): Resource | undefined {
+  return useSelector(() => {
+    const resources = resourceState$.resources.get();
+    return resources[id];
+  });
+}
+
+export function useResourcesLoading(): boolean {
+  return useSelector(() => resourceState$.isLoading.get());
+}
+
+export function useSelectedResourceId(): string | null {
+  return useSelector(() => resourceState$.selectedResourceId.get());
+}
+
+export function useUploadProgress(): number | null {
+  return useSelector(() => resourceState$.uploadProgress.get());
+}
+
+// WP 6.3: Check if a specific resource is selected
+export function useIsResourceSelected(id: string): boolean {
+  return useSelector(() => resourceState$.selectedResourceId.get() === id);
+}
+
+export {
+  resourceActions,
+  setResourceAdapter,
+  loadResources,
+  uploadResource,
+  updateResource,
+  deleteResource,
+  getResourceBlob,
+  selectResource,
+} from './resourceActions';

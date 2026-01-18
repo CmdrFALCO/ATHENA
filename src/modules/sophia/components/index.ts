@@ -9,3 +9,8 @@ export { NoteEditor } from './NoteEditor';
 export { EditorToolbar } from './EditorToolbar';
 export { SimilarNotesPanel } from './SimilarNotesPanel';
 export { SimilarNotesButton } from './SimilarNotesButton';
+// WP 6.2: Resource Upload
+export { ResourceUploadDialog } from './ResourceUploadDialog';
+export { ResourceUploadButton } from './ResourceUploadButton';
+// WP 6.3: Resource Detail
+export { ResourceDetailPanel } from './ResourceDetailPanel';

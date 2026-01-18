@@ -1,8 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft, Plus } from 'lucide-react';
-import { useSidebarOpen, useNotes, uiActions, entityActions } from '@/store';
+import { useSidebarOpen, useNotes, useResources, uiActions, entityActions } from '@/store';
 import { useNoteAdapter } from '@/adapters';
-import { EntityList } from '@/modules/sophia';
+import { EntityList, ResourceUploadButton } from '@/modules/sophia';
 
 const navItems = [
   { path: '/sophia', label: 'Sophia', icon: Bird },
@@ -15,13 +15,22 @@ export function Sidebar() {
   const location = useLocation();
   const noteAdapter = useNoteAdapter();
   const notes = useNotes();
+  const resources = useResources();
+
+  // Calculate default position for new items (offset from existing nodes)
+  const getDefaultPosition = () => {
+    const allPositions = [
+      ...notes.map((n) => n.position_x ?? 0),
+      ...resources.map((r) => r.positionX ?? 0),
+    ];
+    const defaultX = allPositions.length > 0
+      ? Math.max(...allPositions) + 250
+      : 100;
+    return { x: defaultX, y: 100 };
+  };
 
   const handleCreateNote = async () => {
-    // Calculate sensible default position (offset from existing nodes)
-    const defaultX = notes.length > 0
-      ? Math.max(...notes.map((n) => n.position_x ?? 0)) + 250
-      : 100;
-    const defaultY = 100;
+    const { x: defaultX, y: defaultY } = getDefaultPosition();
 
     const newNote = await noteAdapter.create({
       type: 'note',
@@ -34,6 +43,11 @@ export function Sidebar() {
     });
     entityActions.addNote(newNote);
     uiActions.selectEntity(newNote.id);
+  };
+
+  const handleResourceSuccess = (resourceId: string) => {
+    console.log('Resource uploaded:', resourceId);
+    // Resource is already in state via resourceActions.addResource
   };
 
   return (
@@ -75,18 +89,24 @@ export function Sidebar() {
       {/* Entity list */}
       {isOpen && (
         <div className="flex-1 min-h-0 border-t border-athena-border flex flex-col">
-          {/* Notes header with create button */}
+          {/* Notes header with create buttons */}
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-xs font-medium text-athena-muted uppercase tracking-wider">
               Notes
             </span>
-            <button
-              onClick={handleCreateNote}
-              className="p-1 rounded hover:bg-athena-bg text-athena-muted hover:text-athena-text transition-colors"
-              title="New Note"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <ResourceUploadButton
+                onSuccess={handleResourceSuccess}
+                initialPosition={getDefaultPosition()}
+              />
+              <button
+                onClick={handleCreateNote}
+                className="p-1 rounded hover:bg-athena-bg text-athena-muted hover:text-athena-text transition-colors"
+                title="New Note"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <EntityList />
         </div>
