@@ -187,7 +187,9 @@ export class SQLiteClusterAdapter implements IClusterAdapter {
     return results.map((row) => this.mapToCluster(row));
   }
 
-  async invalidate(id: string, _reason?: string): Promise<void> {
+  // reason parameter reserved for future audit logging
+  async invalidate(id: string, reason?: string): Promise<void> {
+    void reason;
     await this.db.run(`UPDATE clusters SET invalid_at = ? WHERE id = ?`, [
       new Date().toISOString(),
       id,

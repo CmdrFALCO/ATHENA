@@ -36,7 +36,9 @@ export function EntityDetailHeader({ note, actions }: EntityDetailHeaderProps) {
   const [title, setTitle] = useState(note.title);
 
   // Sync local state when note changes (e.g., switching notes)
+  // This is a legitimate pattern for derived state from props
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate derived state pattern
     setTitle(note.title);
   }, [note.id, note.title]);
 

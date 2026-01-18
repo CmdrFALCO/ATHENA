@@ -1,6 +1,4 @@
 import {
-  createContext,
-  useContext,
   useEffect,
   useState,
   useCallback,
@@ -8,27 +6,14 @@ import {
   type ReactNode,
 } from 'react';
 import { useSelector } from '@legendapp/state/react';
-import { getAIService, type IAIService } from './AIService';
+import { getAIService } from './AIService';
 import type { AIProviderType, AISettings } from './types';
 import { DEFAULT_AI_SETTINGS } from './types';
 import { devSettings$ } from '@/config';
+import { AIContext, type AIContextValue } from './context';
 
-interface AIContextValue {
-  service: IAIService;
-  isConfigured: boolean;
-  isAvailable: boolean;
-  isLoading: boolean;
-  error: string | null;
-  provider: AIProviderType | null;
-
-  // Actions
-  testConnection: () => Promise<boolean>;
-  setApiKey: (provider: AIProviderType, key: string) => Promise<void>;
-  clearApiKey: (provider: AIProviderType) => Promise<void>;
-  hasApiKey: (provider: AIProviderType) => Promise<boolean>;
-}
-
-const AIContext = createContext<AIContextValue | null>(null);
+// Re-export for backwards compatibility
+export { AIContext, type AIContextValue } from './context';
 
 export function AIProvider({ children }: { children: ReactNode }) {
   const service = useMemo(() => getAIService(), []);
@@ -172,24 +157,4 @@ export function AIProvider({ children }: { children: ReactNode }) {
   return <AIContext.Provider value={value}>{children}</AIContext.Provider>;
 }
 
-export function useAI(): AIContextValue {
-  const context = useContext(AIContext);
-  if (!context) {
-    throw new Error('useAI must be used within an AIProvider');
-  }
-  return context;
-}
-
-export function useAIStatus(): {
-  isConfigured: boolean;
-  isAvailable: boolean;
-  provider: AIProviderType | null;
-} {
-  const { isConfigured, isAvailable, provider } = useAI();
-  return { isConfigured, isAvailable, provider };
-}
-
-// Optional hook that doesn't throw if outside provider
-export function useOptionalAI(): AIContextValue | null {
-  return useContext(AIContext);
-}
+// Hooks are exported from ./hooks/useAIContext.ts for fast refresh compatibility

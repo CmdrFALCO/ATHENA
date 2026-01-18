@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useSelector } from '@legendapp/state/react';
-import { useOptionalAI } from '../AIContext';
+import { useOptionalAI } from './useAIContext';
 import { useAdapters } from '@/adapters';
 import { devSettings$ } from '@/config';
 import {

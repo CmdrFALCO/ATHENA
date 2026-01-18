@@ -51,3 +51,22 @@ export {
   mvpRules,
   registerMvpRules,
 } from './rules';
+
+// Store
+export { validationState$ } from './store';
+export type { ValidationState } from './store';
+export {
+  runValidation,
+  dismissViolation,
+  undismissViolation,
+  clearViolations,
+  applyViolationFix,
+  getActiveViolations,
+} from './store';
+
+// Hooks
+export { useValidation, useViolations, useViolationsFor } from './hooks';
+export type { UseViolationsOptions, UseViolationsForOptions } from './hooks';
+
+// Service
+export { SimpleValidationService, validationService } from './services';

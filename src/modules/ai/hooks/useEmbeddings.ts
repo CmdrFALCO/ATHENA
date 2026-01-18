@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useEmbeddingAdapter } from '@/adapters/hooks';
-import { useAI, useOptionalAI } from '../AIContext';
+import { useAI, useOptionalAI } from './useAIContext';
 import type { EmbeddingRecord, SimilarityResult } from '@/adapters/IEmbeddingAdapter';
 
 export interface UseEmbeddingsResult {

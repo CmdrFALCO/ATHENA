@@ -1,5 +1,38 @@
 # ATHENA Changelog
 
+## [5.4.0] - 2026-01-18
+
+### Added
+- **Validation Service & Store**: Complete validation state management (WP 5.4)
+  - `SimpleValidationService` - Implements `IValidationService` interface for Phase 5A
+  - Legend-State slice for validation (`validationState$`)
+  - Validation actions: `runValidation`, `dismissViolation`, `applyViolationFix`, `clearValidation`
+  - React hooks: `useValidation`, `useViolations`, `useViolationsFor`
+- **Validation State**: Observable validation state
+  - `violations` - Current list of violations
+  - `lastReport` - Most recent validation report
+  - `isValidating` - Loading state during validation
+  - `dismissedViolationIds` - Track dismissed violations
+- **Auto-fix Support**: Apply fixes for certain violation types
+  - Self-loop connections can be auto-deleted
+  - Duplicate connections can be auto-deleted
+  - Uses connection adapter for database persistence
+
+### Technical
+- `SimpleValidationService` bridges store and RulesEngine from WP 5.2
+- `observe` from Legend-State for `onViolationsChanged` subscription
+- `useViolationsFor(entityId)` filters violations for specific canvas nodes/edges
+- Validation state exposed at `window.__ATHENA_VALIDATION_STATE__` for debugging
+- Bridge interface pattern enables future Phase 5B swap (SimpleValidationService → full CPN engine)
+
+### Fixed
+- ESLint errors across codebase:
+  - Separated AI context and hooks for React Fast Refresh compatibility
+  - Fixed `FacetSidebar` component-during-render warning
+  - Fixed unused variable warnings with delete pattern
+  - Added eslint-ignore for legitimate setState-in-effect patterns
+  - Added `tools/sql.js-custom/` to eslint ignore (third-party build files)
+
 ## [5.1.1] - 2026-01-17
 
 ### Added

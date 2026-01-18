@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 5.3 (MVP Rules) |
+| **Last WP Completed** | 5.4 (Validation Service & Store) |
 | **Last Updated** | January 2026 |
 | **Phase** | 5 (Validation) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
@@ -51,7 +51,7 @@ athena/
 │   │   ├── ai/                   # AI backend
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
-│   │   ├── validation/           # 🔄 Types, Engine & 6 MVP Rules
+│   │   ├── validation/           # 🔄 Types, Engine, Rules, Service, Store, Hooks
 │   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -94,7 +94,7 @@ athena/
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
-| Validation | `src/modules/validation/` | — | 🔄 Engine + 6 Rules |
+| Validation | `src/modules/validation/` | [docs/modules/VALIDATION.md](docs/modules/VALIDATION.md) | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -132,6 +132,9 @@ athena/
 | Bridge interface | `src/modules/validation/interfaces/` | IValidationService allows Phase 5A/5B impl swap |
 | Rules Engine | `src/modules/validation/engine/` | Stateless rule evaluation with context indexes |
 | MVP Rules | `src/modules/validation/rules/` | 6 validation rules (orphan, self-loop, duplicate, bidirectional, weakly-connected, stale) |
+| Validation Store | `src/modules/validation/store/` | Legend-State slice for violations, reports, dismissed IDs |
+| Validation Service | `src/modules/validation/services/` | SimpleValidationService implements IValidationService interface |
+| Validation Hooks | `src/modules/validation/hooks/` | useValidation, useViolations, useViolationsFor for React components |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -155,6 +158,7 @@ athena/
 | IValidationService | `src/modules/validation/interfaces/` | Bridge interface for Phase 5A/5B swap |
 | RulesEngine | `src/modules/validation/engine/` | Stateless engine for rule registration and evaluation |
 | ContextBuilderInput | `src/modules/validation/engine/` | Input for building ValidationContext with O(1) indexes |
+| ValidationState | `src/modules/validation/store/` | Legend-State slice with violations, lastReport, dismissedIds |
 
 ---
 
@@ -197,8 +201,9 @@ athena/
 ## Console Debugging
 
 ```javascript
-window.__ATHENA_STATE__       // Main app state
-window.__ATHENA_DEV_SETTINGS__ // Feature flags
+window.__ATHENA_STATE__           // Main app state
+window.__ATHENA_DEV_SETTINGS__    // Feature flags
+window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
 ```
 
 ---

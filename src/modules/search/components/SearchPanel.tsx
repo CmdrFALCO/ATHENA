@@ -6,7 +6,7 @@
  * Complementary to Command Palette (Cmd+K) which handles quick jumps.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
@@ -57,13 +57,18 @@ export function SearchPanel({ isOpen, onClose }: SearchPanelProps) {
     return () => clearTimeout(timer);
   }, [query, search, clear, isOpen]);
 
-  // Reset state when panel opens/closes
+  // Reset state when panel closes (track previous state to avoid cascading renders)
+  // This is a legitimate pattern for resetting modal state on close
+  const wasOpenRef = useRef(isOpen);
   useEffect(() => {
-    if (!isOpen) {
+    if (wasOpenRef.current && !isOpen) {
+      // Panel just closed - reset state
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate modal reset pattern
       setQuery('');
       setSelection({});
       clear();
     }
+    wasOpenRef.current = isOpen;
   }, [isOpen, clear]);
 
   const handleFacetChange = useCallback((facetId: string, value: string) => {

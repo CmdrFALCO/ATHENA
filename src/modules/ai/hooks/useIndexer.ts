@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector } from '@legendapp/state/react';
 import { IndexerService, type IndexerStatus, type IndexerConfig } from '../IndexerService';
-import { useOptionalAI } from '../AIContext';
+import { useOptionalAI } from './useAIContext';
 import { useAdapters } from '@/adapters';
 import { devSettings$ } from '@/config';
 import { DEFAULT_AI_SETTINGS, type AISettings } from '../types';

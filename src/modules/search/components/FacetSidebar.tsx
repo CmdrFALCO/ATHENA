@@ -13,14 +13,14 @@ interface FacetSidebarProps {
   onClear: () => void;
 }
 
-function getFacetIcon(facetId: string) {
+function FacetIcon({ facetId }: { facetId: string }) {
   switch (facetId) {
     case 'type':
-      return FileText;
+      return <FileText className="w-4 h-4" />;
     case 'created':
-      return Calendar;
+      return <Calendar className="w-4 h-4" />;
     default:
-      return Folder;
+      return <Folder className="w-4 h-4" />;
   }
 }
 
@@ -31,12 +31,10 @@ interface FacetGroupProps {
 }
 
 function FacetGroup({ facet, selected, onChange }: FacetGroupProps) {
-  const Icon = getFacetIcon(facet.id);
-
   return (
     <div className="mb-6">
       <h4 className="flex items-center gap-2 text-sm font-medium text-zinc-400 mb-2">
-        <Icon className="w-4 h-4" />
+        <FacetIcon facetId={facet.id} />
         {facet.label}
       </h4>
       <ul className="space-y-1">

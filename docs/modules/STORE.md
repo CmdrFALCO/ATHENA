@@ -1,7 +1,7 @@
 # Store Module
 
 **Location:** `src/store/`
-**Status:** Implemented in WP 0.4, extended in WP 0.5, WP 3.5, WP 5.1.1
+**Status:** Implemented in WP 0.4, extended in WP 0.5, WP 3.5, WP 5.1.1, WP 5.4
 
 ## Purpose
 
@@ -234,8 +234,9 @@ interface SuggestedConnection {
 
 ```javascript
 // Access state observables in browser console
-window.__ATHENA_STATE__       // Main app state (entities, connections, clusters)
-window.__ATHENA_DEV_SETTINGS__ // Feature flags
+window.__ATHENA_STATE__              // Main app state (entities, connections, clusters)
+window.__ATHENA_DEV_SETTINGS__       // Feature flags
+window.__ATHENA_VALIDATION_STATE__   // Validation state (violations, reports) - WP 5.4
 ```
 
 ---
@@ -248,8 +249,33 @@ window.__ATHENA_DEV_SETTINGS__ // Feature flags
 
 ---
 
+## Related Stores
+
+### Validation Store (WP 5.4)
+
+The validation module has its own Legend-State slice at `src/modules/validation/store/`:
+
+```typescript
+import { validationState$, runValidation, dismissViolation } from '@/modules/validation';
+
+// Run validation and update store
+await runValidation({ scope: 'full' });
+
+// Dismiss a violation
+dismissViolation('violation-123');
+
+// Access state
+const violations = validationState$.violations.get();
+const lastReport = validationState$.lastReport.get();
+```
+
+See [Validation Module](VALIDATION.md) for full documentation.
+
+---
+
 ## Related Documentation
 
 - [Adapters Module](ADAPTERS.md) - Database layer that populates store
 - [Canvas Module](CANVAS.md) - Consumes store for graph visualization
 - [Sophia Module](SOPHIA.md) - Consumes store for entity display
+- [Validation Module](VALIDATION.md) - Validation store and hooks

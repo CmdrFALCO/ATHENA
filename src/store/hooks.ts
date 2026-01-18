@@ -143,9 +143,9 @@ export const entityActions = {
   },
 
   removeNote(id: string) {
-    const notes = appState$.entities.notes.get();
-    const { [id]: _, ...rest } = notes;
-    appState$.entities.notes.set(rest);
+    const newNotes = { ...appState$.entities.notes.get() };
+    delete newNotes[id];
+    appState$.entities.notes.set(newNotes);
   },
 
   setLoading(loading: boolean) {
@@ -177,9 +177,9 @@ export const connectionActions = {
   },
 
   removeConnection(id: string) {
-    const items = appState$.connections.items.get();
-    const { [id]: _, ...rest } = items;
-    appState$.connections.items.set(rest);
+    const newItems = { ...appState$.connections.items.get() };
+    delete newItems[id];
+    appState$.connections.items.set(newItems);
   },
 };
 
@@ -232,9 +232,9 @@ export const clusterActions = {
   },
 
   removeCluster(id: string) {
-    const items = appState$.clusters.items.get();
-    const { [id]: _, ...rest } = items;
-    appState$.clusters.items.set(rest);
+    const newItems = { ...appState$.clusters.items.get() };
+    delete newItems[id];
+    appState$.clusters.items.set(newItems);
   },
 
   setLoading(loading: boolean) {

@@ -378,8 +378,21 @@ ATHENA_COLORS.connection.semantic  // '#22c55e' - Green
 
 ---
 
+## Future: Validation Integration
+
+The canvas will display validation violations (WP 5.5+):
+
+- **Red edges** - Connections with validation errors (self-loop, duplicate)
+- **Amber edges** - Connections with validation warnings
+- **Node badges** - Show violation count on affected nodes
+
+Uses `useViolationsFor(entityId)` from the validation module to get violations for each node/edge.
+
+---
+
 ## Related Documentation
 
 - [Sophia Module](SOPHIA.md) - Side-by-side entity detail view
 - [Store Module](STORE.md) - Entity and connection state
 - [Theme Constants](APP.md#theme) - Color definitions
+- [Validation Module](VALIDATION.md) - Violation detection for canvas items
