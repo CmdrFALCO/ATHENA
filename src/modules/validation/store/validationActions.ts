@@ -188,3 +188,14 @@ export function getActiveViolations() {
   const dismissed = validationState$.dismissedViolationIds.get();
   return violations.filter((v) => !dismissed.includes(v.id));
 }
+
+// Export actions for console debugging
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__ATHENA_VALIDATION__ = {
+    runValidation,
+    dismissViolation,
+    undismissViolation,
+    clearViolations,
+    getActiveViolations,
+  };
+}

@@ -13,6 +13,9 @@ import {
 import { router } from './app/routes';
 import { AIProvider } from './modules/ai';
 
+// Import validation store to expose window.__ATHENA_VALIDATION__
+import './modules/validation/store/validationActions';
+
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
   const [error, setError] = useState<string>('');
