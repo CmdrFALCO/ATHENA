@@ -14,3 +14,6 @@ export { ResourceUploadDialog } from './ResourceUploadDialog';
 export { ResourceUploadButton } from './ResourceUploadButton';
 // WP 6.3: Resource Detail
 export { ResourceDetailPanel } from './ResourceDetailPanel';
+// WP 6.6: URL Resources
+export { UrlResourceDialog } from './UrlResourceDialog';
+export { UrlAddButton } from './UrlAddButton';

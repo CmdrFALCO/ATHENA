@@ -1,5 +1,51 @@
 # ATHENA Changelog
 
+## [6.6.0] - 2026-01-23
+
+### Added
+- **URL Resources**: Add URLs as first-class resources with two modes
+  - `src/modules/sophia/components/UrlResourceDialog.tsx` - Dialog for adding URL resources
+  - `src/modules/sophia/components/UrlAddButton.tsx` - Sidebar button to open URL dialog
+  - `src/modules/resources/url/UrlResourceService.ts` - URL creation logic for both modes
+- **Reference Mode**: Bookmark-only, instant (no AI required)
+  - Stores URL and user notes
+  - Sets `extractionStatus: 'skipped'`
+  - No external API calls
+- **AI Extract Mode**: Sends URL to AI for fetching and summarization
+  - Gemini fetches and analyzes page content
+  - Extracts title, summary, and key points
+  - Stores extracted text for search
+  - Generates embeddings for semantic search
+- **URL Config in DevSettings**: Configuration for URL handling
+  - `url.defaultMode` - 'reference' or 'extracted' (default: reference)
+  - `url.autoExtract` - Force extraction mode (default: false)
+  - `devSettingsActions.setUrlDefaultMode()` and `setUrlAutoExtract()`
+
+### Changed
+- `src/store/resourceActions.ts` - Added `addUrlResource()` action
+- `src/store/hooks.ts` - Exports `addUrlResource`
+- `src/store/index.ts` - Exports `addUrlResource`
+- `src/app/layout/Sidebar.tsx` - Added UrlAddButton next to ResourceUploadButton
+- `src/config/devSettings.ts` - Added UrlConfig interface and url settings
+- `src/modules/sophia/components/ResourceDetailPanel.tsx` - Shows URL mode (Reference/AI Extracted)
+- `src/modules/sophia/components/index.ts` - Exports UrlResourceDialog and UrlAddButton
+
+### Technical
+- **URL Title Extraction**: Parses URL path for meaningful name, falls back to hostname
+- **Graceful AI Fallback**: If AI unavailable in extract mode, creates resource with `extractionStatus: 'failed'`
+- **Post-Extraction Pipeline**: URL resources with extracted text get embeddings for semantic search
+- **No Blob Storage**: URL resources use `storageType: 'url'` - URL itself is the reference
+
+### Phase 6 Complete
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Resource Upload & Storage ✅
+- WP 6.3: Resource Nodes on Canvas ✅
+- WP 6.4: Browser Extraction + FTS + Embeddings ✅
+- WP 6.5: AI Extraction (PDF, images) + Unified Search ✅
+- WP 6.6: URL Resources ✅
+
+**Phase 6 delivers: "The Second Brain with Rich Media"**
+
 ## [6.5.0] - 2026-01-23
 
 ### Added

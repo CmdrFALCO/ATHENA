@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 6.5 (AI Extraction + Unified Search) |
+| **Last WP Completed** | 6.6 (URL Resources) |
 | **Last Updated** | January 2026 |
-| **Phase** | 6 (Resources) - In Progress |
+| **Phase** | 6 (Resources) - Complete |
 | **Milestone** | Usability Milestone - Daily use viable |
 
 ---
@@ -167,6 +167,9 @@ athena/
 | Multimodal AI | `src/modules/ai/backends/GeminiBackend.ts` | `generateWithAttachment()` for vision/document understanding |
 | Extraction Strategy | `src/config/devSettings.ts` | `resources.extraction.strategy` for browser/AI/hybrid routing |
 | Unified Search | `src/modules/search/hooks/useCommandPalette.ts` | Command Palette searches entities AND resources in parallel |
+| URL Resources | `src/modules/resources/url/UrlResourceService.ts` | Reference (bookmark) and AI Extract modes for URLs |
+| URL Dialog | `src/modules/sophia/components/UrlResourceDialog.tsx` | Dialog for adding URL resources with mode selection |
+| URL Config | `src/config/devSettings.ts` | `url.defaultMode` and `url.autoExtract` settings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -190,6 +193,8 @@ athena/
 | AttachmentInput | `src/modules/ai/types.ts` | Base64-encoded file attachment for multimodal AI |
 | GenerateWithAttachmentOptions | `src/modules/ai/types.ts` | Options for multimodal generation (prompt + attachment) |
 | ExtractionStrategy | `src/config/devSettings.ts` | 'browser' | 'ai' | 'browser-then-ai' extraction routing |
+| UrlConfig | `src/config/devSettings.ts` | URL handling settings (defaultMode, autoExtract) |
+| UrlMode | `src/shared/types/resources.ts` | 'reference' | 'extracted' URL resource modes |
 | Facet | `src/modules/search/types/facets.ts` | Facet definition with values and counts for filtering |
 | CommandPaletteResult | `src/modules/search/hooks/useCommandPalette.ts` | Unified search result for entities and resources |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
@@ -236,9 +241,9 @@ athena/
 
 ## Coming Next
 
-| WP | What's Added |
-|----|--------------|
-| **6.6** | URL Resources (web links as reference nodes) |
+| Phase | What's Added |
+|-------|--------------|
+| **Phase 7** | Templates & Knowledge Publishing (TBD) |
 
 ---
 

@@ -4,10 +4,13 @@ import type {
   CreateResourceInput,
   UpdateResourceInput,
   ResourceType,
+  UrlMode,
 } from '@/shared/types/resources';
 import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
 import { blobStorage } from '@/services/blobStorage';
 import { browserExtractionService } from '@/modules/resources/extraction';
+import { urlResourceService } from '@/modules/resources/url';
+import { postExtraction } from '@/modules/resources/extraction/postExtraction';
 
 // Adapter reference (set by component on mount)
 let resourceAdapter: IResourceAdapter | null = null;
@@ -88,6 +91,79 @@ export async function uploadResource(
   }
 
   return resource;
+}
+
+/**
+ * Add a URL resource (WP 6.6)
+ * @param url - The URL to add
+ * @param mode - 'reference' (bookmark only) or 'extracted' (AI summarization)
+ * @param notes - Optional user notes
+ * @param position - Optional canvas position
+ * @returns The created resource ID
+ */
+export async function addUrlResource(
+  url: string,
+  mode: UrlMode,
+  notes: string,
+  position?: { x: number; y: number }
+): Promise<string> {
+  if (!resourceAdapter) throw new Error('Resource adapter not initialized');
+
+  let resourceInput: CreateResourceInput;
+  let extractedText: string | null = null;
+  let extractionStatus: 'complete' | 'failed' | 'skipped';
+  let extractionMethod: 'ai' | null = null;
+
+  if (mode === 'reference') {
+    // Reference mode: instant, no AI
+    resourceInput = await urlResourceService.createReference(url, notes);
+    extractionStatus = 'skipped'; // Intentionally not extracted
+  } else {
+    // Extracted mode: AI fetches and summarizes
+    const result = await urlResourceService.createWithExtraction(url, notes);
+    resourceInput = result.input;
+    extractedText = result.extractedText;
+    extractionStatus = result.extractionStatus;
+    extractionMethod = result.extractionMethod;
+
+    if (result.extractionError) {
+      console.warn('[addUrlResource] Extraction error:', result.extractionError);
+    }
+  }
+
+  // Add position if provided
+  if (position) {
+    resourceInput.positionX = position.x;
+    resourceInput.positionY = position.y;
+  }
+
+  // Create resource in database
+  const resource = await resourceAdapter.create(resourceInput);
+
+  // Update extraction fields (adapter.create doesn't handle these directly)
+  await resourceAdapter.update(resource.id, {
+    extractedText: extractedText || undefined,
+    extractionStatus,
+    extractionMethod: extractionMethod || undefined,
+  });
+
+  // Update local resource object
+  resource.extractedText = extractedText || undefined;
+  resource.extractionStatus = extractionStatus;
+  resource.extractionMethod = extractionMethod || undefined;
+
+  // Add to state
+  const resources = resourceState$.resources.get();
+  resourceState$.resources.set({ ...resources, [resource.id]: resource });
+
+  // If extraction succeeded, trigger post-extraction (embeddings)
+  if (extractionStatus === 'complete' && extractedText) {
+    postExtraction(resource.id).catch((err) => {
+      console.error('[addUrlResource] Post-extraction failed:', err);
+    });
+  }
+
+  return resource.id;
 }
 
 /**
@@ -228,6 +304,7 @@ function getResourceTypeFromMime(mimeType: string, fileName: string): ResourceTy
 export const resourceActions = {
   setResources,
   addResource,
+  addUrlResource,
   removeResource,
   setLoading: setResourcesLoading,
   selectResource,

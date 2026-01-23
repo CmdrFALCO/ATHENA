@@ -52,6 +52,14 @@ export interface ResourceConfig {
   };
 }
 
+// URL configuration (WP 6.6)
+export interface UrlConfig {
+  /** Default mode for URL resources: 'reference' (bookmark) or 'extracted' (AI summarization) */
+  defaultMode: 'reference' | 'extracted';
+  /** If true, always use 'extracted' mode regardless of user selection */
+  autoExtract: boolean;
+}
+
 // Search configuration (RRF parameters)
 export interface SearchConfig {
   /** Default search mode for Command Palette */
@@ -93,6 +101,11 @@ const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
   },
 };
 
+const DEFAULT_URL_CONFIG: UrlConfig = {
+  defaultMode: 'reference', // Default to bookmark-only for speed
+  autoExtract: false, // Don't force AI extraction
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -120,6 +133,7 @@ export const devSettings$ = observable({
   canvas: { ...DEFAULT_CANVAS_CONFIG } as CanvasConfig,
   search: { ...DEFAULT_SEARCH_CONFIG } as SearchConfig,
   resources: { ...DEFAULT_RESOURCE_CONFIG } as ResourceConfig,
+  url: { ...DEFAULT_URL_CONFIG } as UrlConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -148,6 +162,7 @@ export const devSettingsActions = {
     devSettings$.canvas.set({ ...DEFAULT_CANVAS_CONFIG });
     devSettings$.search.set({ ...DEFAULT_SEARCH_CONFIG });
     devSettings$.resources.set({ ...DEFAULT_RESOURCE_CONFIG });
+    devSettings$.url.set({ ...DEFAULT_URL_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -212,6 +227,17 @@ export const devSettingsActions = {
 
   setMaxFileSizeMB(sizeMB: number) {
     devSettings$.resources.extraction.maxFileSizeMB.set(sizeMB);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // URL config actions (WP 6.6)
+  setUrlDefaultMode(mode: UrlConfig['defaultMode']) {
+    devSettings$.url.defaultMode.set(mode);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setUrlAutoExtract(enabled: boolean) {
+    devSettings$.url.autoExtract.set(enabled);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

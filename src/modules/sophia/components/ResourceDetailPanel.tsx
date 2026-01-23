@@ -164,17 +164,22 @@ export function ResourceDetailPanel({ resourceId }: ResourceDetailPanelProps) {
 
         {/* URL for url type */}
         {resource.type === 'url' && resource.url && (
-          <div className="space-y-1">
-            <label className="text-sm text-athena-muted">URL</label>
-            <a
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-blue-400 hover:text-blue-300 hover:underline text-sm break-all"
-            >
-              {resource.url}
-              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-            </a>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <label className="text-sm text-athena-muted">URL</label>
+              <a
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-blue-400 hover:text-blue-300 hover:underline text-sm break-all"
+              >
+                {resource.url}
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+              </a>
+            </div>
+            <div className="text-xs text-athena-muted">
+              Mode: {resource.urlMode === 'reference' ? 'Reference (bookmark)' : 'AI Extracted'}
+            </div>
           </div>
         )}
 

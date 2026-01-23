@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft, Plus } from 'lucide-react';
 import { useSidebarOpen, useNotes, useResources, uiActions, entityActions } from '@/store';
 import { useNoteAdapter } from '@/adapters';
-import { EntityList, ResourceUploadButton } from '@/modules/sophia';
+import { EntityList, ResourceUploadButton, UrlAddButton } from '@/modules/sophia';
 
 const navItems = [
   { path: '/sophia', label: 'Sophia', icon: Bird },
@@ -95,6 +95,10 @@ export function Sidebar() {
               Notes
             </span>
             <div className="flex items-center gap-1">
+              <UrlAddButton
+                onSuccess={handleResourceSuccess}
+                initialPosition={getDefaultPosition()}
+              />
               <ResourceUploadButton
                 onSuccess={handleResourceSuccess}
                 initialPosition={getDefaultPosition()}

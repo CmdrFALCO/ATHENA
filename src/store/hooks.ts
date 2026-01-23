@@ -395,6 +395,7 @@ export {
   setResourceAdapter,
   loadResources,
   uploadResource,
+  addUrlResource,
   updateResource,
   deleteResource,
   getResourceBlob,
