@@ -7,6 +7,7 @@ import { DevSettingsPanel } from '@/config';
 import { useIdleDetection, useOptionalIndexer } from '@/modules/ai';
 import { CommandPalette, SearchPanel, useSearchPanel } from '@/modules/search';
 import { ValidationPanel, useValidationPanel } from '@/modules/validation';
+import { ChatPanel, ChatToggleButton } from '@/modules/chat';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -65,6 +66,10 @@ export function AppLayout() {
 
       {/* Validation Panel - validation violations overlay (WP 5.6) - Ctrl+Shift+V */}
       <ValidationPanel isOpen={isValidationPanelOpen} onClose={closeValidationPanel} />
+
+      {/* Chat Panel - slide-over chat interface (WP 7.1) - Ctrl+Shift+C */}
+      <ChatPanel />
+      <ChatToggleButton />
     </div>
   );
 }

@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 6.6 (URL Resources) |
+| **Last WP Completed** | 7.1 (Chat UI & State) |
 | **Last Updated** | January 2026 |
-| **Phase** | 6 (Resources) - Complete |
-| **Milestone** | Usability Milestone - Daily use viable |
+| **Phase** | 7 (AI Chat - Knowledge Capture Interface) |
+| **Milestone** | Phase 7 - Conversational Knowledge Capture |
 
 ---
 
@@ -50,6 +50,7 @@ athena/
 │   │   ├── canvas/               # React Flow graph
 │   │   ├── sophia/               # Knowledge workspace
 │   │   ├── ai/                   # AI backend
+│   │   ├── chat/                 # ✅ Chat panel with thread management (WP 7.1)
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
@@ -92,6 +93,7 @@ athena/
 | Canvas | `src/modules/canvas/` | [docs/modules/CANVAS.md](docs/modules/CANVAS.md) | ✅ |
 | Sophia | `src/modules/sophia/` | [docs/modules/SOPHIA.md](docs/modules/SOPHIA.md) | ✅ |
 | AI | `src/modules/ai/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
+| Chat | `src/modules/chat/` | [docs/modules/CHAT.md](docs/modules/CHAT.md) | ✅ |
 | App Shell | `src/app/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Secure Storage | `src/services/secureStorage/` | [docs/modules/AI.md](docs/modules/AI.md) | ✅ |
 | Blob Storage | `src/services/blobStorage/` | — | ✅ |
@@ -170,6 +172,13 @@ athena/
 | URL Resources | `src/modules/resources/url/UrlResourceService.ts` | Reference (bookmark) and AI Extract modes for URLs |
 | URL Dialog | `src/modules/sophia/components/UrlResourceDialog.tsx` | Dialog for adding URL resources with mode selection |
 | URL Config | `src/config/devSettings.ts` | `url.defaultMode` and `url.autoExtract` settings |
+| Chat Module | `src/modules/chat/` | Slide-over chat panel with thread management and IndexedDB persistence |
+| Chat State | `src/modules/chat/store/chatState.ts` | Legend-State slice for threads, messages, and panel visibility |
+| Chat Actions | `src/modules/chat/store/chatActions.ts` | Thread/message CRUD, panel toggle, persistence loading |
+| Chat Persistence | `src/modules/chat/services/ChatPersistence.ts` | IndexedDB storage for chat threads and messages |
+| Chat Panel | `src/modules/chat/components/` | ChatPanel, ChatHeader, ChatMessages, ChatInput, ChatToggleButton |
+| Chat Config | `src/config/devSettings.ts` | `chat.enabled`, `chat.position`, `chat.showToggleButton` settings |
+| Chat Keyboard | `src/modules/chat/components/ChatToggleButton.tsx` | Ctrl+Shift+C to toggle chat panel |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -207,6 +216,13 @@ athena/
 | ContextBuilderInput | `src/modules/validation/engine/` | Input for building ValidationContext with O(1) indexes |
 | ValidationState | `src/modules/validation/store/` | Legend-State slice with violations, lastReport, dismissedIds |
 | ResourceState | `src/store/resourceState.ts` | Legend-State slice for resources with upload progress tracking |
+| ChatMessage | `src/modules/chat/types/index.ts` | Message with threadId, role, content, and optional proposals |
+| ChatThread | `src/modules/chat/types/index.ts` | Thread with title, contextNodeIds, and timestamps |
+| ChatState | `src/modules/chat/types/index.ts` | Legend-State slice for threads, messages, and panel state |
+| KnowledgeProposals | `src/modules/chat/types/index.ts` | AI-proposed nodes and edges (WP 7.4 placeholder) |
+| NodeProposal | `src/modules/chat/types/index.ts` | Proposed entity with confidence and status |
+| EdgeProposal | `src/modules/chat/types/index.ts` | Proposed connection with rationale and confidence |
+| ChatConfig | `src/config/devSettings.ts` | Chat module configuration (enabled, position, persistence) |
 
 ---
 
@@ -241,9 +257,13 @@ athena/
 
 ## Coming Next
 
-| Phase | What's Added |
+| WP | What's Added |
 |-------|--------------|
-| **Phase 7** | Templates & Knowledge Publishing (TBD) |
+| **WP 7.2** | Context Builder - Gather relevant notes for AI context |
+| **WP 7.3** | AI Generation Service - Claude/GPT streaming responses |
+| **WP 7.4** | Extraction Parser - Parse AI responses for knowledge proposals |
+| **WP 7.5** | Proposal Cards - UI for accept/reject knowledge suggestions |
+| **WP 7.6** | Spatial Awareness - @mention nodes in chat |
 
 ---
 
@@ -254,6 +274,8 @@ window.__ATHENA_STATE__           // Main app state
 window.__ATHENA_DEV_SETTINGS__    // Feature flags
 window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
 window.__ATHENA_RESOURCE_STATE__  // Resource state (resources, upload progress)
+window.__ATHENA_CHAT_STATE__      // Chat state (threads, messages, panel)
+window.__ATHENA_CHAT__            // Chat actions for testing
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
 window.__ATHENA_DB__()            // Database connection (function)

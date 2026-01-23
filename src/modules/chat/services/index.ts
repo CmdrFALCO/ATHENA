@@ -1,0 +1,1 @@
+export { chatPersistence } from './ChatPersistence';

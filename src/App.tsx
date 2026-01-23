@@ -13,6 +13,7 @@ import {
 } from './adapters';
 import { router } from './app/routes';
 import { AIProvider } from './modules/ai';
+import { chatActions } from './modules/chat';
 
 // Import validation store to expose window.__ATHENA_VALIDATION__
 import './modules/validation/store/validationActions';
@@ -34,6 +35,11 @@ function App() {
           clusters: new SQLiteClusterAdapter(db),
           search: new SQLiteSearchAdapter(db, embeddingAdapter, noteAdapter),
           resources: new SQLiteResourceAdapter(db),
+        });
+
+        // WP 7.1: Load chat threads from IndexedDB
+        chatActions.loadThreads().catch((err) => {
+          console.error('Failed to load chat threads:', err);
         });
       } catch (err) {
         setError(String(err));

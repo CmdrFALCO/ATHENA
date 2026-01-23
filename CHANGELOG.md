@@ -1,5 +1,55 @@
 # ATHENA Changelog
 
+## [7.1.0] - 2026-01-23
+
+### Added
+- **Chat Module (WP 7.1)**: Slide-over chat panel for conversational knowledge capture
+  - `src/modules/chat/types/index.ts` - ChatMessage, ChatThread, ChatState types
+  - `src/modules/chat/store/chatState.ts` - Legend-State slice for chat
+  - `src/modules/chat/store/chatActions.ts` - Thread/message CRUD actions
+  - `src/modules/chat/services/ChatPersistence.ts` - IndexedDB persistence
+  - `src/modules/chat/components/ChatPanel.tsx` - Main slide-over container
+  - `src/modules/chat/components/ChatHeader.tsx` - Thread title and controls
+  - `src/modules/chat/components/ChatMessages.tsx` - Message list with auto-scroll
+  - `src/modules/chat/components/ChatMessage.tsx` - Single message display
+  - `src/modules/chat/components/ChatInput.tsx` - Text input with send button
+  - `src/modules/chat/components/ChatToggleButton.tsx` - Floating toggle button
+- **Chat Persistence**: IndexedDB storage for threads and messages
+  - `athena-chat` database with `threads` and `messages` object stores
+  - Threads indexed by `updatedAt`, messages indexed by `threadId`
+  - Auto-loads on app start, persists across sessions
+- **Chat DevSettings**: Configuration options for chat behavior
+  - `chat.enabled` - Toggle chat panel visibility
+  - `chat.position` - Panel position (right/left)
+  - `chat.defaultWidth` - Panel width in pixels
+  - `chat.persistHistory` - Enable/disable persistence
+  - `chat.showToggleButton` - Show/hide floating button
+- **Keyboard Shortcut**: `Ctrl+Shift+C` to toggle chat panel
+
+### Changed
+- `src/app/layout/AppLayout.tsx` - Added ChatPanel and ChatToggleButton
+- `src/App.tsx` - Added chat initialization (loadThreads on startup)
+- `src/config/devSettings.ts` - Added ChatConfig interface and chat settings
+
+### Technical
+- **Thread Management**: Create, switch, delete threads with auto-selection
+- **Message Flow**: User message → placeholder AI response (WP 7.3 will add real AI)
+- **Auto-scroll**: Messages container scrolls to bottom on new messages
+- **Panel State**: Open/close state managed in Legend-State store
+- **Context Nodes**: `contextNodeIds` field prepared for WP 7.6 spatial awareness
+
+### Debug
+- `window.__ATHENA_CHAT_STATE__` - Chat state (threads, messages, panel)
+- `window.__ATHENA_CHAT__` - Chat actions for testing
+
+### Phase 7 Progress
+- WP 7.1: Chat UI & State ✅
+- WP 7.2: Context Builder ⏳
+- WP 7.3: AI Generation Service ⏳
+- WP 7.4: Extraction Parser ⏳
+- WP 7.5: Proposal Cards ⏳
+- WP 7.6: Spatial Awareness ⏳
+
 ## [6.6.0] - 2026-01-23
 
 ### Added

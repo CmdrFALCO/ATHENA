@@ -16,6 +16,9 @@ export interface FeatureFlags {
   enableCPNValidation: boolean;
   showValidationPanel: boolean;
 
+  // Phase 7: Chat
+  enableChat: boolean;
+
   // Debug
   showDebugInfo: boolean;
   logStateChanges: boolean;
@@ -58,6 +61,22 @@ export interface UrlConfig {
   defaultMode: 'reference' | 'extracted';
   /** If true, always use 'extracted' mode regardless of user selection */
   autoExtract: boolean;
+}
+
+// Chat configuration (WP 7.1)
+export interface ChatConfig {
+  /** Whether chat panel is enabled */
+  enabled: boolean;
+  /** Panel position: 'right' or 'left' */
+  position: 'right' | 'left';
+  /** Default panel width in pixels */
+  defaultWidth: number;
+  /** Whether to persist chat history */
+  persistHistory: boolean;
+  /** Maximum days to keep chat history (0 = unlimited) */
+  maxHistoryDays: number;
+  /** Show floating toggle button */
+  showToggleButton: boolean;
 }
 
 // Search configuration (RRF parameters)
@@ -106,6 +125,15 @@ const DEFAULT_URL_CONFIG: UrlConfig = {
   autoExtract: false, // Don't force AI extraction
 };
 
+const DEFAULT_CHAT_CONFIG: ChatConfig = {
+  enabled: true,
+  position: 'right',
+  defaultWidth: 384, // 24rem (w-96)
+  persistHistory: true,
+  maxHistoryDays: 30,
+  showToggleButton: true,
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -121,6 +149,9 @@ const DEFAULT_FLAGS: FeatureFlags = {
   enableCPNValidation: false,
   showValidationPanel: false,
 
+  // Chat (on - WP 7.1)
+  enableChat: true,
+
   // Debug (on for development)
   showDebugInfo: true,
   logStateChanges: false,
@@ -134,6 +165,7 @@ export const devSettings$ = observable({
   search: { ...DEFAULT_SEARCH_CONFIG } as SearchConfig,
   resources: { ...DEFAULT_RESOURCE_CONFIG } as ResourceConfig,
   url: { ...DEFAULT_URL_CONFIG } as UrlConfig,
+  chat: { ...DEFAULT_CHAT_CONFIG } as ChatConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -163,6 +195,7 @@ export const devSettingsActions = {
     devSettings$.search.set({ ...DEFAULT_SEARCH_CONFIG });
     devSettings$.resources.set({ ...DEFAULT_RESOURCE_CONFIG });
     devSettings$.url.set({ ...DEFAULT_URL_CONFIG });
+    devSettings$.chat.set({ ...DEFAULT_CHAT_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -238,6 +271,32 @@ export const devSettingsActions = {
 
   setUrlAutoExtract(enabled: boolean) {
     devSettings$.url.autoExtract.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Chat config actions (WP 7.1)
+  setChatEnabled(enabled: boolean) {
+    devSettings$.chat.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setChatPosition(position: ChatConfig['position']) {
+    devSettings$.chat.position.set(position);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setChatWidth(width: number) {
+    devSettings$.chat.defaultWidth.set(width);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setChatPersistHistory(enabled: boolean) {
+    devSettings$.chat.persistHistory.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setChatShowToggleButton(show: boolean) {
+    devSettings$.chat.showToggleButton.set(show);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };
