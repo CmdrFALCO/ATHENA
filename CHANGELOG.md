@@ -1,5 +1,55 @@
 # ATHENA Changelog
 
+## [7.3.0] - 2026-01-23
+
+### Added
+- **Conversational Generation (WP 7.3)**: Real AI integration with streaming responses
+  - `src/modules/chat/services/ChatService.ts` - Main chat orchestrator
+  - `src/modules/chat/services/promptTemplates.ts` - System prompts for knowledge capture
+  - `src/modules/chat/components/ChatServiceInitializer.tsx` - Initialization component
+- **AI Streaming**: Server-Sent Events streaming for LLM responses
+  - `AIService.generateStream()` - Streaming generation method
+  - `GeminiBackend.generateStream()` - Gemini SSE implementation
+  - `AIChatMessage`, `StreamOptions`, `StreamResult` types
+- **Knowledge Capture Prompt**: System prompt guiding AI to propose knowledge
+  - Structured `athena-proposals` format for nodes and edges
+  - Context injection from ContextBuilder
+  - Simple chat prompt (without proposals) option
+- **Generation DevSettings**: Configuration for AI generation
+  - `chat.generation.enableProposals` - Toggle proposal suggestions
+  - `chat.generation.historyLimit` - Conversation history limit (default: 10)
+  - `chat.generation.temperature` - AI temperature setting (default: 0.7)
+  - `chat.generation.maxTokens` - Maximum response tokens (default: 2048)
+
+### Changed
+- `src/modules/ai/types.ts` - Added AIChatMessage, StreamOptions, StreamResult types
+- `src/modules/ai/types.ts` - Added `generateStream()` to IAIBackend interface
+- `src/modules/ai/AIService.ts` - Added `generateStream()` method
+- `src/modules/ai/backends/GeminiBackend.ts` - Implements SSE streaming
+- `src/modules/chat/components/ChatInput.tsx` - Wired to ChatService
+- `src/modules/chat/components/ChatMessages.tsx` - Shows streaming content with cursor animation
+- `src/config/devSettings.ts` - Added GenerationConfig interface and chat.generation settings
+- `src/App.tsx` - Added ChatServiceInitializer inside AIProvider
+- `src/modules/chat/index.ts` - Added exports for ChatService and prompt templates
+
+### Technical
+- **SSE Parsing**: Handles Gemini's streaming format with proper buffering
+- **Context Integration**: Uses ContextBuilder from WP 7.2 to gather relevant notes
+- **Error Handling**: Graceful error display in chat messages
+- **Loading States**: Animated dots before first chunk, blinking cursor during stream
+- **Conversation History**: Includes last N messages (configurable) for context
+
+### Debug
+- `window.__ATHENA_CHAT_SERVICE__` - Chat service instance
+
+### Phase 7 Progress
+- WP 7.1: Chat UI & State ✅
+- WP 7.2: Context Builder ✅
+- WP 7.3: Conversational Generation ✅
+- WP 7.4: Extraction Parser ⏳
+- WP 7.5: Proposal Cards ⏳
+- WP 7.6: Spatial Awareness ⏳
+
 ## [7.2.0] - 2026-01-23
 
 ### Added

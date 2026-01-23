@@ -7,6 +7,9 @@ import type {
   GenerateWithAttachmentOptions,
   ProviderConfig,
   ModelInfo,
+  StreamOptions,
+  StreamResult,
+  AIChatMessage,
 } from '../types';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
@@ -41,6 +44,12 @@ interface GeminiErrorResponse {
     message: string;
     status: string;
   };
+}
+
+// Content format for Gemini streaming API
+interface GeminiContent {
+  role: 'user' | 'model';
+  parts: Array<{ text: string }>;
 }
 
 export class GeminiBackend implements IAIBackend {
@@ -265,6 +274,141 @@ export class GeminiBackend implements IAIBackend {
         : undefined,
       finishReason,
     };
+  }
+
+  /**
+   * Generate a streaming response using Server-Sent Events (SSE).
+   * WP 7.3 - Conversational Generation
+   *
+   * Uses Gemini's streamGenerateContent endpoint with alt=sse parameter.
+   */
+  async generateStream(options: StreamOptions): Promise<StreamResult> {
+    if (!this.apiKey) {
+      const error = new Error('Gemini API key not configured');
+      options.onError?.(error);
+      throw error;
+    }
+
+    const {
+      messages,
+      onChunk,
+      onComplete,
+      onError,
+      temperature = 0.7,
+      maxTokens = 2048,
+    } = options;
+
+    // Extract system message if present
+    const systemMessage = messages.find(m => m.role === 'system');
+    const chatMessages = messages.filter(m => m.role !== 'system');
+
+    // Use SSE streaming endpoint
+    const url = `${BASE_URL}/models/${this.chatModel}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: this.formatMessagesForGemini(chatMessages),
+          systemInstruction: systemMessage
+            ? { parts: [{ text: systemMessage.content }] }
+            : undefined,
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({})) as GeminiErrorResponse;
+        const errorMessage = errorData.error?.message || `API request failed: ${response.status}`;
+        const error = new Error(errorMessage);
+        onError?.(error);
+        throw error;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        const error = new Error('No response body');
+        onError?.(error);
+        throw error;
+      }
+
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE events from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr && jsonStr !== '[DONE]') {
+              try {
+                const data = JSON.parse(jsonStr) as GeminiGenerateResponse;
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (text) {
+                  fullResponse += text;
+                  onChunk(text);
+                }
+              } catch {
+                // Skip malformed JSON chunks
+                console.warn('[GeminiBackend] Failed to parse streaming chunk:', jsonStr.slice(0, 100));
+              }
+            }
+          }
+        }
+      }
+
+      // Process any remaining buffer
+      if (buffer.startsWith('data: ')) {
+        const jsonStr = buffer.slice(6).trim();
+        if (jsonStr && jsonStr !== '[DONE]') {
+          try {
+            const data = JSON.parse(jsonStr) as GeminiGenerateResponse;
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (text) {
+              fullResponse += text;
+              onChunk(text);
+            }
+          } catch {
+            // Ignore malformed final chunk
+          }
+        }
+      }
+
+      onComplete?.(fullResponse);
+
+      return {
+        fullResponse,
+        tokenCount: undefined, // Gemini doesn't provide token count in streaming
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      onError?.(err);
+      throw err;
+    }
+  }
+
+  /**
+   * Format messages for Gemini API.
+   * Gemini uses 'user' and 'model' roles instead of 'user' and 'assistant'.
+   */
+  private formatMessagesForGemini(messages: AIChatMessage[]): GeminiContent[] {
+    return messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
   }
 
   private async fetchWithRetry<T>(url: string, body: object): Promise<T> {

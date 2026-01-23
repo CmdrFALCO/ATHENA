@@ -1,6 +1,7 @@
 /**
  * ChatInput - Text input with send button
  * WP 7.1 - Chat UI & State
+ * WP 7.3 - Integrated with ChatService for AI streaming
  *
  * Handles message input with Enter to send, Shift+Enter for new line.
  * Creates thread automatically if none exists.
@@ -11,6 +12,7 @@ import { useSelector } from '@legendapp/state/react';
 import { Send } from 'lucide-react';
 import { chatState$ } from '../store/chatState';
 import { chatActions } from '../store/chatActions';
+import { getChatService, isChatServiceReady } from '../services/ChatService';
 
 export function ChatInput() {
   const [input, setInput] = useState('');
@@ -50,7 +52,18 @@ export function ChatInput() {
       await chatActions.createThread();
     }
 
-    await chatActions.sendMessage(content);
+    // Use ChatService if initialized (WP 7.3), otherwise fallback to placeholder
+    if (isChatServiceReady()) {
+      try {
+        const chatService = getChatService();
+        await chatService.sendMessage(content);
+      } catch (error) {
+        console.error('[ChatInput] Failed to send message:', error);
+      }
+    } else {
+      // Fallback to placeholder response (pre-WP 7.3 behavior)
+      await chatActions.sendMessage(content);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

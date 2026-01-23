@@ -75,7 +75,21 @@ export interface ContextConfig {
   traversalDepth: number;
 }
 
-// Chat configuration (WP 7.1, extended WP 7.2)
+// Generation configuration for AI chat (WP 7.3)
+export interface GenerationConfig {
+  /** Whether to enable knowledge capture proposals */
+  enableProposals: boolean;
+  /** Number of recent messages to include in conversation history */
+  historyLimit: number;
+  /** Temperature for AI generation (0-1, higher = more creative) */
+  temperature: number;
+  /** Maximum tokens to generate per response */
+  maxTokens: number;
+  /** Optional model override (uses provider default if not set) */
+  model?: string;
+}
+
+// Chat configuration (WP 7.1, extended WP 7.2, WP 7.3)
 export interface ChatConfig {
   /** Whether chat panel is enabled */
   enabled: boolean;
@@ -91,6 +105,8 @@ export interface ChatConfig {
   showToggleButton: boolean;
   /** Context building configuration (WP 7.2) */
   context: ContextConfig;
+  /** Generation configuration (WP 7.3) */
+  generation: GenerationConfig;
 }
 
 // Search configuration (RRF parameters)
@@ -146,6 +162,13 @@ const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
   traversalDepth: 1,
 };
 
+const DEFAULT_GENERATION_CONFIG: GenerationConfig = {
+  enableProposals: true,
+  historyLimit: 10,
+  temperature: 0.7,
+  maxTokens: 2048,
+};
+
 const DEFAULT_CHAT_CONFIG: ChatConfig = {
   enabled: true,
   position: 'right',
@@ -154,6 +177,7 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   maxHistoryDays: 30,
   showToggleButton: true,
   context: { ...DEFAULT_CONTEXT_CONFIG },
+  generation: { ...DEFAULT_GENERATION_CONFIG },
 };
 
 // Default values (conservative - features off until implemented)
@@ -340,6 +364,27 @@ export const devSettingsActions = {
 
   setContextTraversalDepth(value: number) {
     devSettings$.chat.context.traversalDepth.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Generation config actions (WP 7.3)
+  setGenerationEnableProposals(value: boolean) {
+    devSettings$.chat.generation.enableProposals.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setGenerationHistoryLimit(value: number) {
+    devSettings$.chat.generation.historyLimit.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setGenerationTemperature(value: number) {
+    devSettings$.chat.generation.temperature.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setGenerationMaxTokens(value: number) {
+    devSettings$.chat.generation.maxTokens.set(value);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

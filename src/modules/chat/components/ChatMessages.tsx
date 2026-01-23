@@ -52,6 +52,10 @@ export function ChatMessages() {
           <div className="flex-1 bg-athena-surface rounded-lg p-3">
             <p className="text-sm whitespace-pre-wrap text-athena-text">
               {streamingContent}
+              <span
+                className="inline-block w-2 h-4 bg-athena-accent/60 ml-0.5 animate-pulse"
+                aria-hidden="true"
+              />
             </p>
           </div>
         </div>

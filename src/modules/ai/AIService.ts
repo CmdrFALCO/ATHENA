@@ -7,6 +7,8 @@ import type {
   GenerateWithAttachmentOptions,
   AISettings,
   ProviderConfig,
+  StreamOptions,
+  StreamResult,
 } from './types';
 import { DEFAULT_AI_SETTINGS } from './types';
 import { GeminiBackend } from './backends';
@@ -17,6 +19,7 @@ export interface IAIService {
   getBackend(): IAIBackend | null;
   embed(text: string): Promise<EmbeddingResult>;
   generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
+  generateStream(options: StreamOptions): Promise<StreamResult>;
   generateWithAttachment(options: GenerateWithAttachmentOptions): Promise<GenerateResult>;
 
   isConfigured(): boolean;
@@ -131,6 +134,17 @@ class AIServiceImpl implements IAIService {
       throw new Error('AI backend not configured');
     }
     return this.backend.generate(prompt, options);
+  }
+
+  /**
+   * Generate a streaming response using the current backend.
+   * WP 7.3 - Conversational Generation
+   */
+  async generateStream(options: StreamOptions): Promise<StreamResult> {
+    if (!this.backend) {
+      throw new Error('No AI backend configured. Please configure an AI provider in settings.');
+    }
+    return this.backend.generateStream(options);
   }
 
   async generateWithAttachment(options: GenerateWithAttachmentOptions): Promise<GenerateResult> {

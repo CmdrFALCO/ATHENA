@@ -13,7 +13,7 @@ import {
 } from './adapters';
 import { router } from './app/routes';
 import { AIProvider } from './modules/ai';
-import { chatActions } from './modules/chat';
+import { chatActions, ChatServiceInitializer } from './modules/chat';
 
 // Import validation store to expose window.__ATHENA_VALIDATION__
 import './modules/validation/store/validationActions';
@@ -67,6 +67,8 @@ function App() {
   return (
     <AdapterProvider adapters={adapters}>
       <AIProvider>
+        {/* WP 7.3: Initialize ChatService after AIProvider is ready */}
+        <ChatServiceInitializer />
         <RouterProvider router={router} />
       </AIProvider>
     </AdapterProvider>

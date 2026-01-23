@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 7.2 (GraphRAG Context Builder) |
+| **Last WP Completed** | 7.3 (Conversational Generation) |
 | **Last Updated** | January 2026 |
 | **Phase** | 7 (AI Chat - Knowledge Capture Interface) |
 | **Milestone** | Phase 7 - Conversational Knowledge Capture |
@@ -183,6 +183,10 @@ athena/
 | Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected, Similarity, Traversal strategies |
 | Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts |
 | Context Config | `src/config/devSettings.ts` | `chat.context.*` settings for context building |
+| Chat Service | `src/modules/chat/services/ChatService.ts` | Orchestrates chat flow: context → prompt → AI → response |
+| Prompt Templates | `src/modules/chat/services/promptTemplates.ts` | System prompts for knowledge capture |
+| AI Streaming | `src/modules/ai/backends/GeminiBackend.ts` | SSE streaming via `generateStream()` method |
+| Generation Config | `src/config/devSettings.ts` | `chat.generation.*` settings for AI generation |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -231,6 +235,10 @@ athena/
 | ContextOptions | `src/modules/chat/services/contextStrategies/types.ts` | Options for context building (selectedNodeIds, query, maxItems, etc.) |
 | ContextResult | `src/modules/chat/services/contextStrategies/types.ts` | Result with items, token estimate, debug info |
 | ContextConfig | `src/config/devSettings.ts` | Context builder settings (maxItems, similarityThreshold, traversal) |
+| AIChatMessage | `src/modules/ai/types.ts` | Message format for AI conversations (role + content) |
+| StreamOptions | `src/modules/ai/types.ts` | Options for streaming generation with callbacks |
+| StreamResult | `src/modules/ai/types.ts` | Result of streaming generation (fullResponse, tokenCount) |
+| GenerationConfig | `src/config/devSettings.ts` | Generation settings (enableProposals, historyLimit, temperature, maxTokens) |
 
 ---
 
@@ -267,7 +275,6 @@ athena/
 
 | WP | What's Added |
 |-------|--------------|
-| **WP 7.3** | AI Generation Service - Claude/GPT streaming responses |
 | **WP 7.4** | Extraction Parser - Parse AI responses for knowledge proposals |
 | **WP 7.5** | Proposal Cards - UI for accept/reject knowledge suggestions |
 | **WP 7.6** | Spatial Awareness - @mention nodes in chat |
@@ -283,7 +290,8 @@ window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
 window.__ATHENA_RESOURCE_STATE__  // Resource state (resources, upload progress)
 window.__ATHENA_CHAT_STATE__      // Chat state (threads, messages, panel)
 window.__ATHENA_CHAT__            // Chat actions for testing
-window.__ATHENA_CONTEXT_BUILDER__ // Context builder instance (set by ChatService in WP 7.3)
+window.__ATHENA_CONTEXT_BUILDER__ // Context builder instance
+window.__ATHENA_CHAT_SERVICE__    // Chat service instance (WP 7.3)
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
 window.__ATHENA_DB__()            // Database connection (function)

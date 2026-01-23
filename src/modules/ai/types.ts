@@ -9,6 +9,9 @@ export interface IAIBackend {
   embed(text: string): Promise<EmbeddingResult>;
   generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
 
+  // Streaming operations (WP 7.3)
+  generateStream(options: StreamOptions): Promise<StreamResult>;
+
   // Multimodal (vision) operations - optional, not all backends support it
   generateWithAttachment?(options: GenerateWithAttachmentOptions): Promise<GenerateResult>;
 
@@ -166,3 +169,50 @@ export const PROVIDER_MODELS: Record<AIProviderType, { chat: string[]; embedding
     embedding: ['mistral-embed'],
   },
 };
+
+// ============================================
+// Streaming Types (WP 7.3)
+// ============================================
+
+/**
+ * Message format for chat conversations with AI.
+ * Used for building conversation history in generateStream.
+ */
+export interface AIChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Options for streaming generation.
+ * Includes callbacks for incremental updates and completion.
+ */
+export interface StreamOptions {
+  /** Conversation messages (system, user, assistant) */
+  messages: AIChatMessage[];
+  /** Called with each text chunk as it arrives */
+  onChunk: (chunk: string) => void;
+  /** Called when streaming completes with full response */
+  onComplete?: (fullResponse: string) => void;
+  /** Called if an error occurs during streaming */
+  onError?: (error: Error) => void;
+  /** Temperature for generation (0-1, default 0.7) */
+  temperature?: number;
+  /** Maximum tokens to generate (default 2048) */
+  maxTokens?: number;
+}
+
+/**
+ * Result of streaming generation.
+ * Returned after streaming completes.
+ */
+export interface StreamResult {
+  /** The complete generated response */
+  fullResponse: string;
+  /** Token count if available (not all backends provide this in streaming) */
+  tokenCount?: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
+}
