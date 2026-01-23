@@ -63,7 +63,19 @@ export interface UrlConfig {
   autoExtract: boolean;
 }
 
-// Chat configuration (WP 7.1)
+// Context configuration for GraphRAG (WP 7.2)
+export interface ContextConfig {
+  /** Maximum context items to include */
+  maxItems: number;
+  /** Minimum similarity score for semantic search (0-1) */
+  similarityThreshold: number;
+  /** Whether to expand context via graph traversal */
+  includeTraversal: boolean;
+  /** How many hops to traverse in the graph */
+  traversalDepth: number;
+}
+
+// Chat configuration (WP 7.1, extended WP 7.2)
 export interface ChatConfig {
   /** Whether chat panel is enabled */
   enabled: boolean;
@@ -77,6 +89,8 @@ export interface ChatConfig {
   maxHistoryDays: number;
   /** Show floating toggle button */
   showToggleButton: boolean;
+  /** Context building configuration (WP 7.2) */
+  context: ContextConfig;
 }
 
 // Search configuration (RRF parameters)
@@ -125,6 +139,13 @@ const DEFAULT_URL_CONFIG: UrlConfig = {
   autoExtract: false, // Don't force AI extraction
 };
 
+const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
+  maxItems: 10,
+  similarityThreshold: 0.7,
+  includeTraversal: true,
+  traversalDepth: 1,
+};
+
 const DEFAULT_CHAT_CONFIG: ChatConfig = {
   enabled: true,
   position: 'right',
@@ -132,6 +153,7 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   persistHistory: true,
   maxHistoryDays: 30,
   showToggleButton: true,
+  context: { ...DEFAULT_CONTEXT_CONFIG },
 };
 
 // Default values (conservative - features off until implemented)
@@ -297,6 +319,27 @@ export const devSettingsActions = {
 
   setChatShowToggleButton(show: boolean) {
     devSettings$.chat.showToggleButton.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Context config actions (WP 7.2)
+  setContextMaxItems(value: number) {
+    devSettings$.chat.context.maxItems.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setContextSimilarityThreshold(value: number) {
+    devSettings$.chat.context.similarityThreshold.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setContextIncludeTraversal(value: boolean) {
+    devSettings$.chat.context.includeTraversal.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setContextTraversalDepth(value: number) {
+    devSettings$.chat.context.traversalDepth.set(value);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

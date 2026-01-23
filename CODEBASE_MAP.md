@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 7.1 (Chat UI & State) |
+| **Last WP Completed** | 7.2 (GraphRAG Context Builder) |
 | **Last Updated** | January 2026 |
 | **Phase** | 7 (AI Chat - Knowledge Capture Interface) |
 | **Milestone** | Phase 7 - Conversational Knowledge Capture |
@@ -179,6 +179,10 @@ athena/
 | Chat Panel | `src/modules/chat/components/` | ChatPanel, ChatHeader, ChatMessages, ChatInput, ChatToggleButton |
 | Chat Config | `src/config/devSettings.ts` | `chat.enabled`, `chat.position`, `chat.showToggleButton` settings |
 | Chat Keyboard | `src/modules/chat/components/ChatToggleButton.tsx` | Ctrl+Shift+C to toggle chat panel |
+| Context Builder | `src/modules/chat/services/ContextBuilder.ts` | GraphRAG context gathering with 3 strategies |
+| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected, Similarity, Traversal strategies |
+| Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts |
+| Context Config | `src/config/devSettings.ts` | `chat.context.*` settings for context building |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -223,6 +227,10 @@ athena/
 | NodeProposal | `src/modules/chat/types/index.ts` | Proposed entity with confidence and status |
 | EdgeProposal | `src/modules/chat/types/index.ts` | Proposed connection with rationale and confidence |
 | ChatConfig | `src/config/devSettings.ts` | Chat module configuration (enabled, position, persistence) |
+| ContextItem | `src/modules/chat/services/contextStrategies/types.ts` | Single context item with id, type, title, content, relevance, source |
+| ContextOptions | `src/modules/chat/services/contextStrategies/types.ts` | Options for context building (selectedNodeIds, query, maxItems, etc.) |
+| ContextResult | `src/modules/chat/services/contextStrategies/types.ts` | Result with items, token estimate, debug info |
+| ContextConfig | `src/config/devSettings.ts` | Context builder settings (maxItems, similarityThreshold, traversal) |
 
 ---
 
@@ -259,7 +267,6 @@ athena/
 
 | WP | What's Added |
 |-------|--------------|
-| **WP 7.2** | Context Builder - Gather relevant notes for AI context |
 | **WP 7.3** | AI Generation Service - Claude/GPT streaming responses |
 | **WP 7.4** | Extraction Parser - Parse AI responses for knowledge proposals |
 | **WP 7.5** | Proposal Cards - UI for accept/reject knowledge suggestions |
@@ -276,6 +283,7 @@ window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
 window.__ATHENA_RESOURCE_STATE__  // Resource state (resources, upload progress)
 window.__ATHENA_CHAT_STATE__      // Chat state (threads, messages, panel)
 window.__ATHENA_CHAT__            // Chat actions for testing
+window.__ATHENA_CONTEXT_BUILDER__ // Context builder instance (set by ChatService in WP 7.3)
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
 window.__ATHENA_DB__()            // Database connection (function)

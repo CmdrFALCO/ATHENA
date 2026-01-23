@@ -1,5 +1,49 @@
 # ATHENA Changelog
 
+## [7.2.0] - 2026-01-23
+
+### Added
+- **Context Builder (WP 7.2)**: GraphRAG context gathering for AI conversations
+  - `src/modules/chat/services/ContextBuilder.ts` - Main orchestrator
+  - `src/modules/chat/services/ContextFormatter.ts` - Format for AI prompts
+  - `src/modules/chat/services/contextStrategies/` - Strategy implementations
+- **Three Context Strategies**:
+  - `SelectedNodesStrategy` - Explicit user-selected context (relevanceScore: 1.0)
+  - `SimilarityStrategy` - Semantic similarity search using embeddings
+  - `TraversalStrategy` - Graph neighborhood expansion (1-hop, relevanceScore: 0.5)
+- **Context DevSettings**: Configuration for context building
+  - `chat.context.maxItems` - Maximum context items (default: 10)
+  - `chat.context.similarityThreshold` - Minimum similarity score (default: 0.7)
+  - `chat.context.includeTraversal` - Enable graph traversal (default: true)
+  - `chat.context.traversalDepth` - Traversal hops (default: 1)
+- **Context Types**: Type definitions for context building
+  - `ContextItem` - Single item with id, type, title, content, relevanceScore, source
+  - `ContextOptions` - Options for context building
+  - `ContextResult` - Result with items, token estimate, debug info
+
+### Changed
+- `src/config/devSettings.ts` - Added ContextConfig interface and chat.context settings
+- `src/modules/chat/index.ts` - Added exports for ContextBuilder, ContextFormatter, types
+- `src/modules/chat/services/index.ts` - Added exports for new services
+
+### Technical
+- **Strategy Pattern**: Clean composition of context gathering strategies
+- **Deduplication**: Items appear once even if found by multiple strategies
+- **Priority Order**: Selected > Similar > Traversal (by relevance score)
+- **Token Estimation**: Rough estimate for context window planning (~4 chars/token)
+- **Graceful Degradation**: Handles AI/embedding failures without crashing
+
+### Debug
+- `window.__ATHENA_CONTEXT_BUILDER__` - Context builder instance (set by ChatService in WP 7.3)
+
+### Phase 7 Progress
+- WP 7.1: Chat UI & State ✅
+- WP 7.2: Context Builder ✅
+- WP 7.3: AI Generation Service ⏳
+- WP 7.4: Extraction Parser ⏳
+- WP 7.5: Proposal Cards ⏳
+- WP 7.6: Spatial Awareness ⏳
+
 ## [7.1.0] - 2026-01-23
 
 ### Added
@@ -42,7 +86,7 @@
 - `window.__ATHENA_CHAT_STATE__` - Chat state (threads, messages, panel)
 - `window.__ATHENA_CHAT__` - Chat actions for testing
 
-### Phase 7 Progress
+### Phase 7 Progress (at this version)
 - WP 7.1: Chat UI & State ✅
 - WP 7.2: Context Builder ⏳
 - WP 7.3: AI Generation Service ⏳
