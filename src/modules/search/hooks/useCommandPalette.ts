@@ -1,21 +1,23 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNotes, useCommandPaletteOpen, uiActions } from '@/store';
+import { resourceState$ } from '@/store/resourceState';
 import { useSearchAdapter } from '@/adapters';
-import type { Note, EntityType } from '@/shared/types';
-import type { SearchResult } from '@/adapters';
+import type { Note, EntityType, ResourceType } from '@/shared/types';
+import type { SearchResult, ResourceSearchResult } from '@/adapters';
 
 /**
  * Unified result type for command palette.
- * Can be either a Note (for recent items) or a search result with snippet.
+ * Can be an entity (Note) or a resource (PDF, image, etc.)
  */
 export interface CommandPaletteResult {
   id: string;
   title: string;
-  type: EntityType;
+  type: EntityType | ResourceType;
   snippet?: string; // Highlighted match context (only for search results)
   matchType?: 'keyword' | 'semantic' | 'hybrid'; // Search match type
   updatedAt: string;
   isSearchResult: boolean;
+  isResource?: boolean; // True for resource results
 }
 
 export interface UseCommandPaletteReturn {
@@ -51,6 +53,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
   const [query, setQueryState] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [resourceSearchResults, setResourceSearchResults] = useState<ResourceSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,6 +85,19 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     matchType: result.matchType,
     updatedAt: '', // Search results are sorted by relevance, not date
     isSearchResult: true,
+    isResource: false,
+  }), []);
+
+  // Convert ResourceSearchResult to CommandPaletteResult
+  const resourceSearchResultToResult = useCallback((result: ResourceSearchResult): CommandPaletteResult => ({
+    id: result.resourceId,
+    title: result.name,
+    type: result.type,
+    snippet: result.snippet,
+    matchType: result.matchType,
+    updatedAt: '',
+    isSearchResult: true,
+    isResource: true,
   }), []);
 
   // Debounced search effect
@@ -95,6 +111,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     if (!trimmedQuery) {
       // Empty query: clear search results immediately
       setSearchResults([]);
+      setResourceSearchResults([]);
       setIsSearching(false);
       return;
     }
@@ -105,13 +122,17 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     // Debounce the search (hybrid search combines keyword + semantic)
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const results = await searchAdapter.hybridSearch(trimmedQuery, {
-          limit: MAX_RESULTS,
-        });
-        setSearchResults(results);
+        // Search entities and resources in parallel
+        const [entityResults, resourceResults] = await Promise.all([
+          searchAdapter.hybridSearch(trimmedQuery, { limit: MAX_RESULTS }),
+          searchAdapter.searchResources(trimmedQuery, { limit: MAX_RESULTS }),
+        ]);
+        setSearchResults(entityResults);
+        setResourceSearchResults(resourceResults);
       } catch (error) {
         console.error('Search error:', error);
         setSearchResults([]);
+        setResourceSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -125,16 +146,19 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     };
   }, [query, searchAdapter]);
 
-  // Compute final results
+  // Compute final results (combining entity and resource results)
   const results: CommandPaletteResult[] = useMemo(() => {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
       // Show recent notes when no query
       return recentNotes.map(noteToResult);
     }
-    // Show search results when query exists
-    return searchResults.map(searchResultToResult);
-  }, [query, recentNotes, searchResults, noteToResult, searchResultToResult]);
+    // Combine entity and resource search results
+    // Resources are shown after entities, both sorted by relevance
+    const entityPaletteResults = searchResults.map(searchResultToResult);
+    const resourcePaletteResults = resourceSearchResults.map(resourceSearchResultToResult);
+    return [...entityPaletteResults, ...resourcePaletteResults].slice(0, MAX_RESULTS);
+  }, [query, recentNotes, searchResults, resourceSearchResults, noteToResult, searchResultToResult, resourceSearchResultToResult]);
 
   // Reset selection when results change
   useEffect(() => {
@@ -150,6 +174,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     setQueryState('');
     setSelectedIndex(0);
     setSearchResults([]);
+    setResourceSearchResults([]);
   }, []);
 
   const close = useCallback(() => {
@@ -157,6 +182,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     setQueryState('');
     setSelectedIndex(0);
     setSearchResults([]);
+    setResourceSearchResults([]);
   }, []);
 
   const selectNext = useCallback(() => {
@@ -177,7 +203,13 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     const selected = results[selectedIndex];
     if (!selected) return;
 
-    uiActions.selectEntity(selected.id);
+    if (selected.isResource) {
+      // Select resource
+      resourceState$.selectedResourceId.set(selected.id);
+    } else {
+      // Select entity
+      uiActions.selectEntity(selected.id);
+    }
     close();
   }, [results, selectedIndex, close]);
 

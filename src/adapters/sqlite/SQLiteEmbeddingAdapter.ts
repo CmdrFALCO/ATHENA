@@ -1,4 +1,9 @@
-import type { EmbeddingRecord, SimilarityResult } from '@/shared/types';
+import type {
+  EmbeddingRecord,
+  SimilarityResult,
+  ResourceEmbeddingRecord,
+  ResourceSimilarityResult,
+} from '@/shared/types';
 import type { IEmbeddingAdapter } from '../IEmbeddingAdapter';
 import type { DatabaseConnection } from '@/database';
 
@@ -192,6 +197,134 @@ export class SQLiteEmbeddingAdapter implements IEmbeddingAdapter {
     return {
       id: row.id as string,
       entity_id: row.entity_id as string,
+      vector: JSON.parse(row.vector as string),
+      model: row.model as string,
+      created_at: row.created_at as string,
+    };
+  }
+
+  // === Resource Embedding Methods (WP 6.4) ===
+
+  async storeForResource(
+    resourceId: string,
+    vector: number[],
+    model: string
+  ): Promise<ResourceEmbeddingRecord> {
+    const now = new Date().toISOString();
+
+    // Check if embedding exists for this (resource_id, model) pair
+    const existing = await this.db.exec<Record<string, unknown>>(
+      `SELECT id FROM embeddings WHERE resource_id = ? AND model = ?`,
+      [resourceId, model]
+    );
+
+    const existingRecord = existing[0];
+    if (existingRecord) {
+      // Update existing embedding
+      const id = existingRecord.id as string;
+      await this.db.run(`UPDATE embeddings SET vector = ?, created_at = ? WHERE id = ?`, [
+        JSON.stringify(vector),
+        now,
+        id,
+      ]);
+
+      return {
+        id,
+        resource_id: resourceId,
+        vector,
+        model,
+        created_at: now,
+      };
+    }
+
+    // Insert new embedding (resource_id, not entity_id)
+    const id = crypto.randomUUID();
+    await this.db.run(
+      `INSERT INTO embeddings (id, resource_id, vector, model, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, resourceId, JSON.stringify(vector), model, now]
+    );
+
+    return {
+      id,
+      resource_id: resourceId,
+      vector,
+      model,
+      created_at: now,
+    };
+  }
+
+  async getForResource(
+    resourceId: string,
+    model?: string
+  ): Promise<ResourceEmbeddingRecord | null> {
+    let query: string;
+    let params: unknown[];
+
+    if (model) {
+      query = `SELECT * FROM embeddings WHERE resource_id = ? AND model = ? LIMIT 1`;
+      params = [resourceId, model];
+    } else {
+      query = `SELECT * FROM embeddings WHERE resource_id = ? ORDER BY created_at DESC LIMIT 1`;
+      params = [resourceId];
+    }
+
+    const results = await this.db.exec<Record<string, unknown>>(query, params);
+    return results[0] ? this.mapToResourceEmbeddingRecord(results[0]) : null;
+  }
+
+  async findSimilarResources(
+    vector: number[],
+    model: string,
+    limit: number,
+    threshold = 0
+  ): Promise<ResourceSimilarityResult[]> {
+    // Get all resource embeddings for the specified model
+    // Join with resources table to get name, type, extractedText
+    const results = await this.db.exec<Record<string, unknown>>(
+      `SELECT e.*, r.name, r.type, r.extracted_text
+       FROM embeddings e
+       JOIN resources r ON r.id = e.resource_id
+       WHERE e.resource_id IS NOT NULL
+         AND e.model = ?
+         AND r.invalid_at IS NULL`,
+      [model]
+    );
+
+    // Compute similarity for each, filter, sort, and return top results
+    const similarities: ResourceSimilarityResult[] = results
+      .map((row) => {
+        const rowVector = JSON.parse(row.vector as string) as number[];
+        return {
+          resource_id: row.resource_id as string,
+          similarity: this.cosineSimilarity(vector, rowVector),
+          name: row.name as string | undefined,
+          type: row.type as string | undefined,
+          extractedText: row.extracted_text as string | null,
+        };
+      })
+      .filter((r) => r.similarity >= threshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
+
+    return similarities;
+  }
+
+  async deleteForResource(resourceId: string, model?: string): Promise<void> {
+    if (model) {
+      await this.db.run(`DELETE FROM embeddings WHERE resource_id = ? AND model = ?`, [
+        resourceId,
+        model,
+      ]);
+    } else {
+      await this.db.run(`DELETE FROM embeddings WHERE resource_id = ?`, [resourceId]);
+    }
+  }
+
+  private mapToResourceEmbeddingRecord(row: Record<string, unknown>): ResourceEmbeddingRecord {
+    return {
+      id: row.id as string,
+      resource_id: row.resource_id as string,
       vector: JSON.parse(row.vector as string),
       model: row.model as string,
       created_at: row.created_at as string,

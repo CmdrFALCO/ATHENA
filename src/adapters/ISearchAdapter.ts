@@ -1,4 +1,4 @@
-import type { EntityType } from '@/shared/types';
+import type { EntityType, ResourceType } from '@/shared/types';
 
 export interface SearchResult {
   entityId: string;
@@ -8,8 +8,22 @@ export interface SearchResult {
   score: number; // BM25 relevance score (more negative = more relevant)
   matchType: 'keyword' | 'semantic' | 'hybrid';
   // WP 4.6: Metadata for faceted search
-  createdAt?: string;  // ISO date string
-  updatedAt?: string;  // ISO date string
+  createdAt?: string; // ISO date string
+  updatedAt?: string; // ISO date string
+}
+
+/**
+ * WP 6.4: Resource search result
+ */
+export interface ResourceSearchResult {
+  resourceId: string;
+  name: string;
+  type: ResourceType;
+  snippet: string;
+  score: number;
+  matchType: 'keyword' | 'semantic' | 'hybrid';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SearchOptions {
@@ -51,4 +65,16 @@ export interface ISearchAdapter {
    * @param options - Hybrid search options including RRF parameters
    */
   hybridSearch(query: string, options?: HybridSearchOptions): Promise<SearchResult[]>;
+
+  // === WP 6.4: Resource Search Methods ===
+
+  /**
+   * Keyword search for resources using FTS5
+   */
+  searchResources(query: string, options?: SearchOptions): Promise<ResourceSearchResult[]>;
+
+  /**
+   * Semantic search for resources using vector similarity
+   */
+  semanticSearchResources(query: string, options?: SearchOptions): Promise<ResourceSearchResult[]>;
 }

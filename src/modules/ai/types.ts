@@ -9,6 +9,9 @@ export interface IAIBackend {
   embed(text: string): Promise<EmbeddingResult>;
   generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
 
+  // Multimodal (vision) operations - optional, not all backends support it
+  generateWithAttachment?(options: GenerateWithAttachmentOptions): Promise<GenerateResult>;
+
   // Connection management
   isAvailable(): Promise<boolean>;
   configure(config: ProviderConfig): void;
@@ -41,6 +44,19 @@ export interface GenerateOptions {
   temperature?: number;
   systemPrompt?: string;
   stopSequences?: string[];
+}
+
+// Multimodal (vision) support for AI extraction
+export interface AttachmentInput {
+  mimeType: string;
+  data: string; // base64 encoded
+}
+
+export interface GenerateWithAttachmentOptions {
+  prompt: string;
+  attachment: AttachmentInput;
+  maxTokens?: number;
+  temperature?: number;
 }
 
 export interface ProviderConfig {
@@ -93,7 +109,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   provider: 'none',
 
   providerConfig: {
-    gemini: { chatModel: 'gemini-1.5-flash', embeddingModel: 'text-embedding-004' },
+    gemini: { chatModel: 'gemini-2.5-flash', embeddingModel: 'text-embedding-004' },
     ollama: { endpoint: 'http://localhost:11434', chatModel: 'llama3.2', embeddingModel: 'nomic-embed-text' },
     anthropic: { chatModel: 'claude-3-haiku-20240307', embeddingModel: 'voyage-2' },
     openai: { chatModel: 'gpt-4o-mini', embeddingModel: 'text-embedding-3-small' },
@@ -130,7 +146,7 @@ export const PROVIDER_NAMES: Record<AIProviderType | 'none', string> = {
 // Provider model options
 export const PROVIDER_MODELS: Record<AIProviderType, { chat: string[]; embedding: string[] }> = {
   gemini: {
-    chat: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'],
+    chat: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'],
     embedding: ['text-embedding-004'],
   },
   ollama: {

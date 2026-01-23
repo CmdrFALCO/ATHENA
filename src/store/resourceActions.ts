@@ -7,6 +7,7 @@ import type {
 } from '@/shared/types/resources';
 import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
 import { blobStorage } from '@/services/blobStorage';
+import { browserExtractionService } from '@/modules/resources/extraction';
 
 // Adapter reference (set by component on mount)
 let resourceAdapter: IResourceAdapter | null = null;
@@ -77,6 +78,14 @@ export async function uploadResource(
 
   // Clear progress after brief delay
   setTimeout(() => resourceState$.uploadProgress.set(null), 500);
+
+  // WP 6.4: Auto-extract if browser extraction is available
+  if (browserExtractionService.canExtract(resource)) {
+    // Run extraction async (don't block upload completion)
+    browserExtractionService.extract(resource).catch((err) => {
+      console.error('[Upload] Auto-extraction failed:', err);
+    });
+  }
 
   return resource;
 }

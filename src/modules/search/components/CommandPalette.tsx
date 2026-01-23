@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { FileText, ClipboardList, FileEdit, Search, Loader2 } from 'lucide-react';
+import { FileText, ClipboardList, FileEdit, Search, Loader2, File, Image, FileSpreadsheet, FileCode } from 'lucide-react';
 import { useCommandPalette, type CommandPaletteResult } from '../hooks';
+import { resourceState$ } from '@/store/resourceState';
 import { uiActions } from '@/store';
-import type { EntityType } from '@/shared/types';
+import type { EntityType, ResourceType } from '@/shared/types';
 
 /**
  * Format a date for display in the command palette.
@@ -29,10 +30,28 @@ function formatDate(dateString: string): string {
 }
 
 /**
- * Get the icon for an entity type.
+ * Get the icon for an entity or resource type.
  */
-function getEntityIcon(type: EntityType) {
-  switch (type) {
+function getResultIcon(type: EntityType | ResourceType, isResource?: boolean) {
+  if (isResource) {
+    // Resource types
+    switch (type as ResourceType) {
+      case 'pdf':
+        return <File className="w-4 h-4 text-red-400" />;
+      case 'image':
+        return <Image className="w-4 h-4 text-blue-400" />;
+      case 'docx':
+        return <FileText className="w-4 h-4 text-blue-500" />;
+      case 'xlsx':
+        return <FileSpreadsheet className="w-4 h-4 text-green-400" />;
+      case 'md':
+        return <FileCode className="w-4 h-4 text-purple-400" />;
+      default:
+        return <File className="w-4 h-4" />;
+    }
+  }
+  // Entity types
+  switch (type as EntityType) {
     case 'note':
       return <FileText className="w-4 h-4" />;
     case 'plan':
@@ -90,9 +109,15 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
       {/* Title row */}
       <div className="flex items-center gap-3">
         <span className="text-zinc-400 flex-shrink-0">
-          {getEntityIcon(result.type)}
+          {getResultIcon(result.type, result.isResource)}
         </span>
         <span className="flex-1 truncate">{result.title}</span>
+        {/* Resource badge */}
+        {result.isResource && (
+          <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-amber-900/50 text-amber-300">
+            resource
+          </span>
+        )}
         {/* Match type badge (only for search results) */}
         {result.matchType && (
           <span className={getMatchTypeBadgeClasses(result.matchType)}>
@@ -194,7 +219,11 @@ export function CommandPalette() {
   const handleResultClick = (index: number) => {
     const result = results[index];
     if (result) {
-      uiActions.selectEntity(result.id);
+      if (result.isResource) {
+        resourceState$.selectedResourceId.set(result.id);
+      } else {
+        uiActions.selectEntity(result.id);
+      }
       close();
     }
   };
@@ -219,7 +248,7 @@ export function CommandPalette() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search notes..."
+            placeholder="Search notes and resources..."
             className="flex-1 bg-transparent text-white text-lg placeholder-zinc-500 outline-none"
           />
           <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 text-xs text-zinc-500 bg-zinc-800 border border-zinc-700 rounded">

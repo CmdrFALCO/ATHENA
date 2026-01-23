@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 6.3 (Resource Nodes on Canvas) |
+| **Last WP Completed** | 6.5 (AI Extraction + Unified Search) |
 | **Last Updated** | January 2026 |
 | **Phase** | 6 (Resources) - In Progress |
 | **Milestone** | Usability Milestone - Daily use viable |
@@ -53,7 +53,8 @@ athena/
 │   │   ├── pronoia/              # ⏳ Plans, decisions
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
-│   │   └── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
+│   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
+│   │   └── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -97,6 +98,7 @@ athena/
 | Theme | `src/shared/theme/` | [docs/modules/APP.md](docs/modules/APP.md) | ✅ |
 | Search | `src/modules/search/` | — | ✅ |
 | Validation | `src/modules/validation/` | [docs/modules/VALIDATION.md](docs/modules/VALIDATION.md) | ✅ |
+| Resources | `src/modules/resources/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -154,6 +156,17 @@ athena/
 | Resource Nodes Hook | `src/modules/canvas/hooks/useResourcesAsNodes.ts` | Convert resources to React Flow nodes with `resource-` ID prefix |
 | Resource Detail Panel | `src/modules/sophia/components/ResourceDetailPanel.tsx` | View/edit resource metadata, download, delete |
 | Mixed Node Canvas | `src/modules/canvas/components/GraphCanvas.tsx` | Render both entity and resource nodes, handle mixed selections |
+| Browser Extraction | `src/modules/resources/extraction/` | DOCX (mammoth), XLSX (SheetJS), MD extractors for text content |
+| Extraction Service | `src/modules/resources/extraction/BrowserExtractionService.ts` | Orchestrates extraction, updates resource status, triggers post-extraction |
+| Resources FTS5 | `src/database/migrations/resources_fts.ts` | FTS5 virtual table with sync triggers for resources |
+| Resource Embeddings | `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` | `storeForResource()`, `findSimilarResources()` for resource semantic search |
+| Post-Extraction Hook | `src/modules/resources/extraction/postExtraction.ts` | Generates embeddings after text extraction completes |
+| Auto-Extract on Upload | `src/store/resourceActions.ts` | Triggers browser extraction for supported file types on upload |
+| Resource Search | `src/adapters/sqlite/SQLiteSearchAdapter.ts` | `searchResources()`, `semanticSearchResources()` for resource FTS and vector search |
+| AI Extraction | `src/modules/resources/extraction/AIExtractionService.ts` | PDF and image extraction using Gemini multimodal |
+| Multimodal AI | `src/modules/ai/backends/GeminiBackend.ts` | `generateWithAttachment()` for vision/document understanding |
+| Extraction Strategy | `src/config/devSettings.ts` | `resources.extraction.strategy` for browser/AI/hybrid routing |
+| Unified Search | `src/modules/search/hooks/useCommandPalette.ts` | Command Palette searches entities AND resources in parallel |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -168,8 +181,17 @@ athena/
 | Resource | `src/shared/types/resources.ts` | PDF, DOCX, URL, etc. with extraction status |
 | Cluster | `src/shared/types/clusters.ts` | N-way groupings with member roles |
 | Embedding | `src/shared/types/embeddings.ts` | Vector storage for similarity |
+| ResourceEmbeddingRecord | `src/shared/types/embeddings.ts` | Embedding record for resources (resource_id instead of entity_id) |
+| ResourceSimilarityResult | `src/shared/types/embeddings.ts` | Resource similarity search result |
 | SearchResult | `src/adapters/ISearchAdapter.ts` | Search result with snippet, score, matchType, createdAt, updatedAt |
+| ResourceSearchResult | `src/adapters/ISearchAdapter.ts` | Resource search result with resourceId, name, type, snippet, score |
+| ExtractionResult | `src/modules/resources/extraction/types.ts` | Text extraction result with optional structured data and error |
+| IExtractor | `src/modules/resources/extraction/types.ts` | Interface for file type extractors |
+| AttachmentInput | `src/modules/ai/types.ts` | Base64-encoded file attachment for multimodal AI |
+| GenerateWithAttachmentOptions | `src/modules/ai/types.ts` | Options for multimodal generation (prompt + attachment) |
+| ExtractionStrategy | `src/config/devSettings.ts` | 'browser' | 'ai' | 'browser-then-ai' extraction routing |
 | Facet | `src/modules/search/types/facets.ts` | Facet definition with values and counts for filtering |
+| CommandPaletteResult | `src/modules/search/hooks/useCommandPalette.ts` | Unified search result for entities and resources |
 | SuggestedConnection | `src/store/state.ts` | AI-suggested connections (ephemeral, not persisted) |
 | ValidationRule | `src/modules/validation/types/rules.ts` | SHACL-inspired rule definition with evaluate function |
 | ValidationContext | `src/modules/validation/types/rules.ts` | Graph snapshot with pre-built indexes for rule evaluation |
@@ -198,6 +220,8 @@ athena/
 | @legendapp/state | 3.x | State management |
 | @tiptap/react | 2.x | Rich text editor |
 | @tiptap/starter-kit | 2.x | Editor extensions |
+| mammoth | 1.x | DOCX to text extraction |
+| xlsx | 0.18.x | Excel file parsing (SheetJS) |
 
 ### Development
 
@@ -214,8 +238,7 @@ athena/
 
 | WP | What's Added |
 |----|--------------|
-| **6.4** | Text extraction (browser-based) |
-| **6.5** | Resource search integration |
+| **6.6** | URL Resources (web links as reference nodes) |
 
 ---
 
@@ -226,6 +249,10 @@ window.__ATHENA_STATE__           // Main app state
 window.__ATHENA_DEV_SETTINGS__    // Feature flags
 window.__ATHENA_VALIDATION_STATE__ // Validation state (violations, reports)
 window.__ATHENA_RESOURCE_STATE__  // Resource state (resources, upload progress)
+window.__ATHENA_EXTRACTION__      // Browser extraction service
+window.__ATHENA_AI_EXTRACTION__   // AI extraction service
+window.__ATHENA_DB__()            // Database connection (function)
+await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```
 
 ---

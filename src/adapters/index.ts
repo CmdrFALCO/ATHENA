@@ -3,7 +3,7 @@ export type { INoteAdapter } from './INoteAdapter';
 export type { IConnectionAdapter } from './IConnectionAdapter';
 export type { IEmbeddingAdapter } from './IEmbeddingAdapter';
 export type { IClusterAdapter } from './IClusterAdapter';
-export type { ISearchAdapter, SearchResult, SearchOptions, HybridSearchOptions } from './ISearchAdapter';
+export type { ISearchAdapter, SearchResult, ResourceSearchResult, SearchOptions, HybridSearchOptions } from './ISearchAdapter';
 export type { IResourceAdapter } from './IResourceAdapter';
 
 // SQLite implementations

@@ -32,10 +32,11 @@ export const CREATE_TABLES = `
     invalid_at TEXT
   );
 
-  -- Embeddings table
+  -- Embeddings table (entity_id or resource_id, at least one should be set)
   CREATE TABLE IF NOT EXISTS embeddings (
     id TEXT PRIMARY KEY,
-    entity_id TEXT NOT NULL REFERENCES entities(id),
+    entity_id TEXT REFERENCES entities(id),
+    resource_id TEXT,
     chunk_index INTEGER DEFAULT 0,
     vector TEXT NOT NULL,
     model TEXT NOT NULL,
@@ -73,6 +74,7 @@ export const CREATE_TABLES = `
   CREATE INDEX IF NOT EXISTS idx_connections_target ON connections(target_id);
   CREATE INDEX IF NOT EXISTS idx_connections_color ON connections(color);
   CREATE INDEX IF NOT EXISTS idx_embeddings_entity ON embeddings(entity_id);
+  CREATE INDEX IF NOT EXISTS idx_embeddings_resource ON embeddings(resource_id);
   CREATE INDEX IF NOT EXISTS idx_cluster_members_entity ON cluster_members(entity_id);
   CREATE INDEX IF NOT EXISTS idx_clusters_type ON clusters(type);
   CREATE INDEX IF NOT EXISTS idx_clusters_color ON clusters(color);

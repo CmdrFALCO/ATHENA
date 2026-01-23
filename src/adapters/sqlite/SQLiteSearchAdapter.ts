@@ -1,5 +1,11 @@
-import type { EntityType } from '@/shared/types';
-import type { ISearchAdapter, SearchResult, SearchOptions, HybridSearchOptions } from '../ISearchAdapter';
+import type { EntityType, ResourceType } from '@/shared/types';
+import type {
+  ISearchAdapter,
+  SearchResult,
+  ResourceSearchResult,
+  SearchOptions,
+  HybridSearchOptions,
+} from '../ISearchAdapter';
 import { applyRRF } from '@/modules/search/services/HybridSearchService';
 import type { DatabaseConnection } from '@/database';
 import type { IEmbeddingAdapter } from '../IEmbeddingAdapter';
@@ -258,5 +264,131 @@ export class SQLiteSearchAdapter implements ISearchAdapter {
       keywordWeight,
       semanticWeight,
     });
+  }
+
+  // === WP 6.4: Resource Search Methods ===
+
+  /**
+   * Search resources via FTS5
+   */
+  async searchResources(query: string, options?: SearchOptions): Promise<ResourceSearchResult[]> {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      return [];
+    }
+
+    const limit = options?.limit ?? 20;
+    const offset = options?.offset ?? 0;
+
+    // Sanitize query for FTS5
+    const ftsQuery = sanitizeQuery(trimmedQuery);
+    if (!ftsQuery) {
+      return [];
+    }
+
+    // Column indices for snippet(): 0=id (UNINDEXED), 1=name, 2=user_notes, 3=extracted_text
+    // Use column 3 (extracted_text) for content snippets
+    const sql = `
+      SELECT
+        r.id,
+        r.name,
+        r.type,
+        r.created_at,
+        r.updated_at,
+        snippet(resources_fts, 3, '<mark>', '</mark>', '...', 32) as snippet,
+        bm25(resources_fts) as score
+      FROM resources_fts
+      JOIN resources r ON r.id = resources_fts.id
+      WHERE resources_fts MATCH ?
+        AND r.invalid_at IS NULL
+      ORDER BY score
+      LIMIT ? OFFSET ?
+    `;
+
+    try {
+      const results = await this.db.exec<Record<string, unknown>>(sql, [ftsQuery, limit, offset]);
+      return results.map((row) => this.mapToResourceSearchResult(row));
+    } catch (error) {
+      console.error('Resource FTS5 search error:', error, { query: trimmedQuery, ftsQuery });
+      return [];
+    }
+  }
+
+  /**
+   * Semantic search for resources using vector similarity
+   */
+  async semanticSearchResources(query: string, options?: SearchOptions): Promise<ResourceSearchResult[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    if (!this.embeddingAdapter) {
+      console.warn('Semantic search requires embedding adapter');
+      return [];
+    }
+
+    const limit = options?.limit ?? 10;
+    const threshold = 0.5;
+
+    try {
+      const aiService = getAIService();
+
+      if (!aiService.isConfigured()) {
+        console.warn('AI not configured, cannot perform semantic search');
+        return [];
+      }
+
+      // 1. Embed the query
+      const embeddingResult = await aiService.embed(trimmed);
+      if (!embeddingResult.vector || embeddingResult.vector.length === 0) {
+        console.warn('Failed to embed query');
+        return [];
+      }
+
+      // 2. Get current embedding model
+      const model = aiService.getActiveEmbeddingModel();
+      if (!model) {
+        console.warn('No active embedding model');
+        return [];
+      }
+
+      // 3. Find similar resource embeddings
+      const similarResults = await this.embeddingAdapter.findSimilarResources(
+        embeddingResult.vector,
+        model,
+        limit,
+        threshold
+      );
+
+      if (similarResults.length === 0) {
+        return [];
+      }
+
+      // 4. Map to ResourceSearchResult format
+      // We need to fetch resource details since findSimilarResources returns them
+      return similarResults.map((r) => ({
+        resourceId: r.resource_id,
+        name: r.name || 'Untitled',
+        type: (r.type || 'pdf') as ResourceType,
+        snippet: r.extractedText?.slice(0, 150) + '...' || '',
+        score: r.similarity,
+        matchType: 'semantic' as const,
+      }));
+    } catch (error) {
+      console.error('Resource semantic search error:', error);
+      return [];
+    }
+  }
+
+  private mapToResourceSearchResult(row: Record<string, unknown>): ResourceSearchResult {
+    return {
+      resourceId: row.id as string,
+      name: (row.name as string) || 'Untitled',
+      type: row.type as ResourceType,
+      snippet: (row.snippet as string) || '',
+      score: row.score as number,
+      matchType: 'keyword',
+      createdAt: row.created_at as string | undefined,
+      updatedAt: row.updated_at as string | undefined,
+    };
   }
 }

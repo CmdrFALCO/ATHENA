@@ -4,6 +4,7 @@ import type {
   EmbeddingResult,
   GenerateResult,
   GenerateOptions,
+  GenerateWithAttachmentOptions,
   AISettings,
   ProviderConfig,
 } from './types';
@@ -16,9 +17,11 @@ export interface IAIService {
   getBackend(): IAIBackend | null;
   embed(text: string): Promise<EmbeddingResult>;
   generate(prompt: string, options?: GenerateOptions): Promise<GenerateResult>;
+  generateWithAttachment(options: GenerateWithAttachmentOptions): Promise<GenerateResult>;
 
   isConfigured(): boolean;
   isAvailable(): Promise<boolean>;
+  supportsMultimodal(): boolean;
   getCurrentProvider(): AIProviderType | null;
 
   // API key management (delegates to SecureStorage)
@@ -128,6 +131,20 @@ class AIServiceImpl implements IAIService {
       throw new Error('AI backend not configured');
     }
     return this.backend.generate(prompt, options);
+  }
+
+  async generateWithAttachment(options: GenerateWithAttachmentOptions): Promise<GenerateResult> {
+    if (!this.backend) {
+      throw new Error('AI backend not configured');
+    }
+    if (!this.backend.generateWithAttachment) {
+      throw new Error('Backend does not support multimodal generation');
+    }
+    return this.backend.generateWithAttachment(options);
+  }
+
+  supportsMultimodal(): boolean {
+    return !!this.backend?.generateWithAttachment;
   }
 
   isConfigured(): boolean {

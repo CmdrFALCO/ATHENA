@@ -4,6 +4,7 @@ import type {
   EmbeddingResult,
   GenerateResult,
   GenerateOptions,
+  GenerateWithAttachmentOptions,
   ProviderConfig,
   ModelInfo,
 } from '../types';
@@ -48,7 +49,7 @@ export class GeminiBackend implements IAIBackend {
   readonly type: AIProviderType = 'gemini';
 
   private apiKey: string | null = null;
-  private chatModel = 'gemini-1.5-flash';
+  private chatModel = 'gemini-2.5-flash';
   private embeddingModel = 'text-embedding-004';
 
   configure(config: ProviderConfig): void {
@@ -64,9 +65,12 @@ export class GeminiBackend implements IAIBackend {
 
   getSupportedModels(): ModelInfo[] {
     return [
+      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', type: 'chat', contextWindow: 1000000 },
+      { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', type: 'chat', contextWindow: 1000000 },
+      { id: 'gemini-3-flash', name: 'Gemini 3 Flash', type: 'chat', contextWindow: 1000000 },
+      { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', type: 'chat', contextWindow: 1000000 },
       { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', type: 'chat', contextWindow: 1000000 },
       { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', type: 'chat', contextWindow: 2000000 },
-      { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', type: 'chat', contextWindow: 1000000 },
       { id: 'text-embedding-004', name: 'Text Embedding 004', type: 'embedding', dimensions: 768 },
     ];
   }
@@ -177,6 +181,88 @@ export class GeminiBackend implements IAIBackend {
         completion: response.usageMetadata.candidatesTokenCount,
         total: response.usageMetadata.totalTokenCount,
       } : undefined,
+      finishReason,
+    };
+  }
+
+  /**
+   * Generate content with an attached file (image/PDF) for multimodal extraction.
+   * Uses Gemini's vision capabilities for OCR and document understanding.
+   */
+  async generateWithAttachment(options: GenerateWithAttachmentOptions): Promise<GenerateResult> {
+    if (!this.apiKey) {
+      throw new Error('API key not configured');
+    }
+
+    // Use the configured chat model - all Gemini chat models support multimodal
+    // Model names: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash-exp, etc.
+    const url = `${BASE_URL}/models/${this.chatModel}:generateContent?key=${this.apiKey}`;
+
+    interface InlineDataPart {
+      inlineData: {
+        mimeType: string;
+        data: string;
+      };
+    }
+
+    interface TextPart {
+      text: string;
+    }
+
+    type Part = InlineDataPart | TextPart;
+
+    const parts: Part[] = [
+      {
+        inlineData: {
+          mimeType: options.attachment.mimeType,
+          data: options.attachment.data,
+        },
+      },
+      { text: options.prompt },
+    ];
+
+    const body: {
+      contents: Array<{ parts: Part[] }>;
+      generationConfig?: {
+        maxOutputTokens?: number;
+        temperature?: number;
+      };
+    } = {
+      contents: [{ parts }],
+    };
+
+    if (options.maxTokens || options.temperature !== undefined) {
+      body.generationConfig = {};
+      if (options.maxTokens) body.generationConfig.maxOutputTokens = options.maxTokens;
+      if (options.temperature !== undefined) body.generationConfig.temperature = options.temperature;
+    }
+
+    const response = await this.fetchWithRetry<GeminiGenerateResponse>(url, body);
+
+    if (!response.candidates || response.candidates.length === 0) {
+      throw new Error('No response generated');
+    }
+
+    const candidate = response.candidates[0]!;
+    const text = candidate.content.parts.map(p => p.text).join('');
+
+    let finishReason: 'stop' | 'length' | 'error' = 'stop';
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      finishReason = 'length';
+    } else if (candidate.finishReason === 'ERROR' || candidate.finishReason === 'SAFETY') {
+      finishReason = 'error';
+    }
+
+    return {
+      text,
+      model: this.chatModel,
+      tokenCount: response.usageMetadata
+        ? {
+            prompt: response.usageMetadata.promptTokenCount,
+            completion: response.usageMetadata.candidatesTokenCount,
+            total: response.usageMetadata.totalTokenCount,
+          }
+        : undefined,
       finishReason,
     };
   }

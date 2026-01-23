@@ -30,3 +30,25 @@ export interface SimilarityResult {
   similarity: number; // 0-1, higher is more similar
   embedding: EmbeddingRecord;
 }
+
+/**
+ * Embedding record for resources
+ */
+export interface ResourceEmbeddingRecord {
+  id: string;
+  resource_id: string;
+  vector: number[];
+  model: string;
+  created_at: string;
+}
+
+/**
+ * Result from resource similarity search
+ */
+export interface ResourceSimilarityResult {
+  resource_id: string;
+  similarity: number; // 0-1, higher is more similar
+  name?: string;
+  type?: string;
+  extractedText?: string | null;
+}

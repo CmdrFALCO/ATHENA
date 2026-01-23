@@ -1,5 +1,121 @@
 # ATHENA Changelog
 
+## [6.5.0] - 2026-01-23
+
+### Added
+- **AI Extraction Module**: AI-powered text extraction for PDFs and images using Gemini multimodal
+  - `src/modules/resources/extraction/AIExtractionService.ts` - Orchestrates AI-based extraction
+  - Uses Gemini 2.5 Flash for vision/document understanding
+  - PDF extraction: Full text with structure preservation
+  - Image extraction: OCR for visible text + visual description
+  - File size limit (configurable, default 10MB)
+- **Multimodal AI Support**: Extended AI backend for vision capabilities
+  - `GenerateWithAttachmentOptions` type for multimodal requests
+  - `IAIBackend.generateWithAttachment()` optional method
+  - `IAIService.generateWithAttachment()` for service-level access
+  - `IAIService.supportsMultimodal()` capability check
+  - `GeminiBackend.generateWithAttachment()` implementation
+- **Extraction Strategy Settings**: Configurable extraction behavior
+  - `resources.extraction.strategy` - 'browser' | 'ai' | 'browser-then-ai'
+  - `resources.extraction.aiEnabled` - Master toggle for AI extraction
+  - `resources.extraction.maxFileSizeMB` - File size limit for AI
+  - Default: 'browser-then-ai' for best of both worlds
+- **Unified Search (Command Palette)**: Search now includes resources
+  - `useCommandPalette.ts` - Searches both entities AND resources in parallel
+  - Resource results shown with amber "resource" badge
+  - Type-specific icons for resources (PDF=red file, image=blue, etc.)
+  - Clicking resource result selects it on canvas
+- **FTS Debug Helper**: Console function to check FTS index status
+  - `window.__ATHENA_FTS_DEBUG__()` - Returns resource count, FTS count, and sample entries
+
+### Changed
+- `src/modules/ai/types.ts` - Added AttachmentInput and GenerateWithAttachmentOptions
+- `src/modules/ai/AIService.ts` - Added generateWithAttachment and supportsMultimodal methods
+- `src/modules/ai/backends/GeminiBackend.ts` - Implements multimodal generation, uses gemini-2.5-flash default
+- `src/config/devSettings.ts` - Added ExtractionStrategy type and extraction config
+- `src/modules/resources/extraction/BrowserExtractionService.ts` - Strategy-based routing with AI fallback
+- `src/modules/search/hooks/useCommandPalette.ts` - Now searches resources via `searchResources()`
+- `src/modules/search/components/CommandPalette.tsx` - Resource icons, badges, and selection handling
+- `src/adapters/index.ts` - Exports `ResourceSearchResult` type
+- `src/database/init.ts` - Added `debugFTSStatus()` helper exposed as `__ATHENA_FTS_DEBUG__`
+- `src/database/schema.ts` - Made `entity_id` nullable in embeddings table, added `resource_id` column
+
+### Technical
+- **Strategy-Based Routing**: BrowserExtractionService routes to appropriate extractor
+  - Browser-first for DOCX/XLSX/MD (fast, local)
+  - AI fallback for PDF/images (requires API key)
+  - Configurable via DevSettings
+- **Base64 Encoding**: Files converted to base64 for Gemini API
+- **Prompt Engineering**: Type-specific prompts for OCR vs document extraction
+- **Graceful Degradation**: Falls back gracefully if AI unavailable
+- **Unified Search**: Command Palette runs `hybridSearch()` and `searchResources()` in parallel
+- **Resource Result Handling**: `CommandPaletteResult.isResource` flag determines selection behavior
+
+### Debug
+- `window.__ATHENA_AI_EXTRACTION__` - AI extraction service instance
+- `window.__ATHENA_FTS_DEBUG__()` - Check FTS index status (resource count, FTS count, samples)
+
+### Phase 6 Progress
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Resource Upload & Storage ✅
+- WP 6.3: Resource Nodes on Canvas ✅
+- WP 6.4: Browser Extraction + FTS + Embeddings ✅
+- WP 6.5: AI Extraction (PDF, images) + Unified Search ✅
+- WP 6.6: URL Resources ⏳
+
+## [6.4.0] - 2026-01-18
+
+### Added
+- **Browser Extraction Module**: Client-side text extraction for DOCX, XLSX, and MD files
+  - `src/modules/resources/extraction/types.ts` - ExtractionResult and IExtractor interfaces
+  - `src/modules/resources/extraction/extractors/DocxExtractor.ts` - DOCX to text using mammoth.js
+  - `src/modules/resources/extraction/extractors/XlsxExtractor.ts` - Excel parsing using SheetJS
+  - `src/modules/resources/extraction/extractors/MarkdownExtractor.ts` - Direct text passthrough
+  - `src/modules/resources/extraction/BrowserExtractionService.ts` - Orchestrates extraction flow
+  - `src/modules/resources/extraction/postExtraction.ts` - Generates embeddings after extraction
+- **Resources FTS5**: Full-text search for resources
+  - `src/database/migrations/resources_fts.ts` - FTS5 virtual table for resources
+  - Indexes: name, user_notes, extracted_text with porter unicode61 tokenizer
+  - Sync triggers: INSERT, UPDATE, DELETE, soft-delete
+- **Resource Embeddings**: Semantic search for resources
+  - `src/database/migrations/embeddings_resources.ts` - Adds resource_id column to embeddings
+  - `ResourceEmbeddingRecord` and `ResourceSimilarityResult` types
+  - `IEmbeddingAdapter.storeForResource()` - Store embeddings for resources
+  - `IEmbeddingAdapter.findSimilarResources()` - Semantic search for resources
+- **Resource Search Methods**: Keyword and semantic search for resources
+  - `ResourceSearchResult` type in ISearchAdapter
+  - `SQLiteSearchAdapter.searchResources()` - FTS5 keyword search for resources
+  - `SQLiteSearchAdapter.semanticSearchResources()` - Vector similarity search for resources
+- **Auto-Extraction on Upload**: Resources are automatically extracted after upload
+  - `uploadResource()` now triggers `browserExtractionService.extract()` for supported types
+
+### Changed
+- `src/database/init.ts` - Runs resources FTS and embeddings migrations
+- `src/database/migrations/index.ts` - Exports new migrations
+- `src/adapters/IEmbeddingAdapter.ts` - Added resource methods to interface
+- `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` - Implements resource embedding methods
+- `src/adapters/ISearchAdapter.ts` - Added ResourceSearchResult type and resource search methods
+- `src/adapters/sqlite/SQLiteSearchAdapter.ts` - Implements resource search methods
+- `src/shared/types/embeddings.ts` - Added ResourceEmbeddingRecord and ResourceSimilarityResult
+- `src/store/resourceActions.ts` - Auto-triggers extraction after upload
+
+### Dependencies
+- `mammoth` (^1.6.0) - DOCX to text extraction
+- `xlsx` (^0.18.5) - Excel file parsing (SheetJS)
+
+### Technical
+- **Extractor Pattern**: IExtractor interface with canExtract() and extract() methods
+- **Async Extraction**: Upload completes immediately, extraction runs in background
+- **FTS5 Triggers**: Same pattern as entities_fts for automatic sync
+- **Embedding Storage**: Resources stored with resource_id instead of entity_id
+
+### Phase 6 Progress
+- WP 6.1: Resource Schema & Types ✅
+- WP 6.2: Resource Upload & Storage ✅
+- WP 6.3: Resource Nodes on Canvas ✅
+- WP 6.4: Browser Extraction + FTS + Embeddings ✅
+- WP 6.5: AI Extraction (PDF, images) ⏳
+
 ## [6.3.0] - 2026-01-18
 
 ### Added

@@ -32,12 +32,24 @@ export interface CanvasConfig {
   showAiSuggestions: 'always' | 'on-select';
 }
 
-// Resource configuration (WP 6.3)
+// Extraction strategy type
+export type ExtractionStrategy = 'browser' | 'ai' | 'browser-then-ai';
+
+// Resource configuration (WP 6.3, extended WP 6.5)
 export interface ResourceConfig {
   /** Whether resource nodes are enabled on canvas */
   enabled: boolean;
   /** Color scheme for resource nodes: 'unified' = all purple, 'per-type' = distinct colors per type */
   nodeColorScheme: 'unified' | 'per-type';
+  /** Extraction settings (WP 6.5) */
+  extraction: {
+    /** Extraction strategy: browser-only, AI-only, or browser with AI fallback */
+    strategy: ExtractionStrategy;
+    /** Master toggle for AI extraction */
+    aiEnabled: boolean;
+    /** Maximum file size (MB) to send to AI extraction */
+    maxFileSizeMB: number;
+  };
 }
 
 // Search configuration (RRF parameters)
@@ -74,6 +86,11 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
 const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
   enabled: true,
   nodeColorScheme: 'per-type', // Default to per-type for visual distinction
+  extraction: {
+    strategy: 'browser-then-ai', // Best of both worlds
+    aiEnabled: true,
+    maxFileSizeMB: 10, // Don't send files larger than 10MB to AI
+  },
 };
 
 // Default values (conservative - features off until implemented)
@@ -179,6 +196,22 @@ export const devSettingsActions = {
 
   setResourceColorScheme(scheme: ResourceConfig['nodeColorScheme']) {
     devSettings$.resources.nodeColorScheme.set(scheme);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Extraction config actions (WP 6.5)
+  setExtractionStrategy(strategy: ExtractionStrategy) {
+    devSettings$.resources.extraction.strategy.set(strategy);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAIExtractionEnabled(enabled: boolean) {
+    devSettings$.resources.extraction.aiEnabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setMaxFileSizeMB(sizeMB: number) {
+    devSettings$.resources.extraction.maxFileSizeMB.set(sizeMB);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

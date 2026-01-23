@@ -1,8 +1,14 @@
-import type { EmbeddingRecord, SimilarityResult } from '@/shared/types';
+import type {
+  EmbeddingRecord,
+  SimilarityResult,
+  ResourceEmbeddingRecord,
+  ResourceSimilarityResult,
+} from '@/shared/types';
 
 /**
  * Adapter interface for embedding storage operations.
  * Supports both single-model and multi-model embedding strategies.
+ * Extended in WP 6.4 to support resource embeddings.
  */
 export interface IEmbeddingAdapter {
   /**
@@ -64,7 +70,39 @@ export interface IEmbeddingAdapter {
    * Delete all embeddings.
    */
   deleteAll(): Promise<void>;
+
+  // === Resource Embedding Methods (WP 6.4) ===
+
+  /**
+   * Store an embedding for a resource.
+   * Upserts if same (resource_id, model) pair exists.
+   */
+  storeForResource(
+    resourceId: string,
+    vector: number[],
+    model: string
+  ): Promise<ResourceEmbeddingRecord>;
+
+  /**
+   * Get embedding for a resource, optionally filtered by model.
+   */
+  getForResource(resourceId: string, model?: string): Promise<ResourceEmbeddingRecord | null>;
+
+  /**
+   * Find similar resources by cosine similarity.
+   */
+  findSimilarResources(
+    vector: number[],
+    model: string,
+    limit: number,
+    threshold?: number
+  ): Promise<ResourceSimilarityResult[]>;
+
+  /**
+   * Delete embedding(s) for a resource.
+   */
+  deleteForResource(resourceId: string, model?: string): Promise<void>;
 }
 
 // Re-export types for convenience
-export type { EmbeddingRecord, SimilarityResult };
+export type { EmbeddingRecord, SimilarityResult, ResourceEmbeddingRecord, ResourceSimilarityResult };

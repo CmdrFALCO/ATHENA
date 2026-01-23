@@ -1,6 +1,15 @@
 import initSqlJs, { type Database, type SqlValue } from '@/vendor/sql.js';
 import { CREATE_TABLES } from './schema';
-import { setupFTS5, migrateExistingToFTS, populateContentText, setupResources, upgradeConnections } from './migrations';
+import {
+  setupFTS5,
+  migrateExistingToFTS,
+  populateContentText,
+  setupResources,
+  upgradeConnections,
+  setupResourcesFTS,
+  migrateExistingResourcesToFTS,
+  addResourceEmbeddingsSupport,
+} from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
 export interface DatabaseConnection {
@@ -95,6 +104,13 @@ async function createDatabase(): Promise<DatabaseConnection> {
   // Upgrade connections table with node type columns (idempotent)
   await upgradeConnections(connection);
 
+  // Set up Resources FTS5 (idempotent)
+  await setupResourcesFTS(connection);
+  await migrateExistingResourcesToFTS(connection);
+
+  // Add resource_id support to embeddings table (idempotent)
+  await addResourceEmbeddingsSupport(connection);
+
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);
   if (populated > 0) {
@@ -110,4 +126,35 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
 export function getDatabase(): DatabaseConnection | null {
   return dbInstance;
+}
+
+// Debug helper: check FTS index status
+async function debugFTSStatus(): Promise<{
+  resources: number;
+  resourcesFTS: number;
+  sample: unknown[];
+}> {
+  const db = getDatabase();
+  if (!db) return { resources: 0, resourcesFTS: 0, sample: [] };
+
+  const resourceCount = await db.exec<{ count: number }>('SELECT COUNT(*) as count FROM resources');
+  const ftsCount = await db.exec<{ count: number }>('SELECT COUNT(*) as count FROM resources_fts');
+  const sample = await db.exec<unknown>(
+    'SELECT id, name, substr(extracted_text, 1, 100) as text_preview FROM resources_fts LIMIT 5'
+  );
+
+  return {
+    resources: resourceCount[0]?.count ?? 0,
+    resourcesFTS: ftsCount[0]?.count ?? 0,
+    sample,
+  };
+}
+
+// Expose for debugging in browser console
+if (typeof window !== 'undefined') {
+  (window as unknown as {
+    __ATHENA_DB__: () => DatabaseConnection | null;
+    __ATHENA_FTS_DEBUG__: () => Promise<unknown>;
+  }).__ATHENA_DB__ = getDatabase;
+  (window as unknown as { __ATHENA_FTS_DEBUG__: () => Promise<unknown> }).__ATHENA_FTS_DEBUG__ = debugFTSStatus;
 }
