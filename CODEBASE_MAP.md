@@ -17,9 +17,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 7.4 (Knowledge Extraction Parser) |
+| **Last WP Completed** | 7.6 (Spatial Awareness) |
 | **Last Updated** | January 2026 |
-| **Phase** | 7 (AI Chat - Knowledge Capture Interface) |
+| **Phase** | 7 (AI Chat - Knowledge Capture Interface) **COMPLETE** |
 | **Milestone** | Phase 7 - Conversational Knowledge Capture |
 
 ---
@@ -191,6 +191,13 @@ athena/
 | Self-Correcting Extractor | `src/modules/chat/services/SelfCorrectingExtractor.ts` | Retry extraction with LLM error feedback |
 | Proposal Schema | `src/modules/chat/services/proposalSchema.ts` | Zod validation for proposal structure |
 | Extraction Config | `src/config/devSettings.ts` | `chat.extraction.*` settings for parsing |
+| MentionInput | `src/modules/chat/components/MentionInput.tsx` | @mention autocomplete with fuzzy search |
+| MentionSuggestions | `src/modules/chat/components/MentionSuggestions.tsx` | Dropdown with keyboard navigation |
+| ContextChips | `src/modules/chat/components/ContextChips.tsx` | Thread context display bar |
+| useMentions Hook | `src/modules/chat/hooks/useMentions.ts` | Note search with fuzzy matching |
+| useCanvasSelection Hook | `src/modules/chat/hooks/useCanvasSelection.ts` | Bridge canvas ↔ chat context |
+| Mentions Config | `src/config/devSettings.ts` | `chat.mentions.*` settings for autocomplete |
+| Spatial Context Config | `src/config/devSettings.ts` | `chat.spatialContext.*` settings for context chips |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -284,11 +291,20 @@ athena/
 
 ## Coming Next
 
-| WP | What's Added |
+| Phase | What's Added |
 |-------|--------------|
-| **WP 7.5** | Proposal Cards - UI for accept/reject knowledge suggestions |
-| **WP 7.6** | Spatial Awareness - @mention nodes in chat |
-| **WP 7.7** | Knowledge Integration - Actually create nodes/edges from accepted proposals |
+| **Phase 8** | Publishing, Templates, Advanced Features |
+
+### Phase 7 Complete
+
+| WP | Feature | Status |
+|----|---------|--------|
+| 7.1 | Chat UI & State | ✅ |
+| 7.2 | GraphRAG Context Builder | ✅ |
+| 7.3 | Conversational Generation | ✅ |
+| 7.4 | Knowledge Extraction Parser | ✅ |
+| 7.5 | Proposal Cards UI | ✅ |
+| 7.6 | Spatial Awareness | ✅ |
 
 ---
 

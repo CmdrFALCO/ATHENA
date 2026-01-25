@@ -1,7 +1,6 @@
 # Chat Module
 
-**Phase:** 7 (AI Chat - Knowledge Capture Interface)
-**WP:** 7.1 - Chat UI & State
+**Phase:** 7 (AI Chat - Knowledge Capture Interface) **COMPLETE**
 **Location:** `src/modules/chat/`
 
 ## Purpose
@@ -22,14 +21,27 @@ src/modules/chat/
 │   ├── chatState.ts           # Legend-State observable
 │   └── chatActions.ts         # Actions for threads/messages
 ├── services/
-│   └── ChatPersistence.ts     # IndexedDB persistence
+│   ├── ChatPersistence.ts     # IndexedDB persistence
+│   ├── ChatService.ts         # Main chat orchestrator (WP 7.3)
+│   ├── ContextBuilder.ts      # GraphRAG context gathering (WP 7.2)
+│   ├── ProposalParser.ts      # Extract proposals from AI (WP 7.4)
+│   └── ProposalAcceptService.ts # Accept flow (WP 7.5)
+├── hooks/                      # WP 7.6: Spatial Awareness
+│   ├── useMentions.ts         # @mention parsing with fuzzy search
+│   └── useCanvasSelection.ts  # Bridge canvas ↔ chat context
 └── components/
     ├── ChatPanel.tsx          # Main slide-over container
     ├── ChatHeader.tsx         # Thread title and controls
     ├── ChatMessages.tsx       # Message list with auto-scroll
     ├── ChatMessage.tsx        # Single message display
-    ├── ChatInput.tsx          # Text input with send button
-    └── ChatToggleButton.tsx   # Floating toggle button
+    ├── ChatInput.tsx          # Text input (original)
+    ├── MentionInput.tsx       # Enhanced input with @autocomplete (WP 7.6)
+    ├── MentionSuggestions.tsx # Autocomplete dropdown (WP 7.6)
+    ├── ContextChips.tsx       # Context display bar (WP 7.6)
+    ├── ChatToggleButton.tsx   # Floating toggle button
+    ├── ProposalCards.tsx      # Container for proposals (WP 7.5)
+    ├── NodeProposalCard.tsx   # Note proposal UI (WP 7.5)
+    └── EdgeProposalCard.tsx   # Connection proposal UI (WP 7.5)
 ```
 
 ## Data Model
@@ -200,9 +212,12 @@ Floating action button:
 | Shortcut | Action |
 |----------|--------|
 | Ctrl+Shift+C | Toggle chat panel |
-| Escape | Close chat panel (when open) |
-| Enter | Send message |
+| Escape | Close chat panel / Close @mention dropdown |
+| Enter | Send message / Select @mention suggestion |
 | Shift+Enter | New line in message |
+| Tab | Select @mention suggestion |
+| Arrow Up/Down | Navigate @mention suggestions |
+| @ | Open @mention autocomplete |
 
 ## DevSettings
 
@@ -314,16 +329,115 @@ chatActions.updateProposalStatus(messageId, proposalId, 'accepted');
 chatActions.updateProposalStatus(messageId, proposalId, 'rejected');
 ```
 
-## Future Work
+## Spatial Awareness (WP 7.6)
 
-| WP | Feature | Integration Point |
-|----|---------|-------------------|
-| 7.6 | Spatial Awareness | @mention autocomplete in `ChatInput` |
+Users can reference existing notes in chat conversations via @mentions or canvas selection. Referenced notes are added to the thread's context and used by ContextBuilder to inform AI responses.
+
+### Components
+
+```
+src/modules/chat/components/
+├── MentionInput.tsx       # Enhanced input replacing ChatInput
+├── MentionSuggestions.tsx # Autocomplete dropdown
+└── ContextChips.tsx       # Context display bar
+
+src/modules/chat/hooks/
+├── useMentions.ts         # @mention parsing and note search
+└── useCanvasSelection.ts  # Bridge canvas ↔ chat context
+```
+
+### @Mentions Flow
+
+```
+User types "@quan" in MentionInput
+    ↓
+useMentions hook filters notes by "quan"
+    ↓
+MentionSuggestions dropdown shows matches
+    ↓
+User selects "Quantum Computing"
+    ↓
+1. Text becomes "@[Quantum Computing] "
+2. chatActions.addToContext(noteId) called
+3. ContextChips updates to show the note
+    ↓
+User sends message → ContextBuilder uses thread.contextNodeIds
+```
+
+### Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `@` | Open suggestions dropdown |
+| Arrow Up/Down | Navigate suggestions |
+| Enter/Tab | Select highlighted suggestion |
+| Escape | Close dropdown |
+
+### Canvas Selection
+
+When a node is selected on the canvas:
+1. `useCanvasSelection` hook reads `appState$.ui.selectedEntityIds`
+2. `ContextChips` shows "Add selected" button with note title
+3. Clicking adds the note to thread context
+
+### Context Actions
+
+```typescript
+// Add note to current thread context
+chatActions.addToContext(nodeId);
+
+// Remove note from current thread context
+chatActions.removeFromContext(nodeId);
+```
+
+### Fuzzy Search Algorithm
+
+The `useMentions` hook uses a scoring algorithm:
+
+| Match Type | Score |
+|------------|-------|
+| Starts with query | 100 |
+| Word boundary match | 80 |
+| Contains query | 60 |
+| Fuzzy match (chars in order) | 40 |
+
+### DevSettings
+
+```typescript
+interface MentionsConfig {
+  enabled: boolean;           // Toggle @mention feature
+  maxSuggestions: number;     // Max suggestions (default: 8)
+  showRecentOnEmpty: boolean; // Show recent on bare @
+  fuzzyMatch: boolean;        // Enable fuzzy matching
+}
+
+interface SpatialContextConfig {
+  showContextChips: boolean;       // Toggle context bar
+  showAddSelectedButton: boolean;  // Toggle add selected button
+  maxContextItems: number;         // Max context items per thread
+}
+
+// Access
+devSettings$.chat.mentions.enabled.get()
+devSettings$.chat.spatialContext.showContextChips.get()
+```
+
+## Phase 7 Complete
+
+| WP | Feature | Status |
+|----|---------|--------|
+| 7.1 | Chat UI & State | ✅ |
+| 7.2 | GraphRAG Context Builder | ✅ |
+| 7.3 | Conversational Generation | ✅ |
+| 7.4 | Knowledge Extraction Parser | ✅ |
+| 7.5 | Proposal Cards UI | ✅ |
+| 7.6 | Spatial Awareness | ✅ |
 
 ## Testing
 
 ### Manual Test Checklist
 
+**Panel & Threads**
 - [ ] Panel toggles with button click
 - [ ] Panel toggles with Ctrl+Shift+C
 - [ ] Panel closes with Escape
@@ -332,10 +446,36 @@ chatActions.updateProposalStatus(messageId, proposalId, 'rejected');
 - [ ] Thread list shows all threads
 - [ ] Can switch between threads
 - [ ] Can delete threads
+
+**Messages**
 - [ ] Messages appear after sending
 - [ ] Auto-scroll works on new messages
 - [ ] Enter sends message
 - [ ] Shift+Enter creates new line
+
+**Persistence**
 - [ ] Threads persist after reload
 - [ ] Messages persist after reload
 - [ ] Most recent thread opens on reload
+
+**@Mentions (WP 7.6)**
+- [ ] Typing `@` shows suggestion dropdown with recent notes
+- [ ] Typing `@qu` filters to notes containing "qu"
+- [ ] Arrow keys navigate suggestions
+- [ ] Enter/Tab selects highlighted suggestion
+- [ ] Escape closes dropdown
+- [ ] Selecting inserts `@[Title] ` into input
+- [ ] Selecting adds note to thread context
+- [ ] Fuzzy matching works (e.g., "qc" matches "Quantum Computing")
+
+**Context Chips (WP 7.6)**
+- [ ] Shows all notes in current thread's context
+- [ ] Clicking X removes note from context
+- [ ] "Add selected note" appears when canvas has selection
+- [ ] "Add selected note" shows truncated title
+- [ ] Clicking "Add selected" adds note to context
+- [ ] Button disappears after adding (already in context)
+- [ ] Shows count indicator (e.g., "3 notes")
+- [ ] Empty state shows helpful message
+- [ ] Context persists with thread (reload test)
+- [ ] Switching threads shows different context

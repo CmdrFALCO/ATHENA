@@ -1,9 +1,10 @@
 /**
  * ChatPanel - Main slide-over container for the chat interface
  * WP 7.1 - Chat UI & State
+ * WP 7.6 - Spatial Awareness (ContextChips, MentionInput)
  *
  * Slides in from the right side, adjacent to the graph canvas.
- * Composes ChatHeader, ChatMessages, and ChatInput.
+ * Composes ChatHeader, ContextChips, ChatMessages, and MentionInput.
  */
 
 import { useSelector } from '@legendapp/state/react';
@@ -13,7 +14,8 @@ import { chatState$ } from '../store/chatState';
 import { chatActions } from '../store/chatActions';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessages } from './ChatMessages';
-import { ChatInput } from './ChatInput';
+import { ContextChips } from './ContextChips';
+import { MentionInput } from './MentionInput';
 import { devSettings$ } from '@/config/devSettings';
 
 export function ChatPanel() {
@@ -55,8 +57,9 @@ export function ChatPanel() {
       </button>
 
       <ChatHeader />
+      <ContextChips />
       <ChatMessages />
-      <ChatInput />
+      <MentionInput />
     </div>
   );
 }

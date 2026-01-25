@@ -1,5 +1,65 @@
 # ATHENA Changelog
 
+## [7.6.0] - 2026-01-25
+
+### Added
+- **Spatial Awareness (WP 7.6)**: Reference existing notes in chat conversations
+  - `src/modules/chat/components/MentionInput.tsx` - Enhanced input with @autocomplete
+  - `src/modules/chat/components/MentionSuggestions.tsx` - Dropdown with keyboard navigation
+  - `src/modules/chat/components/ContextChips.tsx` - Context display bar with add/remove
+  - `src/modules/chat/hooks/useMentions.ts` - @mention parsing with fuzzy search
+  - `src/modules/chat/hooks/useCanvasSelection.ts` - Bridge canvas selection to chat
+- **@Mentions**: Type `@` to trigger autocomplete dropdown
+  - Fuzzy search over note titles
+  - Shows recent notes when @ typed without query
+  - Arrow keys navigate, Enter/Tab select, Escape close
+  - Selecting inserts `@[Title] ` and adds note to thread context
+- **Context Chips Bar**: Visual display of notes in current thread's context
+  - Blue chips with note titles
+  - X button to remove from context
+  - "Add selected" button appears when canvas has selection
+  - Count indicator (e.g., "3 notes")
+- **Mentions DevSettings**: Configuration for autocomplete behavior
+  - `chat.mentions.enabled` - Toggle @mention feature
+  - `chat.mentions.maxSuggestions` - Maximum suggestions (default: 8)
+  - `chat.mentions.showRecentOnEmpty` - Show recent notes on bare @
+  - `chat.mentions.fuzzyMatch` - Enable fuzzy matching
+- **Spatial Context DevSettings**: Configuration for context chips
+  - `chat.spatialContext.showContextChips` - Toggle context bar
+  - `chat.spatialContext.showAddSelectedButton` - Toggle add selected button
+  - `chat.spatialContext.maxContextItems` - Maximum context items per thread
+
+### Changed
+- `src/modules/chat/components/ChatPanel.tsx` - Now uses MentionInput and includes ContextChips
+- `src/modules/chat/components/index.ts` - Exports new components
+- `src/modules/chat/index.ts` - Exports new hooks and components
+- `src/config/devSettings.ts` - Added MentionsConfig and SpatialContextConfig interfaces
+
+### Technical
+- **Fuzzy Matching**: Characters of query appear in target in order
+- **Scoring Algorithm**: Exact prefix (100) > word boundary (80) > contains (60) > fuzzy (40)
+- **Context Persistence**: `contextNodeIds` persisted with thread to IndexedDB
+- **Canvas Bridge**: `useCanvasSelection` hook reads from `appState$.ui.selectedEntityIds`
+
+### Phase 7 Complete
+- WP 7.1: Chat UI & State ✅
+- WP 7.2: Context Builder ✅
+- WP 7.3: Conversational Generation ✅
+- WP 7.4: Extraction Parser ✅
+- WP 7.5: Proposal Cards ✅
+- WP 7.6: Spatial Awareness ✅
+
+**Phase 7 (AI Chat - Knowledge Capture Interface) is now complete!**
+
+ATHENA transforms from passive repository to active knowledge capture partner:
+1. User opens chat (Ctrl+Shift+C)
+2. References notes via @mentions or canvas selection
+3. Asks questions or discusses topics
+4. AI responds with context-aware answers
+5. AI proposes new notes/connections
+6. User accepts relevant proposals
+7. Knowledge graph grows through conversation
+
 ## [7.4.0] - 2026-01-25
 
 ### Added

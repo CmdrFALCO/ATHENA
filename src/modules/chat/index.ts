@@ -4,6 +4,7 @@
  * WP 7.2 - GraphRAG Context Builder
  * WP 7.3 - Conversational Generation (AI streaming)
  * WP 7.4 - Knowledge Extraction Parser
+ * WP 7.6 - Spatial Awareness (@mentions, canvas selection)
  *
  * Provides slide-over chat panel with message persistence,
  * thread management, Legend-State infrastructure, and
@@ -17,6 +18,14 @@ export { ChatMessages } from './components/ChatMessages';
 export { ChatMessage } from './components/ChatMessage';
 export { ChatInput } from './components/ChatInput';
 export { ChatServiceInitializer } from './components/ChatServiceInitializer';
+// WP 7.6: Spatial Awareness components
+export { MentionInput } from './components/MentionInput';
+export { MentionSuggestions } from './components/MentionSuggestions';
+export { ContextChips } from './components/ContextChips';
+
+// Hooks (WP 7.6)
+export { useMentions, type MentionSuggestion } from './hooks/useMentions';
+export { useCanvasSelection } from './hooks/useCanvasSelection';
 
 // Store
 export { chatState$ } from './store/chatState';

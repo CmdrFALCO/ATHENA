@@ -99,7 +99,29 @@ export interface ExtractionConfig {
   minConfidenceThreshold: number;
 }
 
-// Chat configuration (WP 7.1, extended WP 7.2, WP 7.3, WP 7.4)
+// Mentions configuration (WP 7.6)
+export interface MentionsConfig {
+  /** Enable @mention autocomplete */
+  enabled: boolean;
+  /** Maximum suggestions to show */
+  maxSuggestions: number;
+  /** Show recent notes when @ is typed without query */
+  showRecentOnEmpty: boolean;
+  /** Enable fuzzy matching */
+  fuzzyMatch: boolean;
+}
+
+// Spatial context configuration (WP 7.6)
+export interface SpatialContextConfig {
+  /** Show context chips bar */
+  showContextChips: boolean;
+  /** Show "Add selected" button when canvas has selection */
+  showAddSelectedButton: boolean;
+  /** Maximum context items (notes) per thread */
+  maxContextItems: number;
+}
+
+// Chat configuration (WP 7.1, extended WP 7.2, WP 7.3, WP 7.4, WP 7.6)
 export interface ChatConfig {
   /** Whether chat panel is enabled */
   enabled: boolean;
@@ -119,6 +141,10 @@ export interface ChatConfig {
   generation: GenerationConfig;
   /** Extraction configuration (WP 7.4) */
   extraction: ExtractionConfig;
+  /** Mentions configuration (WP 7.6) */
+  mentions: MentionsConfig;
+  /** Spatial context configuration (WP 7.6) */
+  spatialContext: SpatialContextConfig;
 }
 
 // Search configuration (RRF parameters)
@@ -187,6 +213,19 @@ const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
   minConfidenceThreshold: 0.5,
 };
 
+const DEFAULT_MENTIONS_CONFIG: MentionsConfig = {
+  enabled: true,
+  maxSuggestions: 8,
+  showRecentOnEmpty: true,
+  fuzzyMatch: true,
+};
+
+const DEFAULT_SPATIAL_CONTEXT_CONFIG: SpatialContextConfig = {
+  showContextChips: true,
+  showAddSelectedButton: true,
+  maxContextItems: 10,
+};
+
 const DEFAULT_CHAT_CONFIG: ChatConfig = {
   enabled: true,
   position: 'right',
@@ -197,6 +236,8 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   context: { ...DEFAULT_CONTEXT_CONFIG },
   generation: { ...DEFAULT_GENERATION_CONFIG },
   extraction: { ...DEFAULT_EXTRACTION_CONFIG },
+  mentions: { ...DEFAULT_MENTIONS_CONFIG },
+  spatialContext: { ...DEFAULT_SPATIAL_CONTEXT_CONFIG },
 };
 
 // Default values (conservative - features off until implemented)
@@ -420,6 +461,43 @@ export const devSettingsActions = {
 
   setExtractionMinConfidence(value: number) {
     devSettings$.chat.extraction.minConfidenceThreshold.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Mentions config actions (WP 7.6)
+  setMentionsEnabled(value: boolean) {
+    devSettings$.chat.mentions.enabled.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setMentionsMaxSuggestions(value: number) {
+    devSettings$.chat.mentions.maxSuggestions.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setMentionsShowRecentOnEmpty(value: boolean) {
+    devSettings$.chat.mentions.showRecentOnEmpty.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setMentionsFuzzyMatch(value: boolean) {
+    devSettings$.chat.mentions.fuzzyMatch.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Spatial context config actions (WP 7.6)
+  setSpatialContextShowChips(value: boolean) {
+    devSettings$.chat.spatialContext.showContextChips.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSpatialContextShowAddSelected(value: boolean) {
+    devSettings$.chat.spatialContext.showAddSelectedButton.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSpatialContextMaxItems(value: number) {
+    devSettings$.chat.spatialContext.maxContextItems.set(value);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };
