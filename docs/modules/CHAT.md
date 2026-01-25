@@ -267,14 +267,57 @@ import { chatActions } from '@/modules/chat';
 chatActions.loadThreads().catch(console.error);
 ```
 
+## Proposal Cards (WP 7.5)
+
+The Propose-Validate architecture allows users to accept or reject AI-suggested knowledge additions.
+
+### Components
+
+```
+src/modules/chat/components/
+├── ProposalCards.tsx       # Container for all proposals in a message
+├── NodeProposalCard.tsx    # Green card for note proposals
+└── EdgeProposalCard.tsx    # Blue card for connection proposals
+
+src/modules/chat/services/
+└── ProposalAcceptService.ts  # Orchestrates accept flow
+```
+
+### Flow
+
+1. AI generates response with `proposals` field (WP 7.4)
+2. `ChatMessage` renders `ProposalCards` when proposals exist
+3. User clicks Accept/Reject on individual cards
+4. Accept creates real entities/connections via `ProposalAcceptService`
+5. State refreshes (sidebar, canvas update)
+6. Validation runs to catch constraint violations
+
+### Edge Dependency Tracking
+
+Edge proposals may reference:
+- Existing notes (resolved during extraction)
+- Proposed notes (tracked via `acceptedNodeIds` state)
+- Non-existent notes (disabled until created)
+
+```typescript
+// Edge card checks both sources
+const resolvedFromId = proposal.fromId || acceptedNodeIds.get(proposal.fromTitle);
+const resolvedToId = proposal.toId || acceptedNodeIds.get(proposal.toTitle);
+const canAccept = Boolean(resolvedFromId && resolvedToId);
+```
+
+### Actions
+
+```typescript
+// Update proposal status
+chatActions.updateProposalStatus(messageId, proposalId, 'accepted');
+chatActions.updateProposalStatus(messageId, proposalId, 'rejected');
+```
+
 ## Future Work
 
 | WP | Feature | Integration Point |
 |----|---------|-------------------|
-| 7.2 | Context Builder | Uses `contextNodeIds` |
-| 7.3 | AI Generation | Replaces `sendMessage` placeholder |
-| 7.4 | Extraction Parser | Populates `proposals` field |
-| 7.5 | Proposal Cards | Renders in `ChatMessage` |
 | 7.6 | Spatial Awareness | @mention autocomplete in `ChatInput` |
 
 ## Testing

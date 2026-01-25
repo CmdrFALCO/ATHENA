@@ -9,9 +9,9 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 4.1 (Command Palette) |
+| **Last WP Completed** | 7.5 (Proposal Cards UI) |
 | **Last Updated** | January 2026 |
-| **Phase** | 4 (Search) - In Progress |
+| **Phase** | 7 (AI Chat) - In Progress |
 
 ---
 
@@ -123,9 +123,15 @@ athena/
 │   │   │   └── hooks/
 │   │   │       ├── index.ts      # Hook exports
 │   │   │       └── useCommandPalette.ts  # ✅ WP 4.1 - Palette state hook
+│   │   ├── chat/                 # ✅ WP 7.1-7.5 - AI chat interface
+│   │   │   ├── index.ts          # Module barrel export
+│   │   │   ├── types/            # ChatMessage, ChatThread, KnowledgeProposals
+│   │   │   ├── store/            # chatState$, chatActions
+│   │   │   ├── services/         # ChatPersistence, ProposalAcceptService
+│   │   │   └── components/       # ChatPanel, ProposalCards, etc.
 │   │   ├── pronoia/              # ⏳ Phase 6 (plans, decisions)
 │   │   ├── ergane/               # ⏳ Phase 6 (documents, export)
-│   │   └── validation/           # ⏳ Phase 5 (CPN engine)
+│   │   └── validation/           # ✅ Phase 5 (CPN engine)
 │   │
 │   ├── app/                      # ✅ WP 1.1 - App shell
 │   │   ├── index.ts              # Barrel export
@@ -895,6 +901,8 @@ interface SimilarityResult {
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
 | Embedding storage | `src/adapters/sqlite/SQLiteEmbeddingAdapter.ts` | Vector storage + JS-based cosine similarity |
+| Proposal Cards | `src/modules/chat/components/` | Accept/Reject UI for AI proposals (WP 7.5) |
+| Proposal Accept Service | `src/modules/chat/services/ProposalAcceptService.ts` | Orchestrates accept flow with validation |
 
 ---
 
@@ -987,6 +995,7 @@ Pre-existing lint errors to address:
 
 | WP | What's Added |
 |----|--------------|
+| **7.6** | Spatial Awareness - @mentions and context chips |
 | **4.2** | FTS5 full-text search |
 | **4.3** | Search result snippets with highlighting |
 | **4.4** | Semantic/vector search |

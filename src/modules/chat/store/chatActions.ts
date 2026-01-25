@@ -228,9 +228,68 @@ export const chatActions = {
     chatState$.threads.set({ ...threads, [threadId]: updatedThread });
     await chatPersistence.saveThread(updatedThread);
   },
+
+  // Update proposal status (WP 7.5)
+  updateProposalStatus: async (
+    messageId: string,
+    proposalId: string,
+    status: 'pending' | 'accepted' | 'rejected'
+  ) => {
+    const messages = chatState$.messages.peek();
+
+    // Find the thread containing this message
+    for (const threadId of Object.keys(messages)) {
+      const threadMessages = messages[threadId];
+      if (!threadMessages) continue;
+
+      const messageIndex = threadMessages.findIndex((m) => m.id === messageId);
+      if (messageIndex === -1) continue;
+
+      const message = threadMessages[messageIndex];
+      if (!message?.proposals) continue;
+
+      // Find and update the proposal status
+      let updated = false;
+      const updatedProposals = {
+        nodes: message.proposals.nodes.map((n) => {
+          if (n.id === proposalId) {
+            updated = true;
+            return { ...n, status };
+          }
+          return n;
+        }),
+        edges: message.proposals.edges.map((e) => {
+          if (e.id === proposalId) {
+            updated = true;
+            return { ...e, status };
+          }
+          return e;
+        }),
+      };
+
+      if (updated) {
+        const updatedMessage: ChatMessage = {
+          ...message,
+          proposals: updatedProposals,
+        };
+
+        const updatedMessages = [...threadMessages];
+        updatedMessages[messageIndex] = updatedMessage;
+        chatState$.messages.set({ ...messages, [threadId]: updatedMessages });
+
+        // Persist to IndexedDB
+        await chatPersistence.saveMessage(updatedMessage);
+      }
+
+      return;
+    }
+  },
 };
 
 // Export for console debugging
 if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).__ATHENA_CHAT__ = chatActions;
+  (window as unknown as Record<string, unknown>).__ATHENA_CHAT__ = {
+    ...chatActions,
+    chatState$,
+  };
 }
