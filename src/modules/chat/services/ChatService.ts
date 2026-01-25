@@ -1,28 +1,46 @@
 /**
  * Chat Service - Main Orchestrator
  * WP 7.3 - Conversational Generation
+ * WP 7.4 - Knowledge Extraction Parser
  *
  * Orchestrates the complete chat flow:
  * 1. Build context from knowledge graph (via ContextBuilder)
  * 2. Format system prompt with context
  * 3. Call AI with streaming
- * 4. Update UI state throughout
+ * 4. Parse knowledge proposals from response
+ * 5. Update UI state throughout
  */
 
 import { chatActions, chatState$ } from '../store';
 import { ContextBuilder } from './ContextBuilder';
 import { ContextFormatter } from './ContextFormatter';
 import { formatSystemPrompt } from './promptTemplates';
+import { extractProposals, stripProposalBlock, resolveProposalReferences } from './ProposalParser';
+import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
-import type { ChatMessage as StoredChatMessage } from '../types';
+import type { ChatMessage as StoredChatMessage, KnowledgeProposals } from '../types';
 import type { IAIService } from '@/modules/ai';
 import type { AIChatMessage } from '@/modules/ai/types';
+import type { INoteAdapter } from '@/adapters/INoteAdapter';
+import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
 
 export class ChatService {
+  private aiService: IAIService;
+  private contextBuilder: ContextBuilder;
+  private noteAdapter?: INoteAdapter;
+  private resourceAdapter?: IResourceAdapter;
+
   constructor(
-    private aiService: IAIService,
-    private contextBuilder: ContextBuilder
-  ) {}
+    aiService: IAIService,
+    contextBuilder: ContextBuilder,
+    noteAdapter?: INoteAdapter,
+    resourceAdapter?: IResourceAdapter
+  ) {
+    this.aiService = aiService;
+    this.contextBuilder = contextBuilder;
+    this.noteAdapter = noteAdapter;
+    this.resourceAdapter = resourceAdapter;
+  }
 
   /**
    * Send a message and get AI response with streaming.
@@ -110,12 +128,63 @@ export class ChatService {
         },
       });
 
-      // 8. Add assistant message (proposals parsed in WP 7.4)
+      // 8. Parse proposals from response (WP 7.4)
+      const extractionConfig = devSettings$.chat.extraction?.peek();
+      let proposals: KnowledgeProposals | null = null;
+
+      // Try fast extraction first
+      const fastResult = extractProposals(result.fullResponse);
+
+      if (fastResult.success) {
+        proposals = fastResult.proposals;
+      } else if (extractionConfig?.enableSelfCorrection !== false) {
+        // Fall back to self-correction
+        console.log('[ChatService] Fast extraction failed, trying self-correction');
+        const extractor = getSelfCorrectingExtractor(this.aiService);
+        const correctionResult = await extractor.extract(result.fullResponse);
+
+        if (correctionResult.success) {
+          proposals = correctionResult.proposals;
+          console.log(`[ChatService] Self-correction succeeded after ${correctionResult.iterations} attempts`);
+        } else {
+          console.warn('[ChatService] Self-correction failed:', correctionResult.finalError);
+        }
+      }
+
+      // Resolve title references if we have proposals and adapters
+      if (proposals && this.noteAdapter) {
+        proposals = await resolveProposalReferences(
+          proposals,
+          this.noteAdapter,
+          this.resourceAdapter
+        );
+        console.log(`[ChatService] Parsed ${proposals.nodes.length} nodes, ${proposals.edges.length} edges`);
+      }
+
+      // Filter low-confidence proposals
+      if (proposals) {
+        const minConfidence = extractionConfig?.minConfidenceThreshold ?? 0.5;
+
+        proposals = {
+          nodes: proposals.nodes.filter(n => n.confidence >= minConfidence),
+          edges: proposals.edges.filter(e => e.confidence >= minConfidence),
+        };
+
+        // Set to null if nothing remains
+        if (proposals.nodes.length === 0 && proposals.edges.length === 0) {
+          proposals = null;
+        }
+      }
+
+      // Strip proposal block from display content
+      const displayContent = stripProposalBlock(result.fullResponse);
+
+      // 9. Add assistant message with proposals
       await chatActions.addMessage({
         threadId,
         role: 'assistant',
-        content: result.fullResponse,
-        // proposals will be added by WP 7.4 extraction
+        content: displayContent,
+        proposals: proposals || undefined,
       });
 
     } catch (error) {
@@ -172,9 +241,11 @@ let chatServiceInstance: ChatService | null = null;
  */
 export function initChatService(
   aiService: IAIService,
-  contextBuilder: ContextBuilder
+  contextBuilder: ContextBuilder,
+  noteAdapter?: INoteAdapter,
+  resourceAdapter?: IResourceAdapter
 ): ChatService {
-  chatServiceInstance = new ChatService(aiService, contextBuilder);
+  chatServiceInstance = new ChatService(aiService, contextBuilder, noteAdapter, resourceAdapter);
 
   // Expose for debugging
   if (typeof window !== 'undefined') {

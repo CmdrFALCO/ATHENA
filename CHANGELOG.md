@@ -1,5 +1,59 @@
 # ATHENA Changelog
 
+## [7.4.0] - 2026-01-25
+
+### Added
+- **Knowledge Extraction Parser (WP 7.4)**: Parse AI proposals from responses with self-correction
+  - `src/modules/chat/services/proposalSchema.ts` - Zod schemas for validation
+  - `src/modules/chat/services/ProposalParser.ts` - Fast extraction path
+  - `src/modules/chat/services/SelfCorrectingExtractor.ts` - Recovery with LLM feedback
+- **Self-Correction Pattern**: From PageIndex analysis, proven effective
+  - Retries extraction up to 3 times on failure
+  - Sends error details to LLM for correction
+  - Achieves higher extraction reliability
+- **Title Resolution**: Connect proposals to existing knowledge graph
+  - `resolveProposalReferences()` - Maps titles to existing note/resource IDs
+  - Case-insensitive matching
+  - Resolves edge endpoints and suggestedConnections
+- **Extraction DevSettings**: Configuration for parsing behavior
+  - `chat.extraction.enableSelfCorrection` - Toggle recovery path (default: true)
+  - `chat.extraction.maxCorrectionAttempts` - Retry limit (default: 3)
+  - `chat.extraction.minConfidenceThreshold` - Filter low-confidence proposals (default: 0.5)
+- **Proposal Indicator**: Lightbulb indicator in chat messages showing proposal counts
+
+### Changed
+- `src/modules/chat/services/ChatService.ts` - Integrates extraction pipeline
+  - Parses proposals after streaming completes
+  - Falls back to self-correction on parse failure
+  - Resolves title references to existing nodes
+  - Filters low-confidence proposals
+  - Strips proposal block from display content
+- `src/modules/chat/components/ChatMessage.tsx` - Shows proposal count indicator
+- `src/modules/chat/components/ChatServiceInitializer.tsx` - Passes adapters for resolution
+- `src/config/devSettings.ts` - Added ExtractionConfig interface and settings
+- `src/modules/chat/index.ts` - Added exports for extraction services and types
+
+### Technical
+- **Hybrid Extraction**: Fast path for valid JSON, self-correction for malformed
+- **Zod Validation**: Type-safe parsing with detailed error messages
+- **Proposal Block Stripping**: Clean display without JSON artifacts
+- **Deep Copy**: Resolved proposals don't mutate originals
+- **Confidence Filtering**: Proposals below threshold are filtered out
+
+### Dependencies
+- Added `zod` for schema validation
+
+### Debug
+- Extraction logs in console: `[ChatService]`, `[SelfCorrectingExtractor]`
+
+### Phase 7 Progress
+- WP 7.1: Chat UI & State ✅
+- WP 7.2: Context Builder ✅
+- WP 7.3: Conversational Generation ✅
+- WP 7.4: Extraction Parser ✅
+- WP 7.5: Proposal Cards ⏳
+- WP 7.6: Spatial Awareness ⏳
+
 ## [7.3.0] - 2026-01-23
 
 ### Added
@@ -42,7 +96,7 @@
 ### Debug
 - `window.__ATHENA_CHAT_SERVICE__` - Chat service instance
 
-### Phase 7 Progress
+### Phase 7 Progress (at this version)
 - WP 7.1: Chat UI & State ✅
 - WP 7.2: Context Builder ✅
 - WP 7.3: Conversational Generation ✅

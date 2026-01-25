@@ -1,9 +1,11 @@
 /**
  * ChatMessage - Single message display (user/assistant/system)
  * WP 7.1 - Chat UI & State
+ * WP 7.4 - Proposal indicator display
  *
  * Renders a single message with appropriate styling based on role.
- * Placeholder for proposal cards (WP 7.5).
+ * Shows proposal counts when AI suggests knowledge additions.
+ * Full proposal cards UI will be added in WP 7.5.
  */
 
 import { User } from 'lucide-react';
@@ -57,21 +59,25 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {message.content}
           </p>
 
-          {/* TODO WP 7.5: Render proposal cards here */}
-          {message.proposals && (
-            <div className="mt-3 pt-3 border-t border-athena-border">
-              <div className="text-xs text-athena-muted flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-athena-surface rounded">
-                  {message.proposals.nodes.length} node
-                  {message.proposals.nodes.length !== 1 ? 's' : ''}
-                </span>
-                <span className="px-2 py-0.5 bg-athena-surface rounded">
-                  {message.proposals.edges.length} edge
-                  {message.proposals.edges.length !== 1 ? 's' : ''}
-                </span>
+          {/* Proposal indicator (WP 7.4) - Full cards UI in WP 7.5 */}
+          {message.proposals &&
+            (message.proposals.nodes.length > 0 ||
+              message.proposals.edges.length > 0) && (
+              <div className="mt-3 pt-3 border-t border-athena-border">
+                <div className="text-xs text-athena-muted flex items-center gap-2">
+                  <span className="text-amber-500">💡</span>
+                  <span>
+                    {message.proposals.nodes.length} node
+                    {message.proposals.nodes.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-athena-border">•</span>
+                  <span>
+                    {message.proposals.edges.length} edge
+                    {message.proposals.edges.length !== 1 ? 's' : ''} proposed
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         {/* Timestamp */}

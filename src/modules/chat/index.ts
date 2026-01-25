@@ -3,9 +3,11 @@
  * WP 7.1 - Chat UI & State
  * WP 7.2 - GraphRAG Context Builder
  * WP 7.3 - Conversational Generation (AI streaming)
+ * WP 7.4 - Knowledge Extraction Parser
  *
  * Provides slide-over chat panel with message persistence,
- * thread management, and Legend-State infrastructure.
+ * thread management, Legend-State infrastructure, and
+ * proposal extraction from AI responses.
  */
 
 // Components
@@ -38,6 +40,35 @@ export {
   KNOWLEDGE_CAPTURE_SYSTEM_PROMPT,
   SIMPLE_CHAT_SYSTEM_PROMPT,
 } from './services/promptTemplates';
+
+// WP 7.4: Proposal extraction
+export {
+  extractProposals,
+  stripProposalBlock,
+  hasProposalBlock,
+  resolveProposalReferences,
+  canCreateEdge,
+} from './services/ProposalParser';
+export type { ExtractionResult } from './services/ProposalParser';
+
+export {
+  SelfCorrectingExtractor,
+  getSelfCorrectingExtractor,
+  resetSelfCorrectingExtractor,
+} from './services/SelfCorrectingExtractor';
+export type { SelfCorrectionResult } from './services/SelfCorrectingExtractor';
+
+export {
+  RawProposalsSchema,
+  RawNodeProposalSchema,
+  RawEdgeProposalSchema,
+  formatZodErrors,
+} from './services/proposalSchema';
+export type {
+  RawProposals,
+  RawNodeProposal,
+  RawEdgeProposal,
+} from './services/proposalSchema';
 
 // Types
 export type {

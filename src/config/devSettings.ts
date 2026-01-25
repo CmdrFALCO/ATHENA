@@ -89,7 +89,17 @@ export interface GenerationConfig {
   model?: string;
 }
 
-// Chat configuration (WP 7.1, extended WP 7.2, WP 7.3)
+// Extraction configuration for proposal parsing (WP 7.4)
+export interface ExtractionConfig {
+  /** Whether to enable self-correction when parsing fails */
+  enableSelfCorrection: boolean;
+  /** Maximum number of correction attempts (1-5) */
+  maxCorrectionAttempts: number;
+  /** Minimum confidence threshold for proposals (0-1). Proposals below this are filtered out. */
+  minConfidenceThreshold: number;
+}
+
+// Chat configuration (WP 7.1, extended WP 7.2, WP 7.3, WP 7.4)
 export interface ChatConfig {
   /** Whether chat panel is enabled */
   enabled: boolean;
@@ -107,6 +117,8 @@ export interface ChatConfig {
   context: ContextConfig;
   /** Generation configuration (WP 7.3) */
   generation: GenerationConfig;
+  /** Extraction configuration (WP 7.4) */
+  extraction: ExtractionConfig;
 }
 
 // Search configuration (RRF parameters)
@@ -169,6 +181,12 @@ const DEFAULT_GENERATION_CONFIG: GenerationConfig = {
   maxTokens: 2048,
 };
 
+const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
+  enableSelfCorrection: true,
+  maxCorrectionAttempts: 3,
+  minConfidenceThreshold: 0.5,
+};
+
 const DEFAULT_CHAT_CONFIG: ChatConfig = {
   enabled: true,
   position: 'right',
@@ -178,6 +196,7 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   showToggleButton: true,
   context: { ...DEFAULT_CONTEXT_CONFIG },
   generation: { ...DEFAULT_GENERATION_CONFIG },
+  extraction: { ...DEFAULT_EXTRACTION_CONFIG },
 };
 
 // Default values (conservative - features off until implemented)
@@ -385,6 +404,22 @@ export const devSettingsActions = {
 
   setGenerationMaxTokens(value: number) {
     devSettings$.chat.generation.maxTokens.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Extraction config actions (WP 7.4)
+  setExtractionSelfCorrection(value: boolean) {
+    devSettings$.chat.extraction.enableSelfCorrection.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setExtractionMaxAttempts(value: number) {
+    devSettings$.chat.extraction.maxCorrectionAttempts.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setExtractionMinConfidence(value: number) {
+    devSettings$.chat.extraction.minConfidenceThreshold.set(value);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 7.3 (Conversational Generation) |
+| **Last WP Completed** | 7.4 (Knowledge Extraction Parser) |
 | **Last Updated** | January 2026 |
 | **Phase** | 7 (AI Chat - Knowledge Capture Interface) |
 | **Milestone** | Phase 7 - Conversational Knowledge Capture |
@@ -187,6 +187,10 @@ athena/
 | Prompt Templates | `src/modules/chat/services/promptTemplates.ts` | System prompts for knowledge capture |
 | AI Streaming | `src/modules/ai/backends/GeminiBackend.ts` | SSE streaming via `generateStream()` method |
 | Generation Config | `src/config/devSettings.ts` | `chat.generation.*` settings for AI generation |
+| Proposal Parser | `src/modules/chat/services/ProposalParser.ts` | Extract athena-proposals JSON from AI responses |
+| Self-Correcting Extractor | `src/modules/chat/services/SelfCorrectingExtractor.ts` | Retry extraction with LLM error feedback |
+| Proposal Schema | `src/modules/chat/services/proposalSchema.ts` | Zod validation for proposal structure |
+| Extraction Config | `src/config/devSettings.ts` | `chat.extraction.*` settings for parsing |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -239,6 +243,12 @@ athena/
 | StreamOptions | `src/modules/ai/types.ts` | Options for streaming generation with callbacks |
 | StreamResult | `src/modules/ai/types.ts` | Result of streaming generation (fullResponse, tokenCount) |
 | GenerationConfig | `src/config/devSettings.ts` | Generation settings (enableProposals, historyLimit, temperature, maxTokens) |
+| ExtractionConfig | `src/config/devSettings.ts` | Extraction settings (enableSelfCorrection, maxCorrectionAttempts, minConfidenceThreshold) |
+| ExtractionResult | `src/modules/chat/services/ProposalParser.ts` | Result of extraction attempt (success, proposals, error, rawJson) |
+| SelfCorrectionResult | `src/modules/chat/services/SelfCorrectingExtractor.ts` | Result with iteration count and final error |
+| RawProposals | `src/modules/chat/services/proposalSchema.ts` | Zod schema for AI proposal output (before adding IDs/status) |
+| RawNodeProposal | `src/modules/chat/services/proposalSchema.ts` | Zod schema for raw node proposal |
+| RawEdgeProposal | `src/modules/chat/services/proposalSchema.ts` | Zod schema for raw edge proposal |
 
 ---
 
@@ -259,6 +269,7 @@ athena/
 | @tiptap/starter-kit | 2.x | Editor extensions |
 | mammoth | 1.x | DOCX to text extraction |
 | xlsx | 0.18.x | Excel file parsing (SheetJS) |
+| zod | 3.x | Schema validation |
 
 ### Development
 
@@ -275,9 +286,9 @@ athena/
 
 | WP | What's Added |
 |-------|--------------|
-| **WP 7.4** | Extraction Parser - Parse AI responses for knowledge proposals |
 | **WP 7.5** | Proposal Cards - UI for accept/reject knowledge suggestions |
 | **WP 7.6** | Spatial Awareness - @mention nodes in chat |
+| **WP 7.7** | Knowledge Integration - Actually create nodes/edges from accepted proposals |
 
 ---
 
