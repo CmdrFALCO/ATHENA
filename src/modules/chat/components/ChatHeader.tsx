@@ -95,14 +95,23 @@ export function ChatHeader() {
                   </div>
                 ) : (
                   threadArray.map((thread) => (
-                    <button
+                    <div
                       key={thread.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         chatActions.switchThread(thread.id);
                         setShowThreadList(false);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          chatActions.switchThread(thread.id);
+                          setShowThreadList(false);
+                        }
+                      }}
                       className={`w-full px-3 py-2 text-sm text-left hover:bg-athena-surface
-                                  flex items-center justify-between group transition-colors ${
+                                  flex items-center justify-between group transition-colors cursor-pointer ${
                                     thread.id === activeThreadId
                                       ? 'bg-athena-accent/10 text-athena-accent'
                                       : 'text-athena-text'
@@ -124,7 +133,7 @@ export function ChatHeader() {
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>

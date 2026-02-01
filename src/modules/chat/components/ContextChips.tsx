@@ -12,7 +12,8 @@ import { X, Plus, FileText, File } from 'lucide-react';
 import { useSelector } from '@legendapp/state/react';
 import { chatState$ } from '../store/chatState';
 import { chatActions } from '../store/chatActions';
-import { useNotes, useSelectedResourceIds, useResources, uiActions } from '@/store/hooks';
+import { useNotes, useSelectedResourceIds, useResources, useSelectedResourceId, uiActions } from '@/store/hooks';
+import { selectResource } from '@/store/resourceActions';
 import { useCanvasSelection } from '../hooks/useCanvasSelection';
 
 export function ContextChips() {
@@ -21,9 +22,15 @@ export function ContextChips() {
   const notes = useNotes();
   const { selectedEntityId, selectedEntityTitle } = useCanvasSelection();
 
-  // WP 8.7.2: Resource context
-  const selectedResourceIds = useSelectedResourceIds();
+  // WP 8.7.2: Resource context — merge multi-selection + single-selection
+  const multiSelectedResourceIds = useSelectedResourceIds();
+  const singleSelectedResourceId = useSelectedResourceId();
   const allResources = useResources();
+
+  // Combine both selection types, deduplicating
+  const selectedResourceIds = singleSelectedResourceId && !multiSelectedResourceIds.includes(singleSelectedResourceId)
+    ? [...multiSelectedResourceIds, singleSelectedResourceId]
+    : multiSelectedResourceIds;
 
   // Get current thread's context
   const thread = activeThreadId ? threads[activeThreadId] : null;
@@ -48,7 +55,14 @@ export function ContextChips() {
   };
 
   const handleRemoveResource = (resourceId: string) => {
-    uiActions.toggleResourceSelection(resourceId);
+    // Clear from multi-selection if present
+    if (multiSelectedResourceIds.includes(resourceId)) {
+      uiActions.toggleResourceSelection(resourceId);
+    }
+    // Clear single-selection if it matches
+    if (singleSelectedResourceId === resourceId) {
+      selectResource(null);
+    }
   };
 
   const handleAddSelected = () => {

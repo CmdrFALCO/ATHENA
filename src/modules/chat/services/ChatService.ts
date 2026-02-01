@@ -19,6 +19,7 @@ import { extractProposals, stripProposalBlock, resolveProposalReferences, applyL
 import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
 import { appState$ } from '@/store/state';
+import { resourceState$ } from '@/store/resourceState';
 import { schemaActions } from '@/modules/schema/store/schemaActions';
 import type { ChatMessage as StoredChatMessage, KnowledgeProposals } from '../types';
 import type { IAIService } from '@/modules/ai';
@@ -84,7 +85,12 @@ export class ChatService {
       const contextConfig = devSettings$.chat.context?.peek();
 
       // WP 8.7.2: Read selected resource IDs from canvas state
-      const selectedResourceIds = appState$.ui.selectedResourceIds.peek();
+      // Merge multi-selection (shift+click) with single-selection (normal click)
+      const multiSelectedIds = appState$.ui.selectedResourceIds.peek();
+      const singleSelectedId = resourceState$.selectedResourceId.peek();
+      const selectedResourceIds = singleSelectedId && !multiSelectedIds.includes(singleSelectedId)
+        ? [...multiSelectedIds, singleSelectedId]
+        : multiSelectedIds;
 
       const contextResult = await this.contextBuilder.build({
         selectedNodeIds: thread.contextNodeIds || [],
@@ -131,7 +137,7 @@ export class ChatService {
       const result = await this.aiService.generateStream({
         messages,
         temperature: generationConfig?.temperature ?? 0.7,
-        maxTokens: generationConfig?.maxTokens ?? 2048,
+        maxTokens: generationConfig?.maxTokens ?? 4096,
         onChunk: (chunk: string) => {
           fullResponse += chunk;
           chatActions.setStreaming(fullResponse);

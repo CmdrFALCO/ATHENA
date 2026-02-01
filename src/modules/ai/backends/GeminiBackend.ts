@@ -295,7 +295,7 @@ export class GeminiBackend implements IAIBackend {
       onComplete,
       onError,
       temperature = 0.7,
-      maxTokens = 2048,
+      maxTokens = 4096,
     } = options;
 
     // Extract system message if present
@@ -394,7 +394,9 @@ export class GeminiBackend implements IAIBackend {
         tokenCount: undefined, // Gemini doesn't provide token count in streaming
       };
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
+      // Re-throw without calling onError again — it was already called above
+      if (error instanceof Error) throw error;
+      const err = new Error(String(error));
       onError?.(err);
       throw err;
     }

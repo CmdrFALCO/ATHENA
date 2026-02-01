@@ -330,7 +330,7 @@ const DEFAULT_GENERATION_CONFIG: GenerationConfig = {
   enableProposals: true,
   historyLimit: 10,
   temperature: 0.7,
-  maxTokens: 2048,
+  maxTokens: 4096,
 };
 
 const DEFAULT_EXTRACTION_CONFIG: ExtractionConfig = {
@@ -453,13 +453,23 @@ export const devSettings$ = observable({
 
   // Metadata
   lastModified: null as string | null,
-  version: 1,
+  version: 2,
 });
 
 // Persist to localStorage
 persistObservable(devSettings$, {
   local: 'athena-dev-settings',
 });
+
+// Migration: bump maxTokens if still at old default of 2048
+// localStorage persistence loads synchronously, so values are already restored
+{
+  const currentMax = devSettings$.chat.generation.maxTokens.peek();
+  if (currentMax <= 2048) {
+    devSettings$.chat.generation.maxTokens.set(4096);
+    console.log('[DevSettings] Migrated maxTokens:', currentMax, '→ 4096');
+  }
+}
 
 // Computed helpers
 export const isFeatureEnabled = (flag: keyof FeatureFlags) =>
