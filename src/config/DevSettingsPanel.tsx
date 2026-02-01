@@ -686,6 +686,65 @@ export function DevSettingsPanel() {
             </p>
           </div>
 
+          {/* Chat Context Section (WP 8.8) */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Chat Context</h3>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Include Traversal</span>
+              <Toggle
+                checked={settings.chat?.context?.includeTraversal ?? true}
+                onChange={(checked) => devSettingsActions.setContextIncludeTraversal(checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Traversal Depth</span>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={settings.chat?.context?.traversalDepth ?? 2}
+                onChange={(e) => devSettingsActions.setContextTraversalDepth(parseInt(e.target.value) || 2)}
+                className="w-16 bg-gray-700 text-white text-sm rounded px-2 py-1 text-right"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Traversal Decay</span>
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.1}
+                value={settings.chat?.context?.traversalDecay ?? 0.5}
+                onChange={(e) => devSettingsActions.setTraversalDecay(parseFloat(e.target.value) || 0.5)}
+                className="w-16 bg-gray-700 text-white text-sm rounded px-2 py-1 text-right"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-700">
+              <span className="text-sm text-gray-300">Max Traversal Nodes</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={settings.chat?.context?.maxTraversalNodes ?? 20}
+                onChange={(e) => devSettingsActions.setMaxTraversalNodes(parseInt(e.target.value) || 20)}
+                className="w-16 bg-gray-700 text-white text-sm rounded px-2 py-1 text-right"
+              />
+            </div>
+
+            <p className="text-xs text-gray-500 mt-1">
+              Score = 0.5 x decay^depth. Depth {settings.chat?.context?.traversalDepth ?? 2} with decay {settings.chat?.context?.traversalDecay ?? 0.5} =&gt; scores: {
+                Array.from(
+                  { length: settings.chat?.context?.traversalDepth ?? 2 },
+                  (_, i) => (0.5 * Math.pow(settings.chat?.context?.traversalDecay ?? 0.5, i)).toFixed(3)
+                ).join(', ')
+              }
+            </p>
+          </div>
+
           {/* Test Data Section */}
           <TestDataSection />
 

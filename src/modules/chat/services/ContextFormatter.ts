@@ -91,6 +91,12 @@ export class ContextFormatter {
   }
 
   private static getSourceLabel(source: ContextItem['source']): string {
+    // WP 8.8: Handle traversal_depth_N labels
+    if (source.startsWith('traversal_depth_')) {
+      const depth = source.replace('traversal_depth_', '');
+      return `connected (${depth}-hop)`;
+    }
+
     switch (source) {
       case 'selected':
         return 'in context';

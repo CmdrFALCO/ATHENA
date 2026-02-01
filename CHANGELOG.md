@@ -1,5 +1,33 @@
 # ATHENA Changelog
 
+## [8.8.0] - 2026-02-01
+
+### Added
+- **Multi-Hop Reasoning (WP 8.8)**: Enhanced graph traversal for richer AI context
+  - `TraversalStrategy` now supports configurable depth (1-5 hops) via BFS
+  - Relevance score decays with distance: `score = baseScore × decay^(depth-1)`
+  - Per-depth node budget prevents context explosion in dense graphs
+  - Cycle detection via visited set ensures no duplicate processing
+  - Granular source tracking: `traversal_depth_1`, `traversal_depth_2`, etc.
+  - `TraversalOptions` interface for typed traversal configuration
+- **New DevSettings**: `chat.context.traversalDecay` (default: 0.5), `chat.context.maxTraversalNodes` (default: 20)
+- **DevSettings Panel**: Chat Context section with traversal depth, decay, and max nodes controls with live score preview
+
+### Changed
+- `src/modules/chat/services/contextStrategies/TraversalStrategy.ts` - Rewritten with BFS multi-hop traversal and relevance decay
+- `src/modules/chat/services/contextStrategies/types.ts` - Added `TraversalOptions` interface, extended `ContextItem.source` with `traversal_depth_${number}`
+- `src/modules/chat/services/ContextBuilder.ts` - Passes decay/maxNodes options to traversal strategy
+- `src/modules/chat/services/ContextFormatter.ts` - Depth-aware source labels (e.g., "connected (2-hop)")
+- `src/config/devSettings.ts` - Added `traversalDecay`, `maxTraversalNodes` to ContextConfig with clamped action methods
+- `src/config/DevSettingsPanel.tsx` - New Chat Context section with traversal controls
+
+### Technical
+- BFS ensures shortest-path discovery — nodes found at lowest depth get highest score
+- Default traversalDepth changed from 1 to 2 for richer context
+- Score decay prioritizes closer neighbors in final context ranking
+- Budget system (maxNodes) prevents runaway traversal in dense graphs
+- Backward-compatible: `TraversalStrategy.gather()` accepts `Partial<TraversalOptions>`, defaults match previous behavior at depth 1
+
 ## [8.7.2] - 2026-02-01
 
 ### Added

@@ -94,7 +94,7 @@ export interface UrlConfig {
   firecrawl: FirecrawlConfig;
 }
 
-// Context configuration for GraphRAG (WP 7.2)
+// Context configuration for GraphRAG (WP 7.2, extended WP 8.8)
 export interface ContextConfig {
   /** Maximum context items to include */
   maxItems: number;
@@ -104,6 +104,10 @@ export interface ContextConfig {
   includeTraversal: boolean;
   /** How many hops to traverse in the graph */
   traversalDepth: number;
+  /** Score multiplier per hop (0.0-1.0) — controls relevance decay with distance (WP 8.8) */
+  traversalDecay: number;
+  /** Total traversal node budget — prevents explosion in dense graphs (WP 8.8) */
+  maxTraversalNodes: number;
   /** Max chars of resource content to include in context (WP 8.7.2) */
   resourceMaxChars: number;
   /** Prefer document tree summaries over raw text for resources (WP 8.7.2) */
@@ -321,7 +325,9 @@ const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
   maxItems: 10,
   similarityThreshold: 0.7,
   includeTraversal: true,
-  traversalDepth: 1,
+  traversalDepth: 2,
+  traversalDecay: 0.5,
+  maxTraversalNodes: 20,
   resourceMaxChars: 8000,
   useDocumentTree: true,
 };
@@ -659,6 +665,17 @@ export const devSettingsActions = {
 
   setContextTraversalDepth(value: number) {
     devSettings$.chat.context.traversalDepth.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Multi-hop traversal config actions (WP 8.8)
+  setTraversalDecay(decay: number) {
+    devSettings$.chat.context.traversalDecay.set(Math.max(0, Math.min(1, decay)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setMaxTraversalNodes(max: number) {
+    devSettings$.chat.context.maxTraversalNodes.set(Math.max(1, max));
     devSettings$.lastModified.set(new Date().toISOString());
   },
 

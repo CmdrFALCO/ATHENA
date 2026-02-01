@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.7.2 (Chat Resource Context) |
+| **Last WP Completed** | 8.8 (Multi-Hop Reasoning) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -188,7 +188,8 @@ athena/
 | Chat Config | `src/config/devSettings.ts` | `chat.enabled`, `chat.position`, `chat.showToggleButton` settings |
 | Chat Keyboard | `src/modules/chat/components/ChatToggleButton.tsx` | Ctrl+Shift+C to toggle chat panel |
 | Context Builder | `src/modules/chat/services/ContextBuilder.ts` | GraphRAG context gathering with 4 strategies |
-| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected (with resource gathering), DocumentReasoning, Similarity, Traversal strategies |
+| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected (with resource gathering), DocumentReasoning, Similarity, Traversal (multi-hop BFS) strategies |
+| Multi-Hop Traversal | `src/modules/chat/services/contextStrategies/TraversalStrategy.ts` | BFS traversal with relevance decay: score = baseScore × decay^(depth-1) (WP 8.8) |
 | Resource Context | `src/modules/chat/services/contextStrategies/SelectedNodesStrategy.ts` | gatherResources() with document tree extraction and smart truncation (WP 8.7.2) |
 | Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts with separate notes/resources sections |
 | Context Config | `src/config/devSettings.ts` | `chat.context.*` settings including resourceMaxChars, useDocumentTree (WP 8.7.2) |
@@ -306,7 +307,8 @@ athena/
 | ContextItem | `src/modules/chat/services/contextStrategies/types.ts` | Single context item with id, type, title, content, relevance, source |
 | ContextOptions | `src/modules/chat/services/contextStrategies/types.ts` | Options for context building (selectedNodeIds, selectedResourceIds, query, maxItems, etc.) |
 | ContextResult | `src/modules/chat/services/contextStrategies/types.ts` | Result with items, token estimate, debug info |
-| ContextConfig | `src/config/devSettings.ts` | Context builder settings (maxItems, similarityThreshold, traversal) |
+| TraversalOptions | `src/modules/chat/services/contextStrategies/types.ts` | Multi-hop traversal configuration (depth, decay, maxNodes) (WP 8.8) |
+| ContextConfig | `src/config/devSettings.ts` | Context builder settings (maxItems, similarityThreshold, traversal, decay, maxNodes) |
 | AIChatMessage | `src/modules/ai/types.ts` | Message format for AI conversations (role + content) |
 | StreamOptions | `src/modules/ai/types.ts` | Options for streaming generation with callbacks |
 | StreamResult | `src/modules/ai/types.ts` | Result of streaming generation (fullResponse, tokenCount) |
@@ -403,6 +405,7 @@ athena/
 | 8.7 | Synthesis Reports | ✅ |
 | 8.7.1 | Synthesis Resource Support | ✅ |
 | 8.7.2 | Chat Resource Context | ✅ |
+| 8.8 | Multi-Hop Reasoning | ✅ |
 
 ### Phase 7 Complete
 

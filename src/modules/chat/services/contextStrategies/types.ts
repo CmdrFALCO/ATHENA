@@ -1,6 +1,7 @@
 /**
  * GraphRAG Context Builder Types
  * WP 7.2 - Context gathering for AI conversations
+ * WP 8.8 - Multi-hop traversal with relevance decay
  */
 
 /**
@@ -12,7 +13,28 @@ export interface ContextItem {
   title: string;
   content: string; // Plain text content
   relevanceScore: number; // 0-1, higher = more relevant
-  source: 'selected' | 'similarity' | 'traversal' | 'document-tree';
+  source:
+    | 'selected'
+    | 'similarity'
+    | 'traversal'
+    | 'document-tree'
+    | `traversal_depth_${number}`; // WP 8.8: granular depth tracking
+}
+
+/**
+ * Options for multi-hop graph traversal (WP 8.8)
+ */
+export interface TraversalOptions {
+  /** Max hops from seed nodes (default: 2) */
+  maxDepth: number;
+  /** Score multiplier per hop — controls relevance decay (default: 0.5) */
+  decayFactor: number;
+  /** Total node budget — prevents explosion in dense graphs (default: 20) */
+  maxNodes: number;
+  /** Starting relevance score for depth 1 (default: 0.5) */
+  baseScore: number;
+  /** Optional: filter by connection type */
+  connectionTypes?: string[];
 }
 
 /**
@@ -31,8 +53,12 @@ export interface ContextOptions {
   similarityThreshold?: number;
   /** Whether to expand context via graph traversal (default: true) */
   includeTraversal?: boolean;
-  /** How many hops to traverse (default: 1) */
+  /** How many hops to traverse (default: 2) */
   traversalDepth?: number;
+  /** Score multiplier per hop (default: 0.5) (WP 8.8) */
+  traversalDecay?: number;
+  /** Total traversal node budget (default: 20) (WP 8.8) */
+  maxTraversalNodes?: number;
 }
 
 /**

@@ -2,12 +2,13 @@
  * Context Builder - Main Orchestrator
  * WP 7.2 - GraphRAG context gathering for AI conversations
  * Extended WP 8.2 - Document reasoning strategy for structured resources
+ * Extended WP 8.8 - Multi-hop traversal with relevance decay
  *
  * Coordinates strategies to gather relevant context:
  * 1. Selected Nodes - Explicit user-selected context (highest priority)
  * 2. Document Reasoning - Navigate document trees for structured resources
  * 3. Similarity Search - Semantically similar content to the query
- * 4. Graph Traversal - Connected nodes (1-hop expansion)
+ * 4. Graph Traversal - Multi-hop BFS with score decay
  */
 
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
@@ -20,7 +21,7 @@ import { SelectedNodesStrategy } from './contextStrategies/SelectedNodesStrategy
 import { SimilarityStrategy } from './contextStrategies/SimilarityStrategy';
 import { TraversalStrategy } from './contextStrategies/TraversalStrategy';
 import { DocumentReasoningStrategy } from './contextStrategies/DocumentReasoningStrategy';
-import type { ContextItem, ContextOptions, ContextResult } from './contextStrategies/types';
+import type { ContextItem, ContextOptions, ContextResult, TraversalOptions } from './contextStrategies/types';
 
 export class ContextBuilder {
   private selectedStrategy: SelectedNodesStrategy;
@@ -78,7 +79,9 @@ export class ContextBuilder {
       maxItems = contextConfig?.maxItems ?? 10,
       similarityThreshold = contextConfig?.similarityThreshold ?? 0.7,
       includeTraversal = contextConfig?.includeTraversal ?? true,
-      traversalDepth = contextConfig?.traversalDepth ?? 1,
+      traversalDepth = contextConfig?.traversalDepth ?? 2,
+      traversalDecay = contextConfig?.traversalDecay ?? 0.5,
+      maxTraversalNodes = contextConfig?.maxTraversalNodes ?? 20,
     } = options;
 
     const resourceMaxChars = contextConfig?.resourceMaxChars ?? 8000;
@@ -174,16 +177,18 @@ export class ContextBuilder {
       }
     }
 
-    // Strategy 4: Traversal (if enabled and room remains)
+    // Strategy 4: Traversal (if enabled and room remains) — WP 8.8 multi-hop BFS
     if (includeTraversal && allItems.length < maxItems && allItems.length > 0) {
       const baseIds = allItems.map((item) => item.id);
-      const traversalItems = await this.traversalStrategy.gather(
-        baseIds,
-        traversalDepth,
-        maxItems - allItems.length
-      );
+      const traversalOptions: Partial<TraversalOptions> = {
+        maxDepth: traversalDepth,
+        decayFactor: traversalDecay,
+        maxNodes: Math.min(maxTraversalNodes, maxItems - allItems.length),
+        baseScore: 0.5,
+      };
+      const traversalItems = await this.traversalStrategy.gather(baseIds, traversalOptions);
       for (const item of traversalItems) {
-        if (!seenIds.has(item.id)) {
+        if (!seenIds.has(item.id) && allItems.length < maxItems) {
           seenIds.add(item.id);
           allItems.push(item);
           traversalCount++;

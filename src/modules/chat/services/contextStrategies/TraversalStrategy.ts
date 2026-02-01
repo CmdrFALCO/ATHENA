@@ -1,9 +1,11 @@
 /**
  * Traversal Strategy
  * WP 7.2 - Expand context by following graph connections
+ * WP 8.8 - Multi-hop BFS with relevance decay
  *
- * Finds nodes connected to the base set via 1-hop expansion.
- * These have lower relevance (0.5) since they are discovered, not directly relevant.
+ * Performs BFS traversal up to maxDepth hops from seed nodes.
+ * Relevance score decays with distance: score = baseScore × decay^(depth-1)
+ * Respects a total node budget (maxNodes) to prevent explosion in dense graphs.
  */
 
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
@@ -11,7 +13,14 @@ import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
 import type { IConnectionAdapter } from '@/adapters/IConnectionAdapter';
 import type { Connection, NodeType } from '@/shared/types';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
-import type { ContextItem, IContextStrategy } from './types';
+import type { ContextItem, IContextStrategy, TraversalOptions } from './types';
+
+const DEFAULT_OPTIONS: TraversalOptions = {
+  maxDepth: 2,
+  decayFactor: 0.5,
+  maxNodes: 20,
+  baseScore: 0.5,
+};
 
 export class TraversalStrategy implements IContextStrategy {
   readonly name = 'traversal';
@@ -30,47 +39,83 @@ export class TraversalStrategy implements IContextStrategy {
   }
 
   /**
-   * Find nodes connected to the base set (1-hop expansion)
+   * Gather context via multi-hop graph traversal with relevance decay.
    *
-   * @param baseIds - IDs of nodes to expand from
-   * @param _depth - How many hops to traverse (currently only 1 supported)
-   * @param limit - Maximum items to return
+   * BFS ensures shortest-path discovery — nodes are found at their lowest depth,
+   * giving them the highest possible relevance score.
+   *
+   * @param seedIds - Starting node IDs (already in context)
+   * @param options - Traversal configuration (partial, merged with defaults)
+   * @returns Context items sorted by relevance (highest first)
    */
-  async gather(baseIds: string[], _depth: number, limit: number): Promise<ContextItem[]> {
-    if (baseIds.length === 0 || limit <= 0) return [];
+  async gather(
+    seedIds: string[],
+    options: Partial<TraversalOptions> = {}
+  ): Promise<ContextItem[]> {
+    const {
+      maxDepth,
+      decayFactor,
+      maxNodes,
+      baseScore,
+      connectionTypes,
+    } = { ...DEFAULT_OPTIONS, ...options };
 
+    // Skip if no seeds or traversal disabled
+    if (seedIds.length === 0 || maxDepth < 1) {
+      return [];
+    }
+
+    const visited = new Set<string>(seedIds); // Seeds are already in context
     const items: ContextItem[] = [];
-    const visitedIds = new Set(baseIds); // Don't revisit base nodes
+    let currentLevel = new Set<string>(seedIds);
+    let totalNodes = 0;
 
-    // Get all connections for base nodes
-    for (const baseId of baseIds) {
-      if (items.length >= limit) break;
+    // BFS by depth level
+    for (let depth = 1; depth <= maxDepth && totalNodes < maxNodes; depth++) {
+      const nextLevel = new Set<string>();
+      const depthScore = baseScore * Math.pow(decayFactor, depth - 1);
 
-      // Get connections where this node is source or target
-      const connections = await this.getConnectionsForNode(baseId);
+      for (const nodeId of currentLevel) {
+        if (totalNodes >= maxNodes) break;
 
-      for (const conn of connections) {
-        if (items.length >= limit) break;
+        // Get connections for this node (both entity and resource connections)
+        const connections = await this.getConnectionsForNode(nodeId);
 
-        // Find the "other" end of the connection
-        const otherId = conn.source_id === baseId ? conn.target_id : conn.source_id;
-        const otherType: NodeType = conn.source_id === baseId ? conn.target_type : conn.source_type;
+        // Filter by connection type if specified
+        const filtered = connectionTypes
+          ? connections.filter(c => connectionTypes.includes(c.type))
+          : connections;
 
-        if (visitedIds.has(otherId)) continue;
-        visitedIds.add(otherId);
+        for (const conn of filtered) {
+          if (totalNodes >= maxNodes) break;
 
-        // Load the connected node
-        const item = await this.loadNode(otherId, otherType);
-        if (item) {
-          items.push({
-            ...item,
-            // Traversal items get lower relevance (discovered, not directly relevant)
-            relevanceScore: 0.5,
-            source: 'traversal',
-          });
+          // Get the other end of the connection
+          const neighborId = conn.source_id === nodeId ? conn.target_id : conn.source_id;
+          const neighborType: NodeType = conn.source_id === nodeId ? conn.target_type : conn.source_type;
+
+          // Skip if already visited
+          if (visited.has(neighborId)) continue;
+          visited.add(neighborId);
+
+          // Load the connected node
+          const item = await this.loadNode(neighborId, neighborType, depthScore, depth);
+          if (item) {
+            items.push(item);
+            nextLevel.add(neighborId);
+            totalNodes++;
+          }
         }
       }
+
+      // Move to next level
+      currentLevel = nextLevel;
+
+      // Early exit if no more nodes to explore
+      if (currentLevel.size === 0) break;
     }
+
+    // Sort by relevance (highest first)
+    items.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
     return items;
   }
@@ -85,8 +130,10 @@ export class TraversalStrategy implements IContextStrategy {
 
   private async loadNode(
     id: string,
-    type: NodeType
-  ): Promise<Omit<ContextItem, 'relevanceScore' | 'source'> | null> {
+    type: NodeType,
+    score: number,
+    depth: number
+  ): Promise<ContextItem | null> {
     if (type === 'entity') {
       const note = await this.noteAdapter.getById(id);
       if (note) {
@@ -95,6 +142,8 @@ export class TraversalStrategy implements IContextStrategy {
           type: 'entity',
           title: note.title,
           content: this.extractContent(note.content),
+          relevanceScore: score,
+          source: `traversal_depth_${depth}` as ContextItem['source'],
         };
       }
     } else {
@@ -105,6 +154,8 @@ export class TraversalStrategy implements IContextStrategy {
           type: 'resource',
           title: resource.name,
           content: resource.extractedText || resource.userNotes || '',
+          relevanceScore: score,
+          source: `traversal_depth_${depth}` as ContextItem['source'],
         };
       }
     }
