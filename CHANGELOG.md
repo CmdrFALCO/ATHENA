@@ -1,5 +1,36 @@
 # ATHENA Changelog
 
+## [8.9.0] - 2026-02-01
+
+### Added
+- **Smart Views Module (WP 8.9)**: Saved, reusable queries for quick knowledge graph exploration
+  - 7 built-in views: Orphan Notes, Recent Notes, Weakly Connected, Stale Notes, By Type, Unembedded Notes, Most Connected
+  - Custom view creation with SQL and parameters
+  - Parameter types: text, number, date, select
+  - ViewSelector dropdown in sidebar for quick access with category grouping
+  - ViewResultsPanel slide-over with results, refresh, and entity navigation
+  - Recent views tracking (last 3 used)
+  - SQL validation via EXPLAIN before saving custom views
+  - `src/modules/views/` — Complete module with types, adapters, services, store, hooks, components
+  - `src/database/migrations/013_smart_views.ts` — Custom views persistence table
+
+### Changed
+- `src/config/devSettings.ts` — Added ViewsConfig with enabled, showInSidebar, maxResults settings and action methods
+- `src/app/layout/Sidebar.tsx` — Added ViewSelector component between navigation and entity list
+- `src/app/layout/AppLayout.tsx` — Added ViewResultsPanel overlay
+- `src/App.tsx` — Initialize views module on startup via initViewsModule() and viewActions.initialize()
+- `src/database/init.ts` — Run setupSmartViews migration on database creation
+- `src/database/migrations/index.ts` — Export setupSmartViews migration
+- `CODEBASE_MAP.md` — Added views module to project structure, module index, data models, key patterns, phase progress, and console debugging
+
+### Technical
+- SQL parameter substitution with `:name` placeholders and single-quote escaping
+- SQLiteViewAdapter uses the app's DatabaseConnection interface (async exec/run returning objects)
+- ViewService resolves defaults, substitutes params, executes SQL, and transforms results with Tiptap preview extraction
+- Built-in views are read-only; custom views stored in smart_views table with JSON-serialized parameters
+- Results include preview text (first 100 chars via extractTextFromTiptap) and optional connection count
+- Debug: `window.__ATHENA_VIEW_STATE__`, `window.__ATHENA_VIEWS__`
+
 ## [8.8.0] - 2026-02-01
 
 ### Added

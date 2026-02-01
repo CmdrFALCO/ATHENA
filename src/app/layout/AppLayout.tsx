@@ -10,6 +10,7 @@ import { ValidationPanel, useValidationPanel } from '@/modules/validation';
 import { ChatPanel, ChatToggleButton } from '@/modules/chat';
 import { MergeCandidatesPanel, useSimilarityPanel } from '@/modules/similarity';
 import { SynthesisPanel } from '@/modules/synthesis';
+import { ViewResultsPanel } from '@/modules/views';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -77,6 +78,9 @@ export function AppLayout() {
 
       {/* Synthesis Panel - knowledge synthesis (WP 8.7) */}
       <SynthesisPanel />
+
+      {/* View Results Panel - smart views slide-over (WP 8.9) */}
+      <ViewResultsPanel />
 
       {/* Chat Panel - slide-over chat interface (WP 7.1) - Ctrl+Shift+C */}
       <ChatPanel />

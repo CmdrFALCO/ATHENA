@@ -14,6 +14,7 @@ import {
   setupPreferenceSignals,
   setupKnowledgeSchemas,
   setupBackgroundJobs,
+  setupSmartViews,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -130,6 +131,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up background jobs history table (WP 8.6, idempotent)
   await setupBackgroundJobs(connection);
+
+  // Set up smart views table for canned queries (WP 8.9, idempotent)
+  await setupSmartViews(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

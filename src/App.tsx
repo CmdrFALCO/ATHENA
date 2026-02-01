@@ -14,6 +14,7 @@ import {
 import { router } from './app/routes';
 import { AIProvider } from './modules/ai';
 import { chatActions, ChatServiceInitializer } from './modules/chat';
+import { initViewsModule, viewActions } from './modules/views';
 
 // Import validation store to expose window.__ATHENA_VALIDATION__
 import './modules/validation/store/validationActions';
@@ -23,6 +24,9 @@ import './modules/jobs/store/jobActions';
 
 // Import synthesis store to expose window.__ATHENA_SYNTHESIS__ and window.__ATHENA_SYNTHESIS_STATE__
 import './modules/synthesis/store/synthesisActions';
+
+// Import views store to expose window.__ATHENA_VIEWS__ and window.__ATHENA_VIEW_STATE__
+import './modules/views/store/viewActions';
 
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
@@ -46,6 +50,12 @@ function App() {
         // WP 7.1: Load chat threads from IndexedDB
         chatActions.loadThreads().catch((err) => {
           console.error('Failed to load chat threads:', err);
+        });
+
+        // WP 8.9: Initialize Smart Views module
+        initViewsModule(db);
+        viewActions.initialize().catch((err) => {
+          console.error('Failed to initialize views:', err);
         });
       } catch (err) {
         setError(String(err));

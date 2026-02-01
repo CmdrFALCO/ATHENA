@@ -3,6 +3,9 @@ import { Bird, Swords, Hammer, PanelLeftClose, PanelLeft, Plus } from 'lucide-re
 import { useSidebarOpen, useNotes, useResources, uiActions, entityActions } from '@/store';
 import { useNoteAdapter } from '@/adapters';
 import { EntityList, ResourceUploadButton, UrlAddButton } from '@/modules/sophia';
+import { ViewSelector } from '@/modules/views';
+import { useSelector } from '@legendapp/state/react';
+import { devSettings$ } from '@/config';
 
 const navItems = [
   { path: '/sophia', label: 'Sophia', icon: Bird },
@@ -16,6 +19,8 @@ export function Sidebar() {
   const noteAdapter = useNoteAdapter();
   const notes = useNotes();
   const resources = useResources();
+  const viewsEnabled = useSelector(() => devSettings$.views.enabled.get());
+  const viewsShowInSidebar = useSelector(() => devSettings$.views.showInSidebar.get());
 
   // Calculate default position for new items (offset from existing nodes)
   const getDefaultPosition = () => {
@@ -85,6 +90,13 @@ export function Sidebar() {
           })}
         </ul>
       </nav>
+
+      {/* Smart Views (WP 8.9) */}
+      {isOpen && viewsEnabled && viewsShowInSidebar && (
+        <div className="px-2 py-1 border-t border-athena-border">
+          <ViewSelector />
+        </div>
+      )}
 
       {/* Entity list */}
       {isOpen && (

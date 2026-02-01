@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.8 (Multi-Hop Reasoning) |
+| **Last WP Completed** | 8.9 (Smart Views) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -59,7 +59,8 @@ athena/
 │   │   ├── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
 │   │   ├── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
 │   │   ├── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
-│   │   └── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
+│   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
+│   │   └── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -109,6 +110,7 @@ athena/
 | Schema | `src/modules/schema/` | — | ✅ |
 | Jobs | `src/modules/jobs/` | — | ✅ |
 | Synthesis | `src/modules/synthesis/` | — | ✅ |
+| Views | `src/modules/views/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -260,6 +262,17 @@ athena/
 | Job Progress | `src/modules/jobs/components/JobProgress.tsx` | Individual job progress bar |
 | Job Migration | `src/database/migrations/012_background_jobs.ts` | job_history table with status and type indexes |
 | Jobs Config | `src/config/devSettings.ts` | `jobs.*` settings for enabled, per-job intervals, thresholds |
+| Built-in Views | `src/modules/views/data/builtInViews.ts` | 7 system-provided views (Orphan Notes, Recent, Weakly Connected, Stale, By Type, Unembedded, Most Connected) |
+| View Adapter | `src/modules/views/adapters/SQLiteViewAdapter.ts` | SQLite CRUD for custom user-created views |
+| View Service | `src/modules/views/services/ViewService.ts` | Execute views with parameter substitution and SQL validation |
+| View State | `src/modules/views/store/viewState.ts` | Legend-State slice for views, results, panel visibility |
+| View Actions | `src/modules/views/store/viewActions.ts` | Initialize, execute, create, update, delete views |
+| View Selector | `src/modules/views/components/ViewSelector.tsx` | Dropdown in sidebar for view selection with categories and recents |
+| View Results Panel | `src/modules/views/components/ViewResultsPanel.tsx` | Slide-over panel with results, refresh, and entity navigation |
+| View Parameter Form | `src/modules/views/components/ViewParameterForm.tsx` | Dynamic form for view parameters (text, number, date, select) |
+| View Hooks | `src/modules/views/hooks/useViews.ts` | useViews for state + actions, useView for single view by ID |
+| View Migration | `src/database/migrations/013_smart_views.ts` | smart_views table for custom view persistence |
+| Views Config | `src/config/devSettings.ts` | `views.*` settings for enabled, showInSidebar, maxResults |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -353,6 +366,14 @@ athena/
 | JobEvent | `src/modules/jobs/types.ts` | Event emitted by JobRunner (started, progress, completed, failed) |
 | IJobAdapter | `src/modules/jobs/adapters/JobAdapter.ts` | Interface for job history persistence |
 | IBackgroundJob | `src/modules/jobs/implementations/IBackgroundJob.ts` | Interface for job implementations with run() and optional cancel() |
+| SmartView | `src/modules/views/types.ts` | Saved query with parameters and metadata |
+| ViewParameter | `src/modules/views/types.ts` | Parameter definition (name, type, default) |
+| ViewResult | `src/modules/views/types.ts` | Query result with entity preview |
+| ViewExecutionResult | `src/modules/views/types.ts` | Full execution result with timing |
+| ViewsConfig | `src/modules/views/types.ts` | Views module configuration |
+| CreateViewInput | `src/modules/views/types.ts` | Input for creating a custom view |
+| UpdateViewInput | `src/modules/views/types.ts` | Input for updating an existing view |
+| IViewAdapter | `src/modules/views/adapters/IViewAdapter.ts` | Interface for view persistence |
 
 ---
 
@@ -406,6 +427,7 @@ athena/
 | 8.7.1 | Synthesis Resource Support | ✅ |
 | 8.7.2 | Chat Resource Context | ✅ |
 | 8.8 | Multi-Hop Reasoning | ✅ |
+| 8.9 | Smart Views (Canned Queries) | ✅ |
 
 ### Phase 7 Complete
 
@@ -445,6 +467,8 @@ window.__ATHENA_JOBS__           // Jobs actions for testing (WP 8.6)
 window.__ATHENA_SYNTHESIS_STATE__ // Synthesis state (progress, reports, panel) (WP 8.7)
 window.__ATHENA_SYNTHESIS__      // Synthesis actions for testing (WP 8.7)
 window.__ATHENA_SYNTHESIS_SERVICE__() // Synthesis service instance (WP 8.7)
+window.__ATHENA_VIEW_STATE__      // View state (views, results, panel) (WP 8.9)
+window.__ATHENA_VIEWS__           // View actions for testing (WP 8.9)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

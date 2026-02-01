@@ -3,6 +3,7 @@ import { persistObservable } from '@legendapp/state/persist';
 import type { SchemaConfig } from '@/modules/schema/types';
 import type { JobsConfig } from '@/modules/jobs/types';
 import type { SynthesisConfig } from '@/modules/synthesis/types';
+import type { ViewsConfig } from '@/modules/views/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -419,6 +420,14 @@ const DEFAULT_JOBS_CONFIG: JobsConfig = {
   },
 };
 
+// Smart Views configuration (WP 8.9)
+const DEFAULT_VIEWS_CONFIG: ViewsConfig = {
+  enabled: true,
+  showInSidebar: true,
+  recentViewIds: [],
+  maxResults: 50,
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -456,6 +465,7 @@ export const devSettings$ = observable({
   schema: { ...DEFAULT_SCHEMA_CONFIG } as SchemaConfig,
   jobs: { ...DEFAULT_JOBS_CONFIG } as JobsConfig,
   synthesis: { ...DEFAULT_SYNTHESIS_CONFIG } as SynthesisConfig,
+  views: { ...DEFAULT_VIEWS_CONFIG } as ViewsConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -501,6 +511,7 @@ export const devSettingsActions = {
     devSettings$.schema.set({ ...DEFAULT_SCHEMA_CONFIG });
     devSettings$.jobs.set({ ...DEFAULT_JOBS_CONFIG });
     devSettings$.synthesis.set({ ...DEFAULT_SYNTHESIS_CONFIG });
+    devSettings$.views.set({ ...DEFAULT_VIEWS_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -909,6 +920,22 @@ export const devSettingsActions = {
 
   setSynthesisResourceMaxChars(chars: number) {
     devSettings$.synthesis.resourceMaxChars.set(chars);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Smart Views config actions (WP 8.9)
+  setViewsEnabled(enabled: boolean) {
+    devSettings$.views.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setViewsShowInSidebar(show: boolean) {
+    devSettings$.views.showInSidebar.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setViewsMaxResults(max: number) {
+    devSettings$.views.maxResults.set(Math.max(1, Math.min(200, max)));
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };
