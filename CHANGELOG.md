@@ -1,5 +1,65 @@
 # ATHENA Changelog
 
+## [8.1.0] - 2026-02-01
+
+### Added
+- **Entity Resolution / Merge Candidates (WP 8.1)**: Detect and merge duplicate/near-duplicate notes
+  - `src/modules/similarity/types.ts` - Type definitions (SimilarityWeights, MergeCandidate, MergeOptions, etc.)
+  - `src/modules/similarity/algorithms/jaroWinkler.ts` - Jaro-Winkler string similarity for titles
+  - `src/modules/similarity/algorithms/levenshtein.ts` - Levenshtein edit distance normalized to 0-1
+  - `src/modules/similarity/algorithms/combined.ts` - Weighted combination scorer with graceful degradation
+  - `src/modules/similarity/adapters/MergeCandidateAdapter.ts` - SQLite adapter with IMergeCandidateAdapter interface
+  - `src/modules/similarity/services/SimilarityService.ts` - Scan all/single notes, progress reporting, abort support
+  - `src/modules/similarity/services/MergeService.ts` - Merge execution with content strategy, connection/cluster transfer
+  - `src/modules/similarity/store/similarityState.ts` - Legend-State slice for candidates, scan progress, filter state
+  - `src/modules/similarity/store/similarityActions.ts` - Actions: scanAll, scanNote, merge, reject, abortScan
+  - `src/modules/similarity/hooks/useMergeCandidates.ts` - Subscribe to candidates list with filtering
+  - `src/modules/similarity/hooks/useMerge.ts` - Merge/reject operations with isMerging state
+  - `src/modules/similarity/hooks/useSimilaritySettings.ts` - Subscribe to DevSettings similarity section
+  - `src/modules/similarity/hooks/useSimilarityPanel.ts` - Panel state with Ctrl+Shift+M keyboard shortcut
+  - `src/modules/similarity/components/MergeCandidatesPanel.tsx` - Main panel with scan, filter, candidate list
+  - `src/modules/similarity/components/CandidateCard.tsx` - Card with score badge, titles, score breakdown
+  - `src/modules/similarity/components/NoteComparisonView.tsx` - Side-by-side comparison dialog
+  - `src/modules/similarity/components/MergeDialog.tsx` - Merge confirmation with options (primary, strategy, transfers)
+  - `src/modules/similarity/components/SimilarityBadge.tsx` - Color-coded score badge (red/amber/blue)
+  - `src/database/migrations/008_merge_candidates.ts` - Creates merge_candidates and similarity_scans tables
+- **Similarity Algorithms**: Three-signal scoring system
+  - Jaro-Winkler for short string comparison (titles)
+  - Levenshtein with two-row optimization for content
+  - Cosine similarity for embedding vectors
+  - Weighted combination with configurable weights (default: 0.3/0.3/0.4)
+- **Graceful Degradation**: When embeddings are missing for notes, weights redistribute proportionally to title+content only
+- **Merge Workflow**: Human-in-the-loop approval process
+  - Scan detects candidates above threshold
+  - Compare side-by-side with score breakdown
+  - Choose primary note, content strategy, and transfer options
+  - Merge transfers connections and clusters, soft-deletes secondary
+- **Similarity DevSettings**: Configuration for detection and merge behavior
+  - `similarity.enabled` - Toggle similarity detection
+  - `similarity.threshold` - Minimum combined score (default: 0.85)
+  - `similarity.runOnNoteCreate` - Auto-scan new notes
+  - `similarity.weights` - Title/content/embedding weight distribution
+  - `similarity.merge.defaultContentStrategy` - Default merge content strategy
+  - `similarity.merge.transferConnections` - Default connection transfer toggle
+  - `similarity.merge.transferClusters` - Default cluster transfer toggle
+
+### Changed
+- `src/database/migrations/index.ts` - Added setupMergeCandidates export
+- `src/database/init.ts` - Calls setupMergeCandidates migration
+- `src/config/devSettings.ts` - Added SimilarityConfig interface, defaults, observable section, 5 new actions
+- `src/app/layout/AppLayout.tsx` - Added MergeCandidatesPanel and useSimilarityPanel hook
+
+### Technical
+- **Consistent ID Ordering**: Candidate pairs stored with `note_a_id < note_b_id` to prevent (A,B)/(B,A) duplicates
+- **Lazy Service Initialization**: Services instantiated on first panel open via `initSimilarityServices()`
+- **Content Strategies**: `keep_primary`, `concatenate`, `keep_secondary` for merge content handling
+- **Connection Transfer**: Uses `getConnectionsFor()` to find all connections, remaps source/target IDs
+- **Cluster Transfer**: Uses `getClustersForEntity()` and `addMember()`/`removeMember()` for membership transfer
+- **Portal Rendering**: Panel and dialogs use `createPortal()` for proper z-index handling
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+
 ## [7.6.0] - 2026-01-25
 
 ### Added

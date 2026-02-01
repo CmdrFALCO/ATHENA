@@ -9,6 +9,7 @@ import {
   setupResourcesFTS,
   migrateExistingResourcesToFTS,
   addResourceEmbeddingsSupport,
+  setupMergeCandidates,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -110,6 +111,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Add resource_id support to embeddings table (idempotent)
   await addResourceEmbeddingsSupport(connection);
+
+  // Set up merge candidates tables for entity resolution (WP 8.1, idempotent)
+  await setupMergeCandidates(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

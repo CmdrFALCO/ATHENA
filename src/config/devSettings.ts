@@ -147,6 +147,34 @@ export interface ChatConfig {
   spatialContext: SpatialContextConfig;
 }
 
+// Similarity / Entity Resolution configuration (WP 8.1)
+export interface SimilarityConfig {
+  /** Enable similarity detection */
+  enabled: boolean;
+  /** Minimum combined score to flag as merge candidate (0-1) */
+  threshold: number;
+  /** Check new notes for duplicates immediately on creation */
+  runOnCreate: boolean;
+  /** Weights for the three similarity signals */
+  weights: {
+    /** Title similarity weight (Jaro-Winkler) */
+    title: number;
+    /** Content similarity weight (Levenshtein) */
+    content: number;
+    /** Embedding similarity weight (cosine) */
+    embedding: number;
+  };
+  /** Default merge behaviour */
+  merge: {
+    /** Default content strategy when merging */
+    defaultContentStrategy: 'keep_primary' | 'keep_secondary' | 'concatenate';
+    /** Transfer connections from secondary note */
+    transferConnections: boolean;
+    /** Transfer cluster memberships from secondary note */
+    transferClusters: boolean;
+  };
+}
+
 // Search configuration (RRF parameters)
 export interface SearchConfig {
   /** Default search mode for Command Palette */
@@ -163,6 +191,22 @@ export interface SearchConfig {
   /** Debounce delay for search input (ms) */
   debounceMs: number;
 }
+
+const DEFAULT_SIMILARITY_CONFIG: SimilarityConfig = {
+  enabled: true,
+  threshold: 0.85,
+  runOnCreate: true,
+  weights: {
+    title: 0.3,
+    content: 0.2,
+    embedding: 0.5,
+  },
+  merge: {
+    defaultContentStrategy: 'keep_primary',
+    transferConnections: true,
+    transferClusters: true,
+  },
+};
 
 const DEFAULT_CANVAS_CONFIG: CanvasConfig = {
   showAiSuggestions: 'always',
@@ -272,6 +316,7 @@ export const devSettings$ = observable({
   resources: { ...DEFAULT_RESOURCE_CONFIG } as ResourceConfig,
   url: { ...DEFAULT_URL_CONFIG } as UrlConfig,
   chat: { ...DEFAULT_CHAT_CONFIG } as ChatConfig,
+  similarity: { ...DEFAULT_SIMILARITY_CONFIG } as SimilarityConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -302,6 +347,7 @@ export const devSettingsActions = {
     devSettings$.resources.set({ ...DEFAULT_RESOURCE_CONFIG });
     devSettings$.url.set({ ...DEFAULT_URL_CONFIG });
     devSettings$.chat.set({ ...DEFAULT_CHAT_CONFIG });
+    devSettings$.similarity.set({ ...DEFAULT_SIMILARITY_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -498,6 +544,34 @@ export const devSettingsActions = {
 
   setSpatialContextMaxItems(value: number) {
     devSettings$.chat.spatialContext.maxContextItems.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Similarity config actions (WP 8.1)
+  setSimilarityEnabled(value: boolean) {
+    devSettings$.similarity.enabled.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSimilarityThreshold(value: number) {
+    devSettings$.similarity.threshold.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSimilarityRunOnCreate(value: boolean) {
+    devSettings$.similarity.runOnCreate.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSimilarityWeights(weights: Partial<SimilarityConfig['weights']>) {
+    const current = devSettings$.similarity.weights.get();
+    devSettings$.similarity.weights.set({ ...current, ...weights });
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSimilarityMergeDefaults(merge: Partial<SimilarityConfig['merge']>) {
+    const current = devSettings$.similarity.merge.get();
+    devSettings$.similarity.merge.set({ ...current, ...merge });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

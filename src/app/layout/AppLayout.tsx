@@ -8,6 +8,7 @@ import { useIdleDetection, useOptionalIndexer } from '@/modules/ai';
 import { CommandPalette, SearchPanel, useSearchPanel } from '@/modules/search';
 import { ValidationPanel, useValidationPanel } from '@/modules/validation';
 import { ChatPanel, ChatToggleButton } from '@/modules/chat';
+import { MergeCandidatesPanel, useSimilarityPanel } from '@/modules/similarity';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -41,6 +42,9 @@ export function AppLayout() {
   // WP 5.6: Validation Panel state (Ctrl+Shift+V)
   const { isOpen: isValidationPanelOpen, close: closeValidationPanel } = useValidationPanel();
 
+  // WP 8.1: Similarity / Merge Candidates Panel state (Ctrl+Shift+M)
+  const { isOpen: isSimilarityPanelOpen, close: closeSimilarityPanel } = useSimilarityPanel();
+
   return (
     <div className="h-screen flex flex-col bg-athena-bg text-athena-text">
       <Header onSearchClick={openSearchPanel} />
@@ -66,6 +70,9 @@ export function AppLayout() {
 
       {/* Validation Panel - validation violations overlay (WP 5.6) - Ctrl+Shift+V */}
       <ValidationPanel isOpen={isValidationPanelOpen} onClose={closeValidationPanel} />
+
+      {/* Merge Candidates Panel - entity resolution (WP 8.1) - Ctrl+Shift+M */}
+      <MergeCandidatesPanel isOpen={isSimilarityPanelOpen} onClose={closeSimilarityPanel} />
 
       {/* Chat Panel - slide-over chat interface (WP 7.1) - Ctrl+Shift+C */}
       <ChatPanel />

@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 7.6 (Spatial Awareness) |
-| **Last Updated** | January 2026 |
-| **Phase** | 7 (AI Chat - Knowledge Capture Interface) **COMPLETE** |
-| **Milestone** | Phase 7 - Conversational Knowledge Capture |
+| **Last WP Completed** | 8.1 (Entity Resolution / Merge Candidates) |
+| **Last Updated** | February 2026 |
+| **Phase** | 8 (Publishing, Templates, Advanced Features) |
+| **Milestone** | Phase 8 - Advanced Features |
 
 ---
 
@@ -55,7 +55,8 @@ athena/
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
 │   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
-│   │   └── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings
+│   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings
+│   │   └── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -101,6 +102,7 @@ athena/
 | Search | `src/modules/search/` | — | ✅ |
 | Validation | `src/modules/validation/` | [docs/modules/VALIDATION.md](docs/modules/VALIDATION.md) | ✅ |
 | Resources | `src/modules/resources/` | — | ✅ |
+| Similarity | `src/modules/similarity/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -198,6 +200,15 @@ athena/
 | useCanvasSelection Hook | `src/modules/chat/hooks/useCanvasSelection.ts` | Bridge canvas ↔ chat context |
 | Mentions Config | `src/config/devSettings.ts` | `chat.mentions.*` settings for autocomplete |
 | Spatial Context Config | `src/config/devSettings.ts` | `chat.spatialContext.*` settings for context chips |
+| Similarity Algorithms | `src/modules/similarity/algorithms/` | Jaro-Winkler, Levenshtein, weighted combination with graceful degradation |
+| Merge Candidate Adapter | `src/modules/similarity/adapters/` | SQLite adapter for merge candidates with consistent ID ordering |
+| Similarity Service | `src/modules/similarity/services/SimilarityService.ts` | Scan all/single notes, detect duplicates, progress reporting |
+| Merge Service | `src/modules/similarity/services/MergeService.ts` | Execute merges: content strategy, connection/cluster transfer, soft-delete |
+| Similarity Store | `src/modules/similarity/store/` | Legend-State slice for candidates, scan progress, filter state |
+| Similarity Hooks | `src/modules/similarity/hooks/` | useMergeCandidates, useMerge, useSimilaritySettings, useSimilarityPanel |
+| Merge Candidates Panel | `src/modules/similarity/components/` | Side panel with scan, filter, compare, merge/reject workflow |
+| Similarity Panel Hook | `src/modules/similarity/hooks/useSimilarityPanel.ts` | Panel state with Ctrl+Shift+M shortcut |
+| Similarity Config | `src/config/devSettings.ts` | `similarity.*` settings for weights, threshold, merge defaults |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -256,6 +267,14 @@ athena/
 | RawProposals | `src/modules/chat/services/proposalSchema.ts` | Zod schema for AI proposal output (before adding IDs/status) |
 | RawNodeProposal | `src/modules/chat/services/proposalSchema.ts` | Zod schema for raw node proposal |
 | RawEdgeProposal | `src/modules/chat/services/proposalSchema.ts` | Zod schema for raw edge proposal |
+| SimilarityWeights | `src/modules/similarity/types.ts` | Weights for title, content, embedding scoring |
+| SimilarityScores | `src/modules/similarity/types.ts` | Individual and combined similarity scores |
+| NoteReference | `src/modules/similarity/types.ts` | Note metadata for candidate display (title, dates, counts, preview) |
+| MergeCandidate | `src/modules/similarity/types.ts` | Candidate pair with scores, status, note references |
+| MergeOptions | `src/modules/similarity/types.ts` | Merge configuration (primary, strategy, transfers) |
+| MergeResult | `src/modules/similarity/types.ts` | Merge outcome with transferred counts |
+| ScanProgress | `src/modules/similarity/types.ts` | Scan status with progress counters |
+| SimilarityConfig | `src/config/devSettings.ts` | Similarity settings (enabled, threshold, weights, merge defaults) |
 
 ---
 
@@ -295,6 +314,12 @@ athena/
 |-------|--------------|
 | **Phase 8** | Publishing, Templates, Advanced Features |
 
+### Phase 8 Progress
+
+| WP | Feature | Status |
+|----|---------|--------|
+| 8.1 | Entity Resolution / Merge Candidates | ✅ |
+
 ### Phase 7 Complete
 
 | WP | Feature | Status |
@@ -319,6 +344,7 @@ window.__ATHENA_CHAT_STATE__      // Chat state (threads, messages, panel)
 window.__ATHENA_CHAT__            // Chat actions for testing
 window.__ATHENA_CONTEXT_BUILDER__ // Context builder instance
 window.__ATHENA_CHAT_SERVICE__    // Chat service instance (WP 7.3)
+window.__ATHENA_SIMILARITY_STATE__ // Similarity state (candidates, scan progress)
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
 window.__ATHENA_DB__()            // Database connection (function)
