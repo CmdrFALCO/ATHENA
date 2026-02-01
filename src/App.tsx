@@ -18,6 +18,9 @@ import { chatActions, ChatServiceInitializer } from './modules/chat';
 // Import validation store to expose window.__ATHENA_VALIDATION__
 import './modules/validation/store/validationActions';
 
+// Import jobs store to expose window.__ATHENA_JOBS__ and window.__ATHENA_JOBS_STATE__
+import './modules/jobs/store/jobActions';
+
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
   const [error, setError] = useState<string>('');

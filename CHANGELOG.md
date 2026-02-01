@@ -1,5 +1,54 @@
 # ATHENA Changelog
 
+## [8.6.0] - 2026-02-01
+
+### Added
+- **Background Jobs Module (WP 8.6)**: Scheduled background tasks for knowledge graph maintenance
+  - `src/modules/jobs/types.ts` - JobType, BackgroundJob, JobResult, JobConfig, JobsConfig, and per-job config interfaces
+  - `src/modules/jobs/adapters/JobAdapter.ts` - IJobAdapter interface + SQLiteJobAdapter for job history persistence
+  - `src/modules/jobs/JobRunner.ts` - Execute jobs with progress tracking, event emission, and error handling
+  - `src/modules/jobs/JobScheduler.ts` - Interval-based scheduling with stagger, last-run awareness, per-job enable/disable
+  - `src/modules/jobs/implementations/IBackgroundJob.ts` - Job interface with run() and optional cancel()
+  - `src/modules/jobs/implementations/SimilarityScanJob.ts` - Wraps SimilarityService.scanAll() to find merge candidates
+  - `src/modules/jobs/implementations/OrphanDetectionJob.ts` - SQL query for notes with no connections older than configurable minAgeDays
+  - `src/modules/jobs/implementations/StaleConnectionJob.ts` - Finds and optionally auto-deletes connections to invalidated entities
+  - `src/modules/jobs/implementations/EmbeddingRefreshJob.ts` - Re-embeds notes missing embeddings via IndexerService
+  - `src/modules/jobs/implementations/ValidationSweepJob.ts` - Wraps runValidation() for full graph re-validation
+  - `src/modules/jobs/store/jobState.ts` - Legend-State slice for running jobs, recent history, scheduler status
+  - `src/modules/jobs/store/jobActions.ts` - initializeJobs, runJobNow, stopScheduler, restartScheduler actions
+  - `src/modules/jobs/components/JobsPanel.tsx` - Full panel with per-job-type status, last result summary, and manual trigger
+  - `src/modules/jobs/components/JobProgress.tsx` - Animated progress bar for running jobs
+  - `src/modules/jobs/index.ts` - Module barrel export
+  - `src/database/migrations/012_background_jobs.ts` - job_history table with type+date and status indexes
+- **Human-Centric Design**: Jobs produce actionable items (merge candidates, validation issues) for human review; only stale connection cleanup auto-modifies data (configurable via autoDelete)
+- **Jobs DevSettings**: Configuration in `jobs.*`
+  - `enabled` - Master switch for all background jobs (default: true)
+  - `similarityScan` - Threshold, batchSize, intervalHours (default: 24h)
+  - `orphanDetection` - minAgeDays, intervalHours (default: 168h / weekly)
+  - `staleConnection` - autoDelete, intervalHours (default: 24h)
+  - `embeddingRefresh` - batchSize, intervalHours (default: 24h)
+  - `validationSweep` - intervalHours (default: 24h)
+
+### Changed
+- `src/config/devSettings.ts` - Added JobsConfig import, DEFAULT_JOBS_CONFIG, jobs observable, resetToDefaults updated, 8 job action methods
+- `src/database/migrations/index.ts` - Exports setupBackgroundJobs
+- `src/database/init.ts` - Calls setupBackgroundJobs during initialization
+- `src/App.tsx` - Imports jobs store for window debug exposure
+
+### Technical
+- Uses `setTimeout` for scheduling (browser-friendly, not Node.js intervals)
+- Job implementations delegate to existing services (SimilarityService, IndexerService, runValidation)
+- Scheduler stagger: overdue jobs run with random 0-30s delay to avoid thundering herd
+- Debug: `window.__ATHENA_JOBS_STATE__` and `window.__ATHENA_JOBS__`
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+- WP 8.3: Firecrawl Integration ✅
+- WP 8.4: Preference Learning ✅
+- WP 8.5: Knowledge Schema Templates ✅
+- WP 8.6: Background Jobs ✅
+
 ## [8.5.0] - 2026-02-01
 
 ### Added

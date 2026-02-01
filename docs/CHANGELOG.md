@@ -1,5 +1,32 @@
 # ATHENA Changelog
 
+## [8.6.0] - 2026-02-01
+
+### Added
+- **Background Jobs Module** (WP 8.6): Scheduled background tasks for knowledge graph maintenance
+  - `JobScheduler` - Interval-based scheduling with stagger, last-run awareness, per-job enable/disable
+  - `JobRunner` - Execute jobs with progress tracking, event emission, and error handling
+  - `SQLiteJobAdapter` - Persists job history to `job_history` table for recent runs and success rates
+  - **5 job implementations:**
+    - `SimilarityScanJob` - Wraps existing `SimilarityService.scanAll()` to find merge candidates
+    - `OrphanDetectionJob` - SQL query for notes with no connections older than configurable `minAgeDays`
+    - `StaleConnectionJob` - Finds and optionally auto-deletes connections to invalidated entities
+    - `EmbeddingRefreshJob` - Re-embeds notes missing embeddings via `IndexerService`
+    - `ValidationSweepJob` - Wraps existing `runValidation()` for full graph re-validation
+- **Jobs UI**: Panel with job status grid, run-now buttons, progress bars, and recent history
+  - `JobsPanel` - Full panel with per-job-type status, last result summary, and manual trigger
+  - `JobProgress` - Animated progress bar for running jobs
+- **Jobs State**: Legend-State slice (`jobsState$`) for running jobs, recent history, scheduler status
+  - Actions: `initializeJobs`, `runJobNow`, `stopScheduler`, `restartScheduler`
+- **Jobs Config**: `devSettings$.jobs` with per-job-type settings (enabled, intervalHours, thresholds)
+- **Migration 012**: `job_history` table with `type+date` and `status` indexes
+
+### Technical
+- Human-centric: jobs produce actionable items for review, not auto-modify data (except stale connection cleanup which is configurable via `autoDelete`)
+- Uses `setTimeout` for scheduling (browser-friendly)
+- Job implementations delegate to existing services (SimilarityService, IndexerService, runValidation)
+- Debug: `window.__ATHENA_JOBS_STATE__` and `window.__ATHENA_JOBS__`
+
 ## [5.4.0] - 2026-01-18
 
 ### Added

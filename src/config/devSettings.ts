@@ -1,6 +1,7 @@
 import { observable, computed } from '@legendapp/state';
 import { persistObservable } from '@legendapp/state/persist';
 import type { SchemaConfig } from '@/modules/schema/types';
+import type { JobsConfig } from '@/modules/jobs/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -358,6 +359,41 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   spatialContext: { ...DEFAULT_SPATIAL_CONTEXT_CONFIG },
 };
 
+// Background Jobs configuration (WP 8.6)
+const DEFAULT_JOBS_CONFIG: JobsConfig = {
+  enabled: true,
+
+  similarityScan: {
+    enabled: true,
+    intervalHours: 24,
+    threshold: 0.85,
+    batchSize: 100,
+  },
+
+  orphanDetection: {
+    enabled: true,
+    intervalHours: 168, // Weekly
+    minAgeDays: 7,
+  },
+
+  staleConnection: {
+    enabled: true,
+    intervalHours: 24,
+    autoDelete: true,
+  },
+
+  embeddingRefresh: {
+    enabled: true,
+    intervalHours: 24,
+    batchSize: 50,
+  },
+
+  validationSweep: {
+    enabled: true,
+    intervalHours: 24,
+  },
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -393,6 +429,7 @@ export const devSettings$ = observable({
   similarity: { ...DEFAULT_SIMILARITY_CONFIG } as SimilarityConfig,
   preferences: { ...DEFAULT_PREFERENCES_CONFIG } as PreferenceLearningConfig,
   schema: { ...DEFAULT_SCHEMA_CONFIG } as SchemaConfig,
+  jobs: { ...DEFAULT_JOBS_CONFIG } as JobsConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -426,6 +463,7 @@ export const devSettingsActions = {
     devSettings$.similarity.set({ ...DEFAULT_SIMILARITY_CONFIG });
     devSettings$.preferences.set({ ...DEFAULT_PREFERENCES_CONFIG });
     devSettings$.schema.set({ ...DEFAULT_SCHEMA_CONFIG });
+    devSettings$.jobs.set({ ...DEFAULT_JOBS_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -739,6 +777,47 @@ export const devSettingsActions = {
 
   setSchemaIncludeInPrompts(include: boolean) {
     devSettings$.schema.includeInPrompts.set(include);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Background Jobs config actions (WP 8.6)
+  setJobsEnabled(enabled: boolean) {
+    devSettings$.jobs.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobSimilarityScanEnabled(enabled: boolean) {
+    devSettings$.jobs.similarityScan.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobSimilarityScanInterval(hours: number) {
+    devSettings$.jobs.similarityScan.intervalHours.set(hours);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobOrphanDetectionEnabled(enabled: boolean) {
+    devSettings$.jobs.orphanDetection.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobStaleConnectionEnabled(enabled: boolean) {
+    devSettings$.jobs.staleConnection.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobStaleConnectionAutoDelete(autoDelete: boolean) {
+    devSettings$.jobs.staleConnection.autoDelete.set(autoDelete);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobEmbeddingRefreshEnabled(enabled: boolean) {
+    devSettings$.jobs.embeddingRefresh.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setJobValidationSweepEnabled(enabled: boolean) {
+    devSettings$.jobs.validationSweep.enabled.set(enabled);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

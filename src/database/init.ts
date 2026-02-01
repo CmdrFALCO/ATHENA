@@ -13,6 +13,7 @@ import {
   setupResourceStructure,
   setupPreferenceSignals,
   setupKnowledgeSchemas,
+  setupBackgroundJobs,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -126,6 +127,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up knowledge schemas for schema templates (WP 8.5, idempotent)
   await setupKnowledgeSchemas(connection);
+
+  // Set up background jobs history table (WP 8.6, idempotent)
+  await setupBackgroundJobs(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

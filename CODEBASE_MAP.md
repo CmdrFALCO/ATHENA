@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.5 (Knowledge Schema Templates) |
+| **Last WP Completed** | 8.6 (Background Jobs) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -57,7 +57,8 @@ athena/
 │   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree + Web Scraping (WP 8.3)
 │   │   ├── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
-│   │   └── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
+│   │   ├── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
+│   │   └── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -105,6 +106,7 @@ athena/
 | Resources | `src/modules/resources/` | — | ✅ |
 | Similarity | `src/modules/similarity/` | — | ✅ |
 | Schema | `src/modules/schema/` | — | ✅ |
+| Jobs | `src/modules/jobs/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -243,6 +245,17 @@ athena/
 | Schema Hints | `src/modules/schema/components/SchemaHints.tsx` | Extraction hints bar above chat input |
 | Schema Migration | `src/database/migrations/011_knowledge_schemas.ts` | knowledge_schemas table with built-in seed data |
 | Schema Config | `src/config/devSettings.ts` | `schema.*` settings for enabled, activeSchemaId, hints, prompts |
+| Job Types | `src/modules/jobs/types.ts` | JobType, BackgroundJob, JobResult, JobsConfig and per-job configs |
+| Job Adapter | `src/modules/jobs/adapters/JobAdapter.ts` | IJobAdapter interface + SQLiteJobAdapter for job history persistence |
+| Job Runner | `src/modules/jobs/JobRunner.ts` | Execute jobs with progress tracking and event emission |
+| Job Scheduler | `src/modules/jobs/JobScheduler.ts` | Interval-based scheduling with stagger and last-run awareness |
+| Job Implementations | `src/modules/jobs/implementations/` | SimilarityScan, OrphanDetection, StaleConnection, EmbeddingRefresh, ValidationSweep |
+| Job State | `src/modules/jobs/store/jobState.ts` | Legend-State slice for running jobs, recent history, scheduler status |
+| Job Actions | `src/modules/jobs/store/jobActions.ts` | Initialize, runJobNow, stopScheduler, restartScheduler |
+| Jobs Panel | `src/modules/jobs/components/JobsPanel.tsx` | Job status grid, run-now buttons, recent history |
+| Job Progress | `src/modules/jobs/components/JobProgress.tsx` | Individual job progress bar |
+| Job Migration | `src/database/migrations/012_background_jobs.ts` | job_history table with status and type indexes |
+| Jobs Config | `src/config/devSettings.ts` | `jobs.*` settings for enabled, per-job intervals, thresholds |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -329,6 +342,12 @@ athena/
 | SchemaConfig | `src/modules/schema/types.ts` | Schema settings (enabled, activeSchemaId, showHintsInChat, includeInPrompts) |
 | CreateSchemaInput | `src/modules/schema/types.ts` | Input for creating a new custom schema |
 | UpdateSchemaInput | `src/modules/schema/types.ts` | Input for updating an existing schema |
+| BackgroundJob | `src/modules/jobs/types.ts` | Job record with type, status, progress, timestamps, result |
+| JobResult | `src/modules/jobs/types.ts` | Job outcome with itemsProcessed, itemsAffected, durationMs, details |
+| JobsConfig | `src/modules/jobs/types.ts` | Master config with per-job-type settings (intervals, thresholds) |
+| JobEvent | `src/modules/jobs/types.ts` | Event emitted by JobRunner (started, progress, completed, failed) |
+| IJobAdapter | `src/modules/jobs/adapters/JobAdapter.ts` | Interface for job history persistence |
+| IBackgroundJob | `src/modules/jobs/implementations/IBackgroundJob.ts` | Interface for job implementations with run() and optional cancel() |
 
 ---
 
@@ -377,6 +396,7 @@ athena/
 | 8.3 | Firecrawl Integration | ✅ |
 | 8.4 | Preference Learning | ✅ |
 | 8.5 | Knowledge Schema Templates | ✅ |
+| 8.6 | Background Jobs | ✅ |
 
 ### Phase 7 Complete
 
@@ -411,6 +431,8 @@ window.__ATHENA_PREFERENCE_STATE__ // Preference learning state (WP 8.4)
 window.__ATHENA_PREFERENCES__    // Preference actions for testing (WP 8.4)
 window.__ATHENA_SCHEMA_STATE__   // Schema state (schemas, loading) (WP 8.5)
 window.__ATHENA_SCHEMAS__        // Schema actions for testing (WP 8.5)
+window.__ATHENA_JOBS_STATE__     // Jobs state (running, recent, scheduler) (WP 8.6)
+window.__ATHENA_JOBS__           // Jobs actions for testing (WP 8.6)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

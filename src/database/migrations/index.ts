@@ -7,3 +7,4 @@ export { setupMergeCandidates } from './008_merge_candidates';
 export { setupResourceStructure } from './009_resource_structure';
 export { setupPreferenceSignals } from './010_preference_signals';
 export { setupKnowledgeSchemas } from './011_knowledge_schemas';
+export { setupBackgroundJobs } from './012_background_jobs';
