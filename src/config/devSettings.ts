@@ -69,12 +69,26 @@ export interface ResourceConfig {
   pdf: PdfConfig;
 }
 
-// URL configuration (WP 6.6)
+// Firecrawl configuration (WP 8.3)
+export interface FirecrawlConfig {
+  /** Enable Firecrawl for URL extraction */
+  enabled: boolean;
+  /** Timeout for Firecrawl requests (ms) */
+  timeout: number;
+  /** Wait for JS rendering (ms) — 0 to disable */
+  waitFor: number;
+  /** Automatically use Firecrawl for known JS-heavy domains */
+  autoDetectDynamic: boolean;
+}
+
+// URL configuration (WP 6.6, extended WP 8.3)
 export interface UrlConfig {
   /** Default mode for URL resources: 'reference' (bookmark) or 'extracted' (AI summarization) */
   defaultMode: 'reference' | 'extracted';
   /** If true, always use 'extracted' mode regardless of user selection */
   autoExtract: boolean;
+  /** Firecrawl web scraping settings (WP 8.3) */
+  firecrawl: FirecrawlConfig;
 }
 
 // Context configuration for GraphRAG (WP 7.2)
@@ -189,6 +203,20 @@ export interface SimilarityConfig {
   };
 }
 
+// Preference Learning configuration (WP 8.4)
+export interface PreferenceLearningConfig {
+  /** Enable preference tracking and learning */
+  enabled: boolean;
+  /** Number of recent signals to consider for adjustments */
+  windowSize: number;
+  /** How much historical data influences adjustments (0-1) */
+  learningRate: number;
+  /** Minimum signals before applying adjustments */
+  minSignalsForAdjustment: number;
+  /** Show learning insights in UI */
+  showInsights: boolean;
+}
+
 // Search configuration (RRF parameters)
 export interface SearchConfig {
   /** Default search mode for Command Palette */
@@ -205,6 +233,14 @@ export interface SearchConfig {
   /** Debounce delay for search input (ms) */
   debounceMs: number;
 }
+
+const DEFAULT_PREFERENCES_CONFIG: PreferenceLearningConfig = {
+  enabled: true,
+  windowSize: 100,
+  learningRate: 0.3,
+  minSignalsForAdjustment: 10,
+  showInsights: true,
+};
 
 const DEFAULT_SIMILARITY_CONFIG: SimilarityConfig = {
   enabled: true,
@@ -254,9 +290,17 @@ const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
   pdf: { ...DEFAULT_PDF_CONFIG },
 };
 
+const DEFAULT_FIRECRAWL_CONFIG: FirecrawlConfig = {
+  enabled: false, // Disabled until API key is configured
+  timeout: 30000,
+  waitFor: 0,
+  autoDetectDynamic: true,
+};
+
 const DEFAULT_URL_CONFIG: UrlConfig = {
   defaultMode: 'reference', // Default to bookmark-only for speed
   autoExtract: false, // Don't force AI extraction
+  firecrawl: { ...DEFAULT_FIRECRAWL_CONFIG },
 };
 
 const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
@@ -339,6 +383,7 @@ export const devSettings$ = observable({
   url: { ...DEFAULT_URL_CONFIG } as UrlConfig,
   chat: { ...DEFAULT_CHAT_CONFIG } as ChatConfig,
   similarity: { ...DEFAULT_SIMILARITY_CONFIG } as SimilarityConfig,
+  preferences: { ...DEFAULT_PREFERENCES_CONFIG } as PreferenceLearningConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -370,6 +415,7 @@ export const devSettingsActions = {
     devSettings$.url.set({ ...DEFAULT_URL_CONFIG });
     devSettings$.chat.set({ ...DEFAULT_CHAT_CONFIG });
     devSettings$.similarity.set({ ...DEFAULT_SIMILARITY_CONFIG });
+    devSettings$.preferences.set({ ...DEFAULT_PREFERENCES_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -466,6 +512,27 @@ export const devSettingsActions = {
 
   setUrlAutoExtract(enabled: boolean) {
     devSettings$.url.autoExtract.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Firecrawl config actions (WP 8.3)
+  setFirecrawlEnabled(enabled: boolean) {
+    devSettings$.url.firecrawl.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setFirecrawlTimeout(timeout: number) {
+    devSettings$.url.firecrawl.timeout.set(timeout);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setFirecrawlWaitFor(waitFor: number) {
+    devSettings$.url.firecrawl.waitFor.set(waitFor);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setFirecrawlAutoDetect(autoDetect: boolean) {
+    devSettings$.url.firecrawl.autoDetectDynamic.set(autoDetect);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -615,6 +682,32 @@ export const devSettingsActions = {
   setSimilarityMergeDefaults(merge: Partial<SimilarityConfig['merge']>) {
     const current = devSettings$.similarity.merge.get();
     devSettings$.similarity.merge.set({ ...current, ...merge });
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Preference Learning config actions (WP 8.4)
+  setPreferencesEnabled(enabled: boolean) {
+    devSettings$.preferences.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPreferenceLearningRate(rate: number) {
+    devSettings$.preferences.learningRate.set(Math.max(0, Math.min(1, rate)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPreferenceWindowSize(size: number) {
+    devSettings$.preferences.windowSize.set(Math.max(10, size));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPreferenceMinSignals(min: number) {
+    devSettings$.preferences.minSignalsForAdjustment.set(Math.max(1, min));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPreferenceShowInsights(show: boolean) {
+    devSettings$.preferences.showInsights.set(show);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

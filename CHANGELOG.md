@@ -1,5 +1,94 @@
 # ATHENA Changelog
 
+## [8.4.0] - 2026-02-01
+
+### Added
+- **Preference Learning (WP 8.4)**: Track accept/reject patterns from AI proposals to learn user preferences and adjust confidence scores
+  - `src/modules/ai/preferences/types.ts` - PreferenceSignal, PreferenceStats, ConfidenceAdjustment, PreferenceLearningConfig types
+  - `src/modules/ai/preferences/PreferenceAdapter.ts` - SQLite persistence for preference signals (IPreferenceAdapter interface + SQLitePreferenceAdapter)
+  - `src/modules/ai/preferences/PreferenceTracker.ts` - Records accept/reject signals from node and edge proposals
+  - `src/modules/ai/preferences/ConfidenceAdjuster.ts` - Adjusts AI confidence based on acceptance rate, calibration, and relative preference factors
+  - `src/modules/ai/preferences/preferenceState.ts` - Legend-State slice for preference stats and loading state
+  - `src/modules/ai/preferences/preferenceActions.ts` - Public API for recording signals, adjusting confidence, refreshing stats
+  - `src/modules/ai/preferences/components/PreferenceInsights.tsx` - Statistics panel showing acceptance rates, calibration quality
+  - `src/modules/ai/preferences/index.ts` - Module barrel export
+  - `src/database/migrations/010_preference_signals.ts` - preference_signals table with indexes
+- **Confidence Adjustment Algorithm**: Three-factor adjustment system
+  - Acceptance rate factor: boosts/reduces confidence based on historical accept rate per type
+  - Calibration factor: detects when AI is overconfident on rejected proposals
+  - Relative preference: compares note vs connection acceptance rates
+- **Preference DevSettings**: Configuration in `preferences.*`
+  - `enabled` - Toggle preference tracking (default: true)
+  - `windowSize` - Number of recent signals to consider (default: 100)
+  - `learningRate` - How much history influences adjustments, 0-1 (default: 0.3)
+  - `minSignalsForAdjustment` - Minimum signals before applying adjustments (default: 10)
+  - `showInsights` - Show learning insights in UI (default: true)
+
+### Changed
+- `src/modules/chat/services/ProposalAcceptService.ts` - Records preference signals on node/edge accept
+- `src/modules/chat/components/NodeProposalCard.tsx` - Records preference signal on reject
+- `src/modules/chat/components/EdgeProposalCard.tsx` - Records preference signal on reject
+- `src/modules/chat/services/ProposalParser.ts` - Added `applyLearnedAdjustments()` function
+- `src/modules/chat/services/ChatService.ts` - Applies learned confidence adjustments after proposal extraction
+- `src/modules/chat/index.ts` - Exports `applyLearnedAdjustments`
+- `src/config/devSettings.ts` - Added PreferenceLearningConfig interface and settings with 5 action methods
+- `src/database/migrations/index.ts` - Exports setupPreferenceSignals
+- `src/database/init.ts` - Calls setupPreferenceSignals during initialization
+
+### Technical
+- **No ML Required**: Simple statistical approach (acceptance rates, confidence calibration) works well for small data volumes
+- **Cached Stats**: ConfidenceAdjuster caches stats for 1 minute to avoid repeated DB queries
+- **Graceful Degradation**: All preference actions wrapped in try/catch; failures log warnings without breaking proposal flow
+- **Privacy**: All data stored locally; `clearHistory()` method for full data deletion
+- **Debug Access**: `window.__ATHENA_PREFERENCE_STATE__` and `window.__ATHENA_PREFERENCES__` for console debugging
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+- WP 8.3: Firecrawl Integration ✅
+- WP 8.4: Preference Learning ✅
+
+## [8.3.0] - 2026-02-01
+
+### Added
+- **Firecrawl Integration (WP 8.3)**: Robust web scraping for JS-heavy sites with graceful fallback
+  - `src/modules/resources/url/types.ts` - IWebScraper interface, ScrapeOptions, ScrapeResult, PageMetadata, FirecrawlApiResponse
+  - `src/modules/resources/url/scrapers/FirecrawlScraper.ts` - Firecrawl API client with SecureStorage key management
+  - `src/modules/resources/url/scrapers/BasicFetchScraper.ts` - Fallback HTML-to-markdown scraper using fetch
+  - `src/modules/resources/url/scrapers/index.ts` - Barrel export for scrapers
+  - `src/modules/resources/url/WebScraperService.ts` - Service with automatic fallback chain (Firecrawl -> basic fetch)
+  - `src/modules/resources/components/FirecrawlSettings.tsx` - API key management UI with save/remove/test connection
+- **Web Scraper Abstraction**: IWebScraper interface allows pluggable scrapers
+  - FirecrawlScraper for JS-rendered sites, anti-bot pages, complex structures
+  - BasicFetchScraper as always-available fallback with HTML-to-markdown conversion
+  - WebScraperService orchestrates selection and fallback
+- **Firecrawl DevSettings**: Configuration in `url.firecrawl.*`
+  - `enabled` - Toggle Firecrawl on/off (default: off until API key configured)
+  - `timeout` - Request timeout in ms (default: 30000)
+  - `waitFor` - JS rendering wait time in ms (default: 0)
+  - `autoDetectDynamic` - Auto-use Firecrawl for JS-heavy domains (default: true)
+- **Extraction Method Selection**: UrlResourceDialog now offers Auto/Firecrawl/Basic fetch choice when in extract mode
+
+### Changed
+- `src/modules/resources/url/UrlResourceService.ts` - Added `extractContent()` method; `createWithExtraction()` now tries web scraping before AI fallback
+- `src/modules/resources/url/index.ts` - Exports scraper types, classes, and WebScraperService
+- `src/modules/resources/components/index.ts` - Exports FirecrawlSettings component
+- `src/modules/sophia/components/UrlResourceDialog.tsx` - Added extraction method radio selection (Auto/Firecrawl/Basic)
+- `src/store/resourceActions.ts` - `addUrlResource()` accepts `extractionPreference` parameter
+- `src/config/devSettings.ts` - Added FirecrawlConfig interface and settings to UrlConfig; added 4 Firecrawl action methods
+
+### Technical
+- **API Key Security**: Firecrawl API key stored encrypted in IndexedDB via SecureStorage (never in localStorage)
+- **Automatic Fallback**: Firecrawl failure transparently degrades to basic fetch
+- **No New Dependencies**: Uses native fetch API and existing SecureStorage service
+- **AGPL-3.0 Safe**: Uses Firecrawl hosted API only (no copyleft trigger from self-hosting)
+- **Debug Access**: `window.__ATHENA_WEB_SCRAPER__()` for console debugging
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+- WP 8.3: Firecrawl Integration ✅
+
 ## [8.2.0] - 2026-02-01
 
 ### Added

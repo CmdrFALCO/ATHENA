@@ -4,7 +4,10 @@ import { X, Link, Loader2 } from 'lucide-react';
 import { addUrlResource, setResourceAdapter } from '@/store/resourceActions';
 import { useResourceAdapter } from '@/adapters';
 import { devSettings$ } from '@/config/devSettings';
+import { getWebScraperService } from '@/modules/resources/url/WebScraperService';
 import type { UrlMode } from '@/shared/types/resources';
+
+type ExtractionMethod = 'auto' | 'firecrawl' | 'basic';
 
 interface UrlResourceDialogProps {
   isOpen: boolean;
@@ -22,8 +25,12 @@ export function UrlResourceDialog({
   const resourceAdapter = useResourceAdapter();
   const defaultMode = useSelector(() => devSettings$.url?.defaultMode.get()) ?? 'reference';
 
+  const firecrawlEnabled = useSelector(() => devSettings$.url.firecrawl.enabled.get());
+  const firecrawlAvailable = getWebScraperService().isFirecrawlAvailable();
+
   const [url, setUrl] = useState('');
   const [mode, setMode] = useState<UrlMode>(defaultMode);
+  const [extractionMethod, setExtractionMethod] = useState<ExtractionMethod>('auto');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +45,7 @@ export function UrlResourceDialog({
     if (isOpen) {
       setUrl('');
       setMode(defaultMode);
+      setExtractionMethod('auto');
       setNotes('');
       setError(null);
     }
@@ -64,7 +72,7 @@ export function UrlResourceDialog({
     setError(null);
 
     try {
-      const resourceId = await addUrlResource(url, mode, notes, initialPosition);
+      const resourceId = await addUrlResource(url, mode, notes, initialPosition, extractionMethod);
       onSuccess?.(resourceId);
       handleClose();
     } catch (err) {
@@ -77,6 +85,7 @@ export function UrlResourceDialog({
   const handleClose = () => {
     setUrl('');
     setMode(defaultMode);
+    setExtractionMethod('auto');
     setNotes('');
     setError(null);
     onClose();
@@ -151,6 +160,71 @@ export function UrlResourceDialog({
               </label>
             </div>
           </div>
+
+          {/* Extraction Method (only shown in extract mode) */}
+          {mode === 'extracted' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-athena-muted">
+                Extraction Method
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="extractionMethod"
+                    value="auto"
+                    checked={extractionMethod === 'auto'}
+                    onChange={() => setExtractionMethod('auto')}
+                    disabled={isLoading}
+                    className="mt-1"
+                  />
+                  <div>
+                    <span className="font-medium text-athena-text">Auto</span>
+                    <span className="text-athena-muted ml-2">— use best available</span>
+                  </div>
+                </label>
+                <label
+                  className={`flex items-start gap-3 ${
+                    firecrawlEnabled && firecrawlAvailable
+                      ? 'cursor-pointer'
+                      : 'opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="extractionMethod"
+                    value="firecrawl"
+                    checked={extractionMethod === 'firecrawl'}
+                    onChange={() => setExtractionMethod('firecrawl')}
+                    disabled={isLoading || !firecrawlEnabled || !firecrawlAvailable}
+                    className="mt-1"
+                  />
+                  <div>
+                    <span className="font-medium text-athena-text">Firecrawl</span>
+                    <span className="text-athena-muted ml-2">— JS-heavy sites</span>
+                    {(!firecrawlEnabled || !firecrawlAvailable) && (
+                      <span className="text-xs text-athena-muted ml-1">(not configured)</span>
+                    )}
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="extractionMethod"
+                    value="basic"
+                    checked={extractionMethod === 'basic'}
+                    onChange={() => setExtractionMethod('basic')}
+                    disabled={isLoading}
+                    className="mt-1"
+                  />
+                  <div>
+                    <span className="font-medium text-athena-text">Basic fetch</span>
+                    <span className="text-athena-muted ml-2">— static HTML</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-1">

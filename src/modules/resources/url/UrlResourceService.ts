@@ -1,6 +1,8 @@
 import type { CreateResourceInput } from '@/shared/types/resources';
 import type { ExtractionResult } from '../extraction/types';
+import type { ScrapeResult } from './types';
 import { getAIService } from '@/modules/ai/AIService';
+import { getWebScraperService } from './WebScraperService';
 
 /**
  * Service for creating URL resources with two modes:
@@ -28,17 +30,43 @@ export class UrlResourceService {
   /**
    * Create a URL resource in AI Extract mode.
    * Sends URL to AI for fetching and summarization.
+   * If preferFirecrawl is true, tries web scraping first then feeds content to AI.
    */
-  async createWithExtraction(url: string, notes: string): Promise<{
+  async createWithExtraction(
+    url: string,
+    notes: string,
+    preferFirecrawl = true,
+  ): Promise<{
     input: CreateResourceInput;
     extractedText: string | null;
     extractionStatus: 'complete' | 'failed' | 'skipped';
-    extractionMethod: 'ai' | null;
+    extractionMethod: 'ai' | 'firecrawl' | 'basic-fetch' | null;
     extractionError: string | null;
   }> {
     const name = this.extractTitleFromUrl(url);
 
-    // Try to extract via AI
+    // Try web scraping first, then fall back to AI-only
+    const scrapeResult = await this.extractContent(url, preferFirecrawl);
+
+    if (scrapeResult.success && scrapeResult.content) {
+      // Web scrape succeeded — use scraped content
+      return {
+        input: {
+          type: 'url',
+          name: scrapeResult.metadata.title ?? name,
+          url,
+          urlMode: 'extracted',
+          storageType: 'url',
+          userNotes: notes || undefined,
+        },
+        extractedText: scrapeResult.content,
+        extractionStatus: 'complete',
+        extractionMethod: scrapeResult.scrapedBy,
+        extractionError: null,
+      };
+    }
+
+    // Web scrape failed — fall back to AI extraction
     const extraction = await this.extractViaAI(url);
 
     return {
@@ -54,6 +82,40 @@ export class UrlResourceService {
       extractionStatus: extraction.error ? 'failed' : 'complete',
       extractionMethod: extraction.error ? null : 'ai',
       extractionError: extraction.error || null,
+    };
+  }
+
+  /**
+   * Extract content from URL using best available scraper.
+   */
+  async extractContent(
+    url: string,
+    preferFirecrawl = true,
+  ): Promise<{
+    success: boolean;
+    content: string | null;
+    metadata: { title: string | null; description: string | null };
+    error?: string;
+    scrapedBy: ScrapeResult['scrapedBy'];
+  }> {
+    const scraper = getWebScraperService();
+    await scraper.initialize();
+
+    const result = await scraper.scrape(
+      url,
+      { formats: ['markdown'], includeMetadata: true },
+      preferFirecrawl,
+    );
+
+    return {
+      success: result.success,
+      content: result.markdown,
+      metadata: {
+        title: result.metadata.title,
+        description: result.metadata.description,
+      },
+      error: result.error,
+      scrapedBy: result.scrapedBy,
     };
   }
 

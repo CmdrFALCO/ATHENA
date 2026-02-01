@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.2 (Document Tree Structure) |
+| **Last WP Completed** | 8.4 (Preference Learning) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -55,7 +55,7 @@ athena/
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
 │   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
-│   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree (WP 8.2)
+│   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree + Web Scraping (WP 8.3)
 │   │   └── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -215,6 +215,21 @@ athena/
 | Document Outline | `src/modules/resources/components/DocumentOutline.tsx` | Collapsible tree view of document structure |
 | Resource Structure Migration | `src/database/migrations/009_resource_structure.ts` | Add `structure` column to resources table |
 | PDF Config | `src/config/devSettings.ts` | `resources.pdf.*` settings for structure extraction |
+| Web Scraper Types | `src/modules/resources/url/types.ts` | IWebScraper interface, ScrapeOptions, ScrapeResult, PageMetadata |
+| Firecrawl Scraper | `src/modules/resources/url/scrapers/FirecrawlScraper.ts` | Firecrawl API client with SecureStorage API key management |
+| Basic Fetch Scraper | `src/modules/resources/url/scrapers/BasicFetchScraper.ts` | Fallback HTML-to-markdown scraper using fetch |
+| Web Scraper Service | `src/modules/resources/url/WebScraperService.ts` | Orchestrates scrapers with automatic fallback chain |
+| Firecrawl Settings | `src/modules/resources/components/FirecrawlSettings.tsx` | API key management UI with test connection |
+| Firecrawl Config | `src/config/devSettings.ts` | `url.firecrawl.*` settings for web scraping |
+| Preference Types | `src/modules/ai/preferences/types.ts` | PreferenceSignal, PreferenceStats, ConfidenceAdjustment |
+| Preference Adapter | `src/modules/ai/preferences/PreferenceAdapter.ts` | SQLite persistence for preference signals |
+| Preference Tracker | `src/modules/ai/preferences/PreferenceTracker.ts` | Records accept/reject signals from proposals |
+| Confidence Adjuster | `src/modules/ai/preferences/ConfidenceAdjuster.ts` | Adjusts AI confidence based on learned patterns |
+| Preference State | `src/modules/ai/preferences/preferenceState.ts` | Legend-State slice for preference stats |
+| Preference Actions | `src/modules/ai/preferences/preferenceActions.ts` | Public API for preference learning |
+| Preference Insights | `src/modules/ai/preferences/components/PreferenceInsights.tsx` | Stats panel for preference learning |
+| Preference Migration | `src/database/migrations/010_preference_signals.ts` | preference_signals table |
+| Preference Config | `src/config/devSettings.ts` | `preferences.*` settings for learning |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -284,6 +299,17 @@ athena/
 | DocumentTree | `src/modules/resources/extraction/types.ts` | Hierarchical document structure node (title, pages, summary, children) |
 | TreeExtractionResult | `src/modules/resources/extraction/types.ts` | Result of AI structure extraction (success, tree, stats) |
 | PdfConfig | `src/config/devSettings.ts` | PDF structure extraction settings (extractStructure, model, depth) |
+| IWebScraper | `src/modules/resources/url/types.ts` | Interface for pluggable web scrapers (name, isAvailable, scrape) |
+| ScrapeOptions | `src/modules/resources/url/types.ts` | Options for scraping (formats, waitFor, timeout) |
+| ScrapeResult | `src/modules/resources/url/types.ts` | Scrape result with markdown, metadata, scrapedBy indicator |
+| PageMetadata | `src/modules/resources/url/types.ts` | Page metadata (title, description, ogImage, language) |
+| FirecrawlApiResponse | `src/modules/resources/url/types.ts` | Firecrawl v1/scrape API response shape |
+| FirecrawlConfig | `src/config/devSettings.ts` | Firecrawl settings (enabled, timeout, waitFor, autoDetectDynamic) |
+| PreferenceSignal | `src/modules/ai/preferences/types.ts` | Recorded user decision on an AI proposal |
+| SignalMetadata | `src/modules/ai/preferences/types.ts` | Additional metadata for pattern analysis |
+| PreferenceStats | `src/modules/ai/preferences/types.ts` | Aggregated statistics for preference learning |
+| ConfidenceAdjustment | `src/modules/ai/preferences/types.ts` | Confidence adjustment with factors |
+| PreferenceLearningConfig | `src/config/devSettings.ts` | Preference learning settings (enabled, learningRate, windowSize) |
 
 ---
 
@@ -329,6 +355,8 @@ athena/
 |----|---------|--------|
 | 8.1 | Entity Resolution / Merge Candidates | ✅ |
 | 8.2 | Document Tree Structure | ✅ |
+| 8.3 | Firecrawl Integration | ✅ |
+| 8.4 | Preference Learning | ✅ |
 
 ### Phase 7 Complete
 
@@ -358,6 +386,9 @@ window.__ATHENA_SIMILARITY_STATE__ // Similarity state (candidates, scan progres
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
 window.__ATHENA_TREE_EXTRACTOR__ // Document tree extractor (WP 8.2)
+window.__ATHENA_WEB_SCRAPER__()  // Web scraper service (WP 8.3)
+window.__ATHENA_PREFERENCE_STATE__ // Preference learning state (WP 8.4)
+window.__ATHENA_PREFERENCES__    // Preference actions for testing (WP 8.4)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

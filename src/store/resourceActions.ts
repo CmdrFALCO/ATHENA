@@ -105,22 +105,24 @@ export async function addUrlResource(
   url: string,
   mode: UrlMode,
   notes: string,
-  position?: { x: number; y: number }
+  position?: { x: number; y: number },
+  extractionPreference: 'auto' | 'firecrawl' | 'basic' = 'auto',
 ): Promise<string> {
   if (!resourceAdapter) throw new Error('Resource adapter not initialized');
 
   let resourceInput: CreateResourceInput;
   let extractedText: string | null = null;
   let extractionStatus: 'complete' | 'failed' | 'skipped';
-  let extractionMethod: 'ai' | null = null;
+  let extractionMethod: string | null = null;
 
   if (mode === 'reference') {
     // Reference mode: instant, no AI
     resourceInput = await urlResourceService.createReference(url, notes);
     extractionStatus = 'skipped'; // Intentionally not extracted
   } else {
-    // Extracted mode: AI fetches and summarizes
-    const result = await urlResourceService.createWithExtraction(url, notes);
+    // Extracted mode: scrape (with optional Firecrawl) then AI fallback
+    const preferFirecrawl = extractionPreference !== 'basic';
+    const result = await urlResourceService.createWithExtraction(url, notes, preferFirecrawl);
     resourceInput = result.input;
     extractedText = result.extractedText;
     extractionStatus = result.extractionStatus;
