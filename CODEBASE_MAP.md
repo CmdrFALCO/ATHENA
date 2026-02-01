@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.4 (Preference Learning) |
+| **Last WP Completed** | 8.5 (Knowledge Schema Templates) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -56,7 +56,8 @@ athena/
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
 │   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
 │   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree + Web Scraping (WP 8.3)
-│   │   └── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
+│   │   ├── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
+│   │   └── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -103,6 +104,7 @@ athena/
 | Validation | `src/modules/validation/` | [docs/modules/VALIDATION.md](docs/modules/VALIDATION.md) | ✅ |
 | Resources | `src/modules/resources/` | — | ✅ |
 | Similarity | `src/modules/similarity/` | — | ✅ |
+| Schema | `src/modules/schema/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -230,6 +232,17 @@ athena/
 | Preference Insights | `src/modules/ai/preferences/components/PreferenceInsights.tsx` | Stats panel for preference learning |
 | Preference Migration | `src/database/migrations/010_preference_signals.ts` | preference_signals table |
 | Preference Config | `src/config/devSettings.ts` | `preferences.*` settings for learning |
+| Schema Types | `src/modules/schema/types.ts` | KnowledgeSchema, SchemaNodeType, SchemaConnectionType, SchemaConfig |
+| Built-in Schemas | `src/modules/schema/data/builtInSchemas.ts` | 4 built-in schemas (Research, Book Notes, Meeting Notes, General) |
+| Schema Adapter | `src/modules/schema/adapters/SchemaAdapter.ts` | ISchemaAdapter interface + SQLiteSchemaAdapter for CRUD |
+| Schema Service | `src/modules/schema/services/SchemaService.ts` | Prompt building, usage tracking, active schema management |
+| Schema State | `src/modules/schema/store/schemaState.ts` | Legend-State slice for schemas, loading, error |
+| Schema Actions | `src/modules/schema/store/schemaActions.ts` | Load, create, update, delete, setActive, recordUsage |
+| Schema Selector | `src/modules/schema/components/SchemaSelector.tsx` | Dropdown to select active schema in chat area |
+| Schema Editor | `src/modules/schema/components/SchemaEditor.tsx` | Dialog to create/edit custom schemas |
+| Schema Hints | `src/modules/schema/components/SchemaHints.tsx` | Extraction hints bar above chat input |
+| Schema Migration | `src/database/migrations/011_knowledge_schemas.ts` | knowledge_schemas table with built-in seed data |
+| Schema Config | `src/config/devSettings.ts` | `schema.*` settings for enabled, activeSchemaId, hints, prompts |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -310,6 +323,12 @@ athena/
 | PreferenceStats | `src/modules/ai/preferences/types.ts` | Aggregated statistics for preference learning |
 | ConfidenceAdjustment | `src/modules/ai/preferences/types.ts` | Confidence adjustment with factors |
 | PreferenceLearningConfig | `src/config/devSettings.ts` | Preference learning settings (enabled, learningRate, windowSize) |
+| KnowledgeSchema | `src/modules/schema/types.ts` | Schema template with note types, connection types, extraction hints |
+| SchemaNodeType | `src/modules/schema/types.ts` | Suggested entity type with name, icon, color, description |
+| SchemaConnectionType | `src/modules/schema/types.ts` | Suggested relationship type with label, source/target constraints |
+| SchemaConfig | `src/modules/schema/types.ts` | Schema settings (enabled, activeSchemaId, showHintsInChat, includeInPrompts) |
+| CreateSchemaInput | `src/modules/schema/types.ts` | Input for creating a new custom schema |
+| UpdateSchemaInput | `src/modules/schema/types.ts` | Input for updating an existing schema |
 
 ---
 
@@ -357,6 +376,7 @@ athena/
 | 8.2 | Document Tree Structure | ✅ |
 | 8.3 | Firecrawl Integration | ✅ |
 | 8.4 | Preference Learning | ✅ |
+| 8.5 | Knowledge Schema Templates | ✅ |
 
 ### Phase 7 Complete
 
@@ -389,6 +409,8 @@ window.__ATHENA_TREE_EXTRACTOR__ // Document tree extractor (WP 8.2)
 window.__ATHENA_WEB_SCRAPER__()  // Web scraper service (WP 8.3)
 window.__ATHENA_PREFERENCE_STATE__ // Preference learning state (WP 8.4)
 window.__ATHENA_PREFERENCES__    // Preference actions for testing (WP 8.4)
+window.__ATHENA_SCHEMA_STATE__   // Schema state (schemas, loading) (WP 8.5)
+window.__ATHENA_SCHEMAS__        // Schema actions for testing (WP 8.5)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

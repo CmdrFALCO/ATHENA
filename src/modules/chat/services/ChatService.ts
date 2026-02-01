@@ -18,6 +18,7 @@ import { formatSystemPrompt } from './promptTemplates';
 import { extractProposals, stripProposalBlock, resolveProposalReferences, applyLearnedAdjustments } from './ProposalParser';
 import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
+import { schemaActions } from '@/modules/schema/store/schemaActions';
 import type { ChatMessage as StoredChatMessage, KnowledgeProposals } from '../types';
 import type { IAIService } from '@/modules/ai';
 import type { AIChatMessage } from '@/modules/ai/types';
@@ -96,7 +97,13 @@ export class ChatService {
       const contextText = ContextFormatter.formatForPrompt(contextResult.items);
       const generationConfig = devSettings$.chat.generation?.peek();
       const enableProposals = generationConfig?.enableProposals ?? true;
-      const systemPrompt = formatSystemPrompt(contextText, enableProposals);
+      let systemPrompt = formatSystemPrompt(contextText, enableProposals);
+
+      // 4b. Add schema guidance if enabled (WP 8.5)
+      const schemaAddition = await schemaActions.getSchemaPromptAddition();
+      if (schemaAddition) {
+        systemPrompt += '\n\n' + schemaAddition;
+      }
 
       // 5. Get conversation history (last N messages)
       const historyLimit = generationConfig?.historyLimit ?? 10;
@@ -164,6 +171,14 @@ export class ChatService {
       // Apply learned confidence adjustments (WP 8.4)
       if (proposals) {
         proposals = await applyLearnedAdjustments(proposals);
+      }
+
+      // Record schema usage if extraction produced proposals (WP 8.5)
+      const activeSchemaId = devSettings$.schema.activeSchemaId.peek();
+      if (activeSchemaId && proposals && proposals.nodes.length > 0) {
+        await schemaActions.recordUsage(activeSchemaId).catch(err =>
+          console.warn('[ChatService] Failed to record schema usage:', err)
+        );
       }
 
       // Filter low-confidence proposals

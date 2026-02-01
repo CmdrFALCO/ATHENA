@@ -1,5 +1,48 @@
 # ATHENA Changelog
 
+## [8.5.0] - 2026-02-01
+
+### Added
+- **Knowledge Schema Templates (WP 8.5)**: Optional schemas that guide AI extraction toward consistent entity/relationship types without enforcing rigid structure
+  - `src/modules/schema/types.ts` - KnowledgeSchema, SchemaNodeType, SchemaConnectionType, SchemaConfig, CreateSchemaInput, UpdateSchemaInput
+  - `src/modules/schema/data/builtInSchemas.ts` - 4 built-in schemas: Research Project, Book Notes, Meeting Notes, General Knowledge
+  - `src/modules/schema/adapters/SchemaAdapter.ts` - ISchemaAdapter interface + SQLiteSchemaAdapter for CRUD operations
+  - `src/modules/schema/services/SchemaService.ts` - Schema prompt building, usage tracking, active schema management
+  - `src/modules/schema/store/schemaState.ts` - Legend-State slice for schemas, loading state, error tracking
+  - `src/modules/schema/store/schemaActions.ts` - Load, create, update, delete, setActive, recordUsage actions
+  - `src/modules/schema/components/SchemaSelector.tsx` - Dropdown selector for active schema in chat area
+  - `src/modules/schema/components/SchemaEditor.tsx` - Portal dialog for creating/editing custom schemas
+  - `src/modules/schema/components/SchemaHints.tsx` - Extraction hints bar displayed above chat input
+  - `src/modules/schema/index.ts` - Module barrel export
+  - `src/database/migrations/011_knowledge_schemas.ts` - knowledge_schemas table with built-in schema seed data
+- **Schema Prompt Integration**: Active schema adds suggested entity types, relationship types, and extraction guidance to AI system prompts with soft constraints ("don't force-fit")
+- **Usage Tracking**: Schema usage counts increment when extraction produces proposals, surfacing frequently-used schemas
+- **Custom Schema Support**: Users can create, edit, and delete custom schemas with note types, connection types, and extraction hints
+- **Schema DevSettings**: Configuration in `schema.*`
+  - `enabled` - Toggle schema features (default: true)
+  - `activeSchemaId` - Currently active schema ID (default: null)
+  - `showHintsInChat` - Show hints above chat input (default: true)
+  - `includeInPrompts` - Include schema guidance in extraction prompts (default: true)
+
+### Changed
+- `src/modules/chat/services/ChatService.ts` - Adds schema prompt addition to system prompt; records schema usage after extraction
+- `src/config/devSettings.ts` - Added SchemaConfig import, DEFAULT_SCHEMA_CONFIG, schema observable, 4 schema action methods, resetToDefaults updated
+- `src/database/migrations/index.ts` - Exports setupKnowledgeSchemas
+- `src/database/init.ts` - Calls setupKnowledgeSchemas during initialization
+
+### Technical
+- **Soft Constraints**: Schemas suggest types but don't enforce them; AI can use free-form types when content doesn't match
+- **Lazy Service Init**: SchemaAdapter and SchemaService are lazily initialized on first use via getServices()
+- **Dark Theme UI**: All components use athena-* Tailwind tokens consistent with existing dark theme
+- **Debug Access**: `window.__ATHENA_SCHEMA_STATE__` and `window.__ATHENA_SCHEMAS__` for console debugging
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+- WP 8.3: Firecrawl Integration ✅
+- WP 8.4: Preference Learning ✅
+- WP 8.5: Knowledge Schema Templates ✅
+
 ## [8.4.0] - 2026-02-01
 
 ### Added

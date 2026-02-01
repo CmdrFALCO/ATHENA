@@ -1,5 +1,6 @@
 import { observable, computed } from '@legendapp/state';
 import { persistObservable } from '@legendapp/state/persist';
+import type { SchemaConfig } from '@/modules/schema/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -234,6 +235,13 @@ export interface SearchConfig {
   debounceMs: number;
 }
 
+const DEFAULT_SCHEMA_CONFIG: SchemaConfig = {
+  enabled: true,
+  activeSchemaId: null,
+  showHintsInChat: true,
+  includeInPrompts: true,
+};
+
 const DEFAULT_PREFERENCES_CONFIG: PreferenceLearningConfig = {
   enabled: true,
   windowSize: 100,
@@ -384,6 +392,7 @@ export const devSettings$ = observable({
   chat: { ...DEFAULT_CHAT_CONFIG } as ChatConfig,
   similarity: { ...DEFAULT_SIMILARITY_CONFIG } as SimilarityConfig,
   preferences: { ...DEFAULT_PREFERENCES_CONFIG } as PreferenceLearningConfig,
+  schema: { ...DEFAULT_SCHEMA_CONFIG } as SchemaConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -416,6 +425,7 @@ export const devSettingsActions = {
     devSettings$.chat.set({ ...DEFAULT_CHAT_CONFIG });
     devSettings$.similarity.set({ ...DEFAULT_SIMILARITY_CONFIG });
     devSettings$.preferences.set({ ...DEFAULT_PREFERENCES_CONFIG });
+    devSettings$.schema.set({ ...DEFAULT_SCHEMA_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -708,6 +718,27 @@ export const devSettingsActions = {
 
   setPreferenceShowInsights(show: boolean) {
     devSettings$.preferences.showInsights.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Schema config actions (WP 8.5)
+  setSchemaEnabled(enabled: boolean) {
+    devSettings$.schema.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setActiveSchemaId(schemaId: string | null) {
+    devSettings$.schema.activeSchemaId.set(schemaId);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSchemaShowHints(show: boolean) {
+    devSettings$.schema.showHintsInChat.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSchemaIncludeInPrompts(include: boolean) {
+    devSettings$.schema.includeInPrompts.set(include);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

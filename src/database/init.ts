@@ -12,6 +12,7 @@ import {
   setupMergeCandidates,
   setupResourceStructure,
   setupPreferenceSignals,
+  setupKnowledgeSchemas,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -122,6 +123,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up preference signals for preference learning (WP 8.4, idempotent)
   await setupPreferenceSignals(connection);
+
+  // Set up knowledge schemas for schema templates (WP 8.5, idempotent)
+  await setupKnowledgeSchemas(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);
