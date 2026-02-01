@@ -9,6 +9,7 @@ import { CommandPalette, SearchPanel, useSearchPanel } from '@/modules/search';
 import { ValidationPanel, useValidationPanel } from '@/modules/validation';
 import { ChatPanel, ChatToggleButton } from '@/modules/chat';
 import { MergeCandidatesPanel, useSimilarityPanel } from '@/modules/similarity';
+import { SynthesisPanel } from '@/modules/synthesis';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -73,6 +74,9 @@ export function AppLayout() {
 
       {/* Merge Candidates Panel - entity resolution (WP 8.1) - Ctrl+Shift+M */}
       <MergeCandidatesPanel isOpen={isSimilarityPanelOpen} onClose={closeSimilarityPanel} />
+
+      {/* Synthesis Panel - knowledge synthesis (WP 8.7) */}
+      <SynthesisPanel />
 
       {/* Chat Panel - slide-over chat interface (WP 7.1) - Ctrl+Shift+C */}
       <ChatPanel />

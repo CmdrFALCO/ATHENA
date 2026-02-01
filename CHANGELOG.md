@@ -1,5 +1,68 @@
 # ATHENA Changelog
 
+## [8.7.1] - 2026-02-01
+
+### Added
+- **Synthesis Resource Support (WP 8.7.1)**: Extend Synthesis Reports to include Resources (PDFs, DOCX, URLs) alongside Notes
+  - `SynthesisRequest` now accepts `resourceIds`, `includeResources`, `resourceMaxChars`
+  - `SynthesisReport` tracks `sourceResourceIds` for provenance
+  - `SynthesisConfig` gains `includeResourcesByDefault`, `resourceMaxChars` defaults
+  - Prompt builder generates separate "Notes" and "Source Documents" sections
+  - Resource content truncation with document tree summary support (WP 8.2 integration)
+  - `SynthesisService` loads resources via `IResourceAdapter`, queries cross-type connections
+  - `SynthesisPanel` shows resource count, "Include resources" checkbox, content limit slider (1k-20k chars)
+  - `SynthesisButton` displays mixed count badge ("2+1R" format)
+  - Save-as-note metadata includes `resourceIds` for full source tracking
+
+### Changed
+- `src/store/state.ts` - Added `selectedResourceIds: string[]` to UIState for multi-resource selection
+- `src/store/hooks.ts` - Added `useSelectedResourceIds()` hook, `toggleResourceSelection()`, `clearResourceSelection()` actions
+- `src/modules/canvas/components/GraphCanvas.tsx` - Shift+click (or Ctrl/Cmd+click) toggles multi-selection for both entities and resources
+- `src/app/routes/SophiaPage.tsx` - Passes both note and resource counts to SynthesisButton
+- `src/config/devSettings.ts` - Added `includeResourcesByDefault`, `resourceMaxChars` to synthesis config with action methods
+
+### Technical
+- Connection loading now queries both entity and resource endpoints, deduplicating by connection ID
+- Resource content uses document tree summaries (WP 8.2) when available, falls back to truncated extracted text
+- Minimum 2 total items (notes + resources combined) required for synthesis generation
+
+## [8.7.0] - 2026-02-01
+
+### Added
+- **Synthesis Reports Module (WP 8.7)**: Generate LLM summaries from subgraphs — select multiple notes, trigger "Synthesize", receive a coherent report
+  - `src/modules/synthesis/types.ts` - SynthesisFormat, SynthesisRequest, SynthesisReport, SynthesisProgress, SynthesisConfig, FORMAT_INFO
+  - `src/modules/synthesis/prompts/synthesisPrompts.ts` - Format-specific prompt templates (summary/outline/report), Tiptap content extraction, report title generation
+  - `src/modules/synthesis/services/SynthesisService.ts` - Core generation logic with adapter-based data access, streaming AI generation, progress callbacks
+  - `src/modules/synthesis/store/synthesisState.ts` - Legend-State slice for panel visibility, format options, progress, reports
+  - `src/modules/synthesis/store/synthesisActions.ts` - Generate, save-as-note, panel toggle, format/length/connection options
+  - `src/modules/synthesis/components/SynthesisPanel.tsx` - Main slide-over panel with format selector, length control, custom prompt, streaming display
+  - `src/modules/synthesis/components/FormatSelector.tsx` - Three-column format picker (Summary/Outline/Report) with icons and descriptions
+  - `src/modules/synthesis/components/ReportViewer.tsx` - Streaming content display with markdown-like rendering and auto-scroll
+  - `src/modules/synthesis/components/SynthesisButton.tsx` - Canvas toolbar trigger with selected-note count badge
+  - `src/modules/synthesis/index.ts` - Module barrel export
+
+### Changed
+- `src/config/devSettings.ts` - Added SynthesisConfig import, DEFAULT_SYNTHESIS_CONFIG, synthesis observable, resetToDefaults updated, 4 synthesis action methods
+- `src/app/layout/AppLayout.tsx` - Added SynthesisPanel to layout
+- `src/app/routes/SophiaPage.tsx` - Added SynthesisButton as floating toolbar in canvas area, conditioned on devSettings
+- `src/App.tsx` - Imports synthesis store for window debug exposure
+
+### Technical
+- Uses adapter pattern (INoteAdapter, IConnectionAdapter) for data access — no direct SQL queries
+- Streaming via `AIService.generateStream()` with `onChunk` callback for real-time content display
+- Reports saved as notes with `subtype: 'synthesis'` and metadata tracking source entity/connection IDs
+- Markdown-to-Tiptap Block[] conversion for note storage
+- Debug: `window.__ATHENA_SYNTHESIS_STATE__`, `window.__ATHENA_SYNTHESIS__`, `window.__ATHENA_SYNTHESIS_SERVICE__()`
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+- WP 8.3: Firecrawl Integration ✅
+- WP 8.4: Preference Learning ✅
+- WP 8.5: Knowledge Schema Templates ✅
+- WP 8.6: Background Jobs ✅
+- WP 8.7: Synthesis Reports ✅
+
 ## [8.6.0] - 2026-02-01
 
 ### Added

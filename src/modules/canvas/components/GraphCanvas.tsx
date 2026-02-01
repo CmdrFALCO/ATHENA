@@ -209,19 +209,35 @@ function GraphCanvasInner() {
   }, [allEdges, setEdges]);
 
   const handleNodeClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
+    (event, node) => {
       internalClickRef.current = true; // Mark as internal click (no need to center)
       clearConnectionSelection(); // Clear edge selection when clicking node
+
+      const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
 
       // Check if this is a resource node (ID starts with 'resource-')
       if (node.id.startsWith('resource-')) {
         const resourceId = node.id.replace('resource-', '');
-        onResourceSelect(resourceId);
-        uiActions.clearSelection(); // Deselect any entity
+
+        if (isMultiSelect) {
+          // WP 8.7.1: Shift+click toggles resource in multi-selection
+          uiActions.toggleResourceSelection(resourceId);
+        } else {
+          // Normal click: single-select for detail panel
+          onResourceSelect(resourceId);
+          uiActions.clearSelection(); // Deselect any entity
+        }
       } else {
         const data = node.data as EntityNodeData;
-        onEntitySelect(data.entityId);
-        selectResource(null); // Deselect any resource
+
+        if (isMultiSelect) {
+          // WP 8.7.1: Shift+click toggles entity in multi-selection
+          uiActions.toggleEntitySelection(data.entityId);
+        } else {
+          // Normal click: single-select for detail panel
+          onEntitySelect(data.entityId);
+          selectResource(null); // Deselect any resource
+        }
       }
     },
     [onEntitySelect, onResourceSelect, clearConnectionSelection]

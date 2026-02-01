@@ -7,6 +7,7 @@ export {
   useSidebarOpen,
   useDevSettingsOpen,
   useSelectedEntityIds,
+  useSelectedResourceIds,  // WP 8.7.1
   useCommandPaletteOpen,  // WP 4.1
   useNotes,
   useNote,

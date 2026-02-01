@@ -2,6 +2,7 @@ import { observable, computed } from '@legendapp/state';
 import { persistObservable } from '@legendapp/state/persist';
 import type { SchemaConfig } from '@/modules/schema/types';
 import type { JobsConfig } from '@/modules/jobs/types';
+import type { SynthesisConfig } from '@/modules/synthesis/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -359,6 +360,18 @@ const DEFAULT_CHAT_CONFIG: ChatConfig = {
   spatialContext: { ...DEFAULT_SPATIAL_CONTEXT_CONFIG },
 };
 
+// Synthesis Reports configuration (WP 8.7, WP 8.7.1)
+const DEFAULT_SYNTHESIS_CONFIG: SynthesisConfig = {
+  enabled: true,
+  defaultFormat: 'summary',
+  defaultMaxLength: 500,
+  includeConnectionsByDefault: true,
+  includeResourcesByDefault: true,
+  resourceMaxChars: 5000,
+  showInCanvasToolbar: true,
+  streamingEnabled: true,
+};
+
 // Background Jobs configuration (WP 8.6)
 const DEFAULT_JOBS_CONFIG: JobsConfig = {
   enabled: true,
@@ -430,6 +443,7 @@ export const devSettings$ = observable({
   preferences: { ...DEFAULT_PREFERENCES_CONFIG } as PreferenceLearningConfig,
   schema: { ...DEFAULT_SCHEMA_CONFIG } as SchemaConfig,
   jobs: { ...DEFAULT_JOBS_CONFIG } as JobsConfig,
+  synthesis: { ...DEFAULT_SYNTHESIS_CONFIG } as SynthesisConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -464,6 +478,7 @@ export const devSettingsActions = {
     devSettings$.preferences.set({ ...DEFAULT_PREFERENCES_CONFIG });
     devSettings$.schema.set({ ...DEFAULT_SCHEMA_CONFIG });
     devSettings$.jobs.set({ ...DEFAULT_JOBS_CONFIG });
+    devSettings$.synthesis.set({ ...DEFAULT_SYNTHESIS_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -818,6 +833,38 @@ export const devSettingsActions = {
 
   setJobValidationSweepEnabled(enabled: boolean) {
     devSettings$.jobs.validationSweep.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Synthesis config actions (WP 8.7)
+  setSynthesisEnabled(enabled: boolean) {
+    devSettings$.synthesis.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSynthesisDefaultFormat(format: SynthesisConfig['defaultFormat']) {
+    devSettings$.synthesis.defaultFormat.set(format);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSynthesisDefaultMaxLength(length: number) {
+    devSettings$.synthesis.defaultMaxLength.set(length);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSynthesisShowInToolbar(show: boolean) {
+    devSettings$.synthesis.showInCanvasToolbar.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // WP 8.7.1: Resource support config
+  setSynthesisIncludeResourcesByDefault(include: boolean) {
+    devSettings$.synthesis.includeResourcesByDefault.set(include);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setSynthesisResourceMaxChars(chars: number) {
+    devSettings$.synthesis.resourceMaxChars.set(chars);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

@@ -16,6 +16,11 @@ export function useSelectedEntityIds(): string[] {
   return useSelector(() => appState$.ui.selectedEntityIds.get());
 }
 
+// WP 8.7.1: Multi-resource selection for synthesis
+export function useSelectedResourceIds(): string[] {
+  return useSelector(() => appState$.ui.selectedResourceIds.get());
+}
+
 // WP 4.1: Command palette
 export function useCommandPaletteOpen(): boolean {
   return useSelector(() => appState$.ui.commandPaletteOpen.get());
@@ -93,6 +98,7 @@ export const uiActions = {
 
   clearSelection() {
     appState$.ui.selectedEntityIds.set([]);
+    appState$.ui.selectedResourceIds.set([]);
   },
 
   toggleEntitySelection(id: string) {
@@ -102,6 +108,20 @@ export const uiActions = {
     } else {
       appState$.ui.selectedEntityIds.set([...current, id]);
     }
+  },
+
+  // WP 8.7.1: Multi-resource selection for synthesis
+  toggleResourceSelection(id: string) {
+    const current = appState$.ui.selectedResourceIds.get();
+    if (current.includes(id)) {
+      appState$.ui.selectedResourceIds.set(current.filter((i) => i !== id));
+    } else {
+      appState$.ui.selectedResourceIds.set([...current, id]);
+    }
+  },
+
+  clearResourceSelection() {
+    appState$.ui.selectedResourceIds.set([]);
   },
 
   // WP 4.1: Command palette

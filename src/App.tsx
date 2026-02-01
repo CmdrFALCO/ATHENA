@@ -21,6 +21,9 @@ import './modules/validation/store/validationActions';
 // Import jobs store to expose window.__ATHENA_JOBS__ and window.__ATHENA_JOBS_STATE__
 import './modules/jobs/store/jobActions';
 
+// Import synthesis store to expose window.__ATHENA_SYNTHESIS__ and window.__ATHENA_SYNTHESIS_STATE__
+import './modules/synthesis/store/synthesisActions';
+
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
   const [error, setError] = useState<string>('');

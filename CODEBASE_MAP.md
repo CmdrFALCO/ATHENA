@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.6 (Background Jobs) |
+| **Last WP Completed** | 8.7 (Synthesis Reports) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -58,7 +58,8 @@ athena/
 │   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree + Web Scraping (WP 8.3)
 │   │   ├── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
 │   │   ├── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
-│   │   └── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
+│   │   ├── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
+│   │   └── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -107,6 +108,7 @@ athena/
 | Similarity | `src/modules/similarity/` | — | ✅ |
 | Schema | `src/modules/schema/` | — | ✅ |
 | Jobs | `src/modules/jobs/` | — | ✅ |
+| Synthesis | `src/modules/synthesis/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -397,6 +399,7 @@ athena/
 | 8.4 | Preference Learning | ✅ |
 | 8.5 | Knowledge Schema Templates | ✅ |
 | 8.6 | Background Jobs | ✅ |
+| 8.7 | Synthesis Reports | ✅ |
 
 ### Phase 7 Complete
 
@@ -433,6 +436,9 @@ window.__ATHENA_SCHEMA_STATE__   // Schema state (schemas, loading) (WP 8.5)
 window.__ATHENA_SCHEMAS__        // Schema actions for testing (WP 8.5)
 window.__ATHENA_JOBS_STATE__     // Jobs state (running, recent, scheduler) (WP 8.6)
 window.__ATHENA_JOBS__           // Jobs actions for testing (WP 8.6)
+window.__ATHENA_SYNTHESIS_STATE__ // Synthesis state (progress, reports, panel) (WP 8.7)
+window.__ATHENA_SYNTHESIS__      // Synthesis actions for testing (WP 8.7)
+window.__ATHENA_SYNTHESIS_SERVICE__() // Synthesis service instance (WP 8.7)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

@@ -14,6 +14,7 @@ export interface UIState {
   sidebarOpen: boolean;
   activePanelId: string | null;
   selectedEntityIds: string[];
+  selectedResourceIds: string[];  // WP 8.7.1: Multi-resource selection for synthesis
   devSettingsOpen: boolean;
   commandPaletteOpen: boolean;  // WP 4.1: Command palette visibility
 }
@@ -43,6 +44,7 @@ export const appState$ = observable({
     sidebarOpen: true,
     activePanelId: null as string | null,
     selectedEntityIds: [] as string[],
+    selectedResourceIds: [] as string[],
     devSettingsOpen: false,
     commandPaletteOpen: false,
   } as UIState,
