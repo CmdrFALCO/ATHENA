@@ -173,7 +173,7 @@ export const builtInViews: SmartView[] = [
       { name: 'limit', label: 'Max Results', type: 'number', required: false, defaultValue: 20 },
     ],
     category: 'sophia',
-    icon: 'Hub',
+    icon: 'Network',
     createdBy: 'system',
   },
 ];

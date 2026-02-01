@@ -10,7 +10,7 @@ import {
   Archive,
   Filter,
   AlertCircle,
-  Hub,
+  Network,
   Plus,
   Star,
 } from 'lucide-react';
@@ -25,7 +25,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Archive,
   Filter,
   AlertCircle,
-  Hub,
+  Network,
   Star,
 };
 
