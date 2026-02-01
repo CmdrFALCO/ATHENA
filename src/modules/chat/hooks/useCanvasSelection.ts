@@ -1,13 +1,14 @@
 /**
  * useCanvasSelection - Hook to access canvas selection state for chat context
  * WP 7.6 - Spatial Awareness
+ * WP 8.7.2 - Resource selection support
  *
  * Bridges the canvas selection system with the chat context system,
- * allowing users to add selected nodes to their chat context.
+ * allowing users to add selected nodes and resources to their chat context.
  */
 
 import { useMemo } from 'react';
-import { useSelectedEntityIds, useNotes } from '@/store/hooks';
+import { useSelectedEntityIds, useSelectedResourceIds, useNotes } from '@/store/hooks';
 
 interface CanvasSelectionResult {
   /** Currently selected entity ID (first in selection, null if none) */
@@ -18,24 +19,34 @@ interface CanvasSelectionResult {
   selectedEntityIds: string[];
   /** Whether an entity is currently selected */
   hasSelection: boolean;
+  /** All selected resource IDs (WP 8.7.2) */
+  selectedResourceIds: string[];
+  /** Whether any resource is currently selected (WP 8.7.2) */
+  hasResourceSelection: boolean;
 }
 
 /**
  * Hook to access canvas selection state for chat context integration
  *
- * @returns Selection state including ID, title, and hasSelection flag
+ * @returns Selection state including entity IDs, resource IDs, titles, and flags
  */
 export function useCanvasSelection(): CanvasSelectionResult {
   const selectedEntityIds = useSelectedEntityIds();
+  const selectedResourceIds = useSelectedResourceIds();
   const notes = useNotes();
 
   const result = useMemo(() => {
-    if (selectedEntityIds.length === 0) {
+    const hasEntitySelection = selectedEntityIds.length > 0;
+    const hasResourceSelection = selectedResourceIds.length > 0;
+
+    if (!hasEntitySelection) {
       return {
         selectedEntityId: null,
         selectedEntityTitle: null,
         selectedEntityIds: [],
         hasSelection: false,
+        selectedResourceIds,
+        hasResourceSelection,
       };
     }
 
@@ -48,8 +59,10 @@ export function useCanvasSelection(): CanvasSelectionResult {
       selectedEntityTitle: note?.title || null,
       selectedEntityIds,
       hasSelection: true,
+      selectedResourceIds,
+      hasResourceSelection,
     };
-  }, [selectedEntityIds, notes]);
+  }, [selectedEntityIds, selectedResourceIds, notes]);
 
   return result;
 }

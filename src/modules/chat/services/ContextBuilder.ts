@@ -60,8 +60,10 @@ export class ContextBuilder {
    *
    * Strategy execution order:
    * 1. Selected nodes (explicit user choice, highest priority)
-   * 2. Similarity search (semantic relevance to query)
-   * 3. Traversal (graph neighborhood expansion)
+   * 1b. Selected resources (WP 8.7.2 - with smart truncation)
+   * 2. Document reasoning (WP 8.2 - for resources with structure)
+   * 3. Similarity search (semantic relevance to query)
+   * 4. Traversal (graph neighborhood expansion)
    *
    * Items are deduplicated across strategies.
    */
@@ -71,6 +73,7 @@ export class ContextBuilder {
 
     const {
       selectedNodeIds = [],
+      selectedResourceIds = [],
       query = '',
       maxItems = contextConfig?.maxItems ?? 10,
       similarityThreshold = contextConfig?.similarityThreshold ?? 0.7,
@@ -78,11 +81,15 @@ export class ContextBuilder {
       traversalDepth = contextConfig?.traversalDepth ?? 1,
     } = options;
 
+    const resourceMaxChars = contextConfig?.resourceMaxChars ?? 8000;
+    const useDocumentTree = contextConfig?.useDocumentTree ?? true;
+
     const allItems: ContextItem[] = [];
     const seenIds = new Set<string>();
 
     // Debug counters
     let selectedCount = 0;
+    let resourceCount = 0;
     let similarCount = 0;
     let traversalCount = 0;
 
@@ -98,8 +105,24 @@ export class ContextBuilder {
       }
     }
 
+    // Strategy 1b: Selected resources (WP 8.7.2 - with smart truncation)
+    if (selectedResourceIds.length > 0) {
+      const resourceItems = await this.selectedStrategy.gatherResources(
+        selectedResourceIds,
+        resourceMaxChars,
+        useDocumentTree
+      );
+      for (const item of resourceItems) {
+        if (!seenIds.has(item.id)) {
+          seenIds.add(item.id);
+          allItems.push(item);
+          resourceCount++;
+        }
+      }
+    }
+
     // Strategy 2: Document reasoning (WP 8.2 - for resources with structure)
-    if (query.trim() && allItems.length < maxItems) {
+    if (useDocumentTree && query.trim() && allItems.length < maxItems) {
       // Find resource IDs from selected items that have structure
       const resourceIdsWithStructure: string[] = [];
       for (const item of allItems) {
@@ -188,6 +211,7 @@ export class ContextBuilder {
       truncated,
       debug: {
         selectedCount,
+        resourceCount,
         similarCount,
         traversalCount,
       },

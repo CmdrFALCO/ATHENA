@@ -1,5 +1,36 @@
 # ATHENA Changelog
 
+## [8.7.2] - 2026-02-01
+
+### Added
+- **Chat Resource Context (WP 8.7.2)**: Enable conversational chat about selected resources (PDFs, DOCX, URLs)
+  - `ContextItem.source` gains `'document-tree'` value for document tree summaries
+  - `ContextOptions` gains `selectedResourceIds` for explicit resource selection
+  - `ContextResult.debug` tracks `resourceCount` separately from entities
+  - `SelectedNodesStrategy.gatherResources()` loads resources with smart truncation
+  - Document tree extraction: prefers section summaries (WP 8.2) over raw text
+  - Smart truncation at paragraph/sentence boundaries with `[...content truncated...]` marker
+  - `ContextFormatter` separates notes and resources into distinct prompt sections ("Reference Documents")
+  - Resources get 10K char safety limit in formatter (already pre-truncated by strategy at 8K default)
+  - Purple resource chips in `ContextChips` alongside blue note chips, with remove support
+  - `useCanvasSelection` hook exposes `selectedResourceIds` and `hasResourceSelection`
+
+### Changed
+- `src/modules/chat/services/contextStrategies/types.ts` - Extended ContextItem source, ContextOptions, ContextResult.debug
+- `src/config/devSettings.ts` - Added `resourceMaxChars` (default: 8000) and `useDocumentTree` (default: true) to ContextConfig with action methods
+- `src/modules/chat/services/contextStrategies/SelectedNodesStrategy.ts` - Added gatherResources(), resourceToContextItem(), extractFromDocumentTree(), truncateResourceContent()
+- `src/modules/chat/services/ContextBuilder.ts` - Strategy 1b for selected resources, useDocumentTree guard on document reasoning, resourceCount debug tracking
+- `src/modules/chat/services/ChatService.ts` - Reads `appState$.ui.selectedResourceIds` and passes to context builder
+- `src/modules/chat/services/ContextFormatter.ts` - Separate notes/resources sections, document-tree source label, resourceCount in summary
+- `src/modules/chat/components/ContextChips.tsx` - Purple resource chips, combined count indicator, resource removal via uiActions
+- `src/modules/chat/hooks/useCanvasSelection.ts` - Added selectedResourceIds and hasResourceSelection to return type
+
+### Technical
+- Resource IDs flow from `appState$.ui.selectedResourceIds` (canvas selection) through ChatService → ContextBuilder → SelectedNodesStrategy
+- No changes to sendMessage() signature — resource IDs read from store at call time (consistent with contextNodeIds pattern)
+- Document tree summaries collected recursively with indent-based hierarchy and char budget
+- MentionInput unchanged — resource context is automatic from canvas selection
+
 ## [8.7.1] - 2026-02-01
 
 ### Added

@@ -104,6 +104,10 @@ export interface ContextConfig {
   includeTraversal: boolean;
   /** How many hops to traverse in the graph */
   traversalDepth: number;
+  /** Max chars of resource content to include in context (WP 8.7.2) */
+  resourceMaxChars: number;
+  /** Prefer document tree summaries over raw text for resources (WP 8.7.2) */
+  useDocumentTree: boolean;
 }
 
 // Generation configuration for AI chat (WP 7.3)
@@ -318,6 +322,8 @@ const DEFAULT_CONTEXT_CONFIG: ContextConfig = {
   similarityThreshold: 0.7,
   includeTraversal: true,
   traversalDepth: 1,
+  resourceMaxChars: 8000,
+  useDocumentTree: true,
 };
 
 const DEFAULT_GENERATION_CONFIG: GenerationConfig = {
@@ -643,6 +649,17 @@ export const devSettingsActions = {
 
   setContextTraversalDepth(value: number) {
     devSettings$.chat.context.traversalDepth.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Resource context config actions (WP 8.7.2)
+  setContextResourceMaxChars(value: number) {
+    devSettings$.chat.context.resourceMaxChars.set(value);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setContextUseDocumentTree(value: boolean) {
+    devSettings$.chat.context.useDocumentTree.set(value);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 

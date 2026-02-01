@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.7 (Synthesis Reports) |
+| **Last WP Completed** | 8.7.2 (Chat Resource Context) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -188,9 +188,10 @@ athena/
 | Chat Config | `src/config/devSettings.ts` | `chat.enabled`, `chat.position`, `chat.showToggleButton` settings |
 | Chat Keyboard | `src/modules/chat/components/ChatToggleButton.tsx` | Ctrl+Shift+C to toggle chat panel |
 | Context Builder | `src/modules/chat/services/ContextBuilder.ts` | GraphRAG context gathering with 4 strategies |
-| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected, DocumentReasoning, Similarity, Traversal strategies |
-| Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts |
-| Context Config | `src/config/devSettings.ts` | `chat.context.*` settings for context building |
+| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected (with resource gathering), DocumentReasoning, Similarity, Traversal strategies |
+| Resource Context | `src/modules/chat/services/contextStrategies/SelectedNodesStrategy.ts` | gatherResources() with document tree extraction and smart truncation (WP 8.7.2) |
+| Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts with separate notes/resources sections |
+| Context Config | `src/config/devSettings.ts` | `chat.context.*` settings including resourceMaxChars, useDocumentTree (WP 8.7.2) |
 | Chat Service | `src/modules/chat/services/ChatService.ts` | Orchestrates chat flow: context → prompt → AI → response |
 | Prompt Templates | `src/modules/chat/services/promptTemplates.ts` | System prompts for knowledge capture |
 | AI Streaming | `src/modules/ai/backends/GeminiBackend.ts` | SSE streaming via `generateStream()` method |
@@ -201,9 +202,9 @@ athena/
 | Extraction Config | `src/config/devSettings.ts` | `chat.extraction.*` settings for parsing |
 | MentionInput | `src/modules/chat/components/MentionInput.tsx` | @mention autocomplete with fuzzy search |
 | MentionSuggestions | `src/modules/chat/components/MentionSuggestions.tsx` | Dropdown with keyboard navigation |
-| ContextChips | `src/modules/chat/components/ContextChips.tsx` | Thread context display bar |
+| ContextChips | `src/modules/chat/components/ContextChips.tsx` | Thread context display bar with blue note chips and purple resource chips (WP 8.7.2) |
 | useMentions Hook | `src/modules/chat/hooks/useMentions.ts` | Note search with fuzzy matching |
-| useCanvasSelection Hook | `src/modules/chat/hooks/useCanvasSelection.ts` | Bridge canvas ↔ chat context |
+| useCanvasSelection Hook | `src/modules/chat/hooks/useCanvasSelection.ts` | Bridge canvas ↔ chat context (entities + resources, WP 8.7.2) |
 | Mentions Config | `src/config/devSettings.ts` | `chat.mentions.*` settings for autocomplete |
 | Spatial Context Config | `src/config/devSettings.ts` | `chat.spatialContext.*` settings for context chips |
 | Similarity Algorithms | `src/modules/similarity/algorithms/` | Jaro-Winkler, Levenshtein, weighted combination with graceful degradation |
@@ -303,7 +304,7 @@ athena/
 | EdgeProposal | `src/modules/chat/types/index.ts` | Proposed connection with rationale and confidence |
 | ChatConfig | `src/config/devSettings.ts` | Chat module configuration (enabled, position, persistence) |
 | ContextItem | `src/modules/chat/services/contextStrategies/types.ts` | Single context item with id, type, title, content, relevance, source |
-| ContextOptions | `src/modules/chat/services/contextStrategies/types.ts` | Options for context building (selectedNodeIds, query, maxItems, etc.) |
+| ContextOptions | `src/modules/chat/services/contextStrategies/types.ts` | Options for context building (selectedNodeIds, selectedResourceIds, query, maxItems, etc.) |
 | ContextResult | `src/modules/chat/services/contextStrategies/types.ts` | Result with items, token estimate, debug info |
 | ContextConfig | `src/config/devSettings.ts` | Context builder settings (maxItems, similarityThreshold, traversal) |
 | AIChatMessage | `src/modules/ai/types.ts` | Message format for AI conversations (role + content) |
@@ -400,6 +401,8 @@ athena/
 | 8.5 | Knowledge Schema Templates | ✅ |
 | 8.6 | Background Jobs | ✅ |
 | 8.7 | Synthesis Reports | ✅ |
+| 8.7.1 | Synthesis Resource Support | ✅ |
+| 8.7.2 | Chat Resource Context | ✅ |
 
 ### Phase 7 Complete
 

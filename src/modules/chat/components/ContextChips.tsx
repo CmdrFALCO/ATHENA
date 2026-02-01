@@ -1,17 +1,18 @@
 /**
- * ContextChips - Shows notes in current thread's context
+ * ContextChips - Shows notes and resources in current thread's context
  * WP 7.6 - Spatial Awareness
+ * WP 8.7.2 - Resource context chips
  *
- * Displays chips for each note in the thread's context,
- * with options to remove them or add the currently selected
- * canvas node.
+ * Displays chips for each note in the thread's context and each
+ * selected resource on the canvas, with options to remove them
+ * or add the currently selected canvas node.
  */
 
-import { X, Plus, FileText } from 'lucide-react';
+import { X, Plus, FileText, File } from 'lucide-react';
 import { useSelector } from '@legendapp/state/react';
 import { chatState$ } from '../store/chatState';
 import { chatActions } from '../store/chatActions';
-import { useNotes } from '@/store/hooks';
+import { useNotes, useSelectedResourceIds, useResources, uiActions } from '@/store/hooks';
 import { useCanvasSelection } from '../hooks/useCanvasSelection';
 
 export function ContextChips() {
@@ -19,6 +20,10 @@ export function ContextChips() {
   const threads = useSelector(() => chatState$.threads.get());
   const notes = useNotes();
   const { selectedEntityId, selectedEntityTitle } = useCanvasSelection();
+
+  // WP 8.7.2: Resource context
+  const selectedResourceIds = useSelectedResourceIds();
+  const allResources = useResources();
 
   // Get current thread's context
   const thread = activeThreadId ? threads[activeThreadId] : null;
@@ -29,12 +34,21 @@ export function ContextChips() {
     .map((id) => notes.find((n) => n.id === id))
     .filter((n): n is NonNullable<typeof n> => n !== undefined);
 
+  // Map resource IDs to resource objects
+  const contextResources = selectedResourceIds
+    .map((id) => allResources.find((r) => r.id === id))
+    .filter((r): r is NonNullable<typeof r> => r !== undefined);
+
   // Check if selected entity can be added (not already in context)
   const canAddSelected =
     selectedEntityId !== null && !contextNodeIds.includes(selectedEntityId);
 
   const handleRemove = (nodeId: string) => {
     chatActions.removeFromContext(nodeId);
+  };
+
+  const handleRemoveResource = (resourceId: string) => {
+    uiActions.toggleResourceSelection(resourceId);
   };
 
   const handleAddSelected = () => {
@@ -44,23 +58,25 @@ export function ContextChips() {
   };
 
   // Don't render if no context and nothing to add
-  if (contextNotes.length === 0 && !canAddSelected) {
+  if (contextNotes.length === 0 && contextResources.length === 0 && !canAddSelected) {
     return (
       <div className="px-3 py-2 border-b border-athena-border">
         <div className="flex items-center gap-1 text-xs text-athena-muted">
           <span>Context:</span>
-          <span className="italic">No notes selected. Use @ or select on canvas.</span>
+          <span className="italic">No notes or resources selected. Use @ or select on canvas.</span>
         </div>
       </div>
     );
   }
+
+  const totalCount = contextNotes.length + contextResources.length;
 
   return (
     <div className="px-3 py-2 border-b border-athena-border">
       <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-xs text-athena-muted mr-1">Context:</span>
 
-        {/* Context chips */}
+        {/* Note chips (blue) */}
         {contextNotes.map((note) => (
           <span
             key={note.id}
@@ -74,6 +90,28 @@ export function ContextChips() {
             <button
               onClick={() => handleRemove(note.id)}
               className="p-0.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800
+                         transition-colors"
+              title="Remove from context"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </span>
+        ))}
+
+        {/* Resource chips (purple) — WP 8.7.2 */}
+        {contextResources.map((resource) => (
+          <span
+            key={resource.id}
+            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full
+                       bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200
+                       text-xs group"
+            title={resource.name}
+          >
+            <File className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate max-w-[120px]">{resource.name}</span>
+            <button
+              onClick={() => handleRemoveResource(resource.id)}
+              className="p-0.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800
                          transition-colors"
               title="Remove from context"
             >
@@ -101,9 +139,13 @@ export function ContextChips() {
         )}
 
         {/* Context count indicator */}
-        {contextNotes.length > 0 && (
+        {totalCount > 0 && (
           <span className="text-xs text-athena-muted ml-auto">
-            {contextNotes.length} note{contextNotes.length !== 1 ? 's' : ''}
+            {contextNotes.length > 0 &&
+              `${contextNotes.length} note${contextNotes.length !== 1 ? 's' : ''}`}
+            {contextNotes.length > 0 && contextResources.length > 0 && ', '}
+            {contextResources.length > 0 &&
+              `${contextResources.length} resource${contextResources.length !== 1 ? 's' : ''}`}
           </span>
         )}
       </div>

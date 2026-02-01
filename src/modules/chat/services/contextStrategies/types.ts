@@ -12,7 +12,7 @@ export interface ContextItem {
   title: string;
   content: string; // Plain text content
   relevanceScore: number; // 0-1, higher = more relevant
-  source: 'selected' | 'similarity' | 'traversal';
+  source: 'selected' | 'similarity' | 'traversal' | 'document-tree';
 }
 
 /**
@@ -21,6 +21,8 @@ export interface ContextItem {
 export interface ContextOptions {
   /** Explicitly included nodes (from thread.contextNodeIds) */
   selectedNodeIds: string[];
+  /** Explicitly selected resource IDs from canvas (WP 8.7.2) */
+  selectedResourceIds?: string[];
   /** Current user message (for similarity search) */
   query: string;
   /** Maximum context items to include (default: 10) */
@@ -45,6 +47,7 @@ export interface ContextResult {
   /** Debug info for DevSettings */
   debug?: {
     selectedCount: number;
+    resourceCount: number;
     similarCount: number;
     traversalCount: number;
   };

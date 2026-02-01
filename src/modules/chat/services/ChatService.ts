@@ -18,6 +18,7 @@ import { formatSystemPrompt } from './promptTemplates';
 import { extractProposals, stripProposalBlock, resolveProposalReferences, applyLearnedAdjustments } from './ProposalParser';
 import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
+import { appState$ } from '@/store/state';
 import { schemaActions } from '@/modules/schema/store/schemaActions';
 import type { ChatMessage as StoredChatMessage, KnowledgeProposals } from '../types';
 import type { IAIService } from '@/modules/ai';
@@ -81,8 +82,13 @@ export class ChatService {
     try {
       // 3. Build context from knowledge graph
       const contextConfig = devSettings$.chat.context?.peek();
+
+      // WP 8.7.2: Read selected resource IDs from canvas state
+      const selectedResourceIds = appState$.ui.selectedResourceIds.peek();
+
       const contextResult = await this.contextBuilder.build({
         selectedNodeIds: thread.contextNodeIds || [],
+        selectedResourceIds,
         query: userMessage,
         maxItems: contextConfig?.maxItems ?? 10,
         similarityThreshold: contextConfig?.similarityThreshold ?? 0.7,
