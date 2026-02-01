@@ -4,3 +4,4 @@ export { upgradeConnections } from './007_connections_v2';
 export { setupResourcesFTS, migrateExistingResourcesToFTS } from './resources_fts';
 export { addResourceEmbeddingsSupport } from './embeddings_resources';
 export { setupMergeCandidates } from './008_merge_candidates';
+export { setupResourceStructure } from './009_resource_structure';

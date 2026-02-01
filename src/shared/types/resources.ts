@@ -18,6 +18,7 @@ export interface Resource {
 
   userNotes?: string; // User's annotations
   extractedText?: string; // Text extracted from content
+  structure?: string; // Hierarchical document tree JSON (WP 8.2)
   extractionStatus: ExtractionStatus;
   extractionMethod?: ExtractionMethod;
 

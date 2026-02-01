@@ -38,7 +38,19 @@ export interface CanvasConfig {
 // Extraction strategy type
 export type ExtractionStrategy = 'browser' | 'ai' | 'browser-then-ai';
 
-// Resource configuration (WP 6.3, extended WP 6.5)
+// PDF structure extraction configuration (WP 8.2)
+export interface PdfConfig {
+  /** Enable document structure extraction for PDFs */
+  extractStructure: boolean;
+  /** Model to use for structure extraction (empty = default) */
+  structureModel: string;
+  /** Maximum tree depth (default: 4) */
+  maxStructureDepth: number;
+  /** Minimum pages to trigger structure extraction */
+  minPagesForStructure: number;
+}
+
+// Resource configuration (WP 6.3, extended WP 6.5, WP 8.2)
 export interface ResourceConfig {
   /** Whether resource nodes are enabled on canvas */
   enabled: boolean;
@@ -53,6 +65,8 @@ export interface ResourceConfig {
     /** Maximum file size (MB) to send to AI extraction */
     maxFileSizeMB: number;
   };
+  /** PDF structure extraction settings (WP 8.2) */
+  pdf: PdfConfig;
 }
 
 // URL configuration (WP 6.6)
@@ -222,6 +236,13 @@ const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   debounceMs: 300,
 };
 
+const DEFAULT_PDF_CONFIG: PdfConfig = {
+  extractStructure: true,
+  structureModel: '',
+  maxStructureDepth: 4,
+  minPagesForStructure: 5,
+};
+
 const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
   enabled: true,
   nodeColorScheme: 'per-type', // Default to per-type for visual distinction
@@ -230,6 +251,7 @@ const DEFAULT_RESOURCE_CONFIG: ResourceConfig = {
     aiEnabled: true,
     maxFileSizeMB: 10, // Don't send files larger than 10MB to AI
   },
+  pdf: { ...DEFAULT_PDF_CONFIG },
 };
 
 const DEFAULT_URL_CONFIG: UrlConfig = {
@@ -412,6 +434,27 @@ export const devSettingsActions = {
 
   setMaxFileSizeMB(sizeMB: number) {
     devSettings$.resources.extraction.maxFileSizeMB.set(sizeMB);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // PDF structure config actions (WP 8.2)
+  setPdfExtractStructure(enabled: boolean) {
+    devSettings$.resources.pdf.extractStructure.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPdfStructureModel(model: string) {
+    devSettings$.resources.pdf.structureModel.set(model);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPdfMaxStructureDepth(depth: number) {
+    devSettings$.resources.pdf.maxStructureDepth.set(depth);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setPdfMinPagesForStructure(pages: number) {
+    devSettings$.resources.pdf.minPagesForStructure.set(pages);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 

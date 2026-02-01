@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.1 (Entity Resolution / Merge Candidates) |
+| **Last WP Completed** | 8.2 (Document Tree Structure) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -55,7 +55,7 @@ athena/
 │   │   ├── ergane/               # ⏳ Documents, export
 │   │   ├── validation/           # ✅ Types, Engine, Rules, Service, Store, Hooks, Components
 │   │   ├── search/               # ✅ FTS5 keyword + semantic + hybrid search (RRF) + Command Palette + Faceted Search Panel
-│   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings
+│   │   ├── resources/            # ✅ Browser + AI extraction (PDF, images) + FTS + Embeddings + Document Tree (WP 8.2)
 │   │   └── similarity/           # ✅ Entity resolution: duplicate detection, comparison, merge (WP 8.1)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
@@ -181,8 +181,8 @@ athena/
 | Chat Panel | `src/modules/chat/components/` | ChatPanel, ChatHeader, ChatMessages, ChatInput, ChatToggleButton |
 | Chat Config | `src/config/devSettings.ts` | `chat.enabled`, `chat.position`, `chat.showToggleButton` settings |
 | Chat Keyboard | `src/modules/chat/components/ChatToggleButton.tsx` | Ctrl+Shift+C to toggle chat panel |
-| Context Builder | `src/modules/chat/services/ContextBuilder.ts` | GraphRAG context gathering with 3 strategies |
-| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected, Similarity, Traversal strategies |
+| Context Builder | `src/modules/chat/services/ContextBuilder.ts` | GraphRAG context gathering with 4 strategies |
+| Context Strategies | `src/modules/chat/services/contextStrategies/` | Selected, DocumentReasoning, Similarity, Traversal strategies |
 | Context Formatter | `src/modules/chat/services/ContextFormatter.ts` | Format context items for AI prompts |
 | Context Config | `src/config/devSettings.ts` | `chat.context.*` settings for context building |
 | Chat Service | `src/modules/chat/services/ChatService.ts` | Orchestrates chat flow: context → prompt → AI → response |
@@ -209,6 +209,12 @@ athena/
 | Merge Candidates Panel | `src/modules/similarity/components/` | Side panel with scan, filter, compare, merge/reject workflow |
 | Similarity Panel Hook | `src/modules/similarity/hooks/useSimilarityPanel.ts` | Panel state with Ctrl+Shift+M shortcut |
 | Similarity Config | `src/config/devSettings.ts` | `similarity.*` settings for weights, threshold, merge defaults |
+| Document Tree Types | `src/modules/resources/extraction/types.ts` | DocumentTree and TreeExtractionResult for hierarchical structure |
+| Document Tree Extractor | `src/modules/resources/extraction/documentTree.ts` | AI-powered hierarchical structure extraction from PDFs |
+| Document Reasoning Strategy | `src/modules/chat/services/contextStrategies/DocumentReasoningStrategy.ts` | Reason over document tree to find relevant sections |
+| Document Outline | `src/modules/resources/components/DocumentOutline.tsx` | Collapsible tree view of document structure |
+| Resource Structure Migration | `src/database/migrations/009_resource_structure.ts` | Add `structure` column to resources table |
+| PDF Config | `src/config/devSettings.ts` | `resources.pdf.*` settings for structure extraction |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -275,6 +281,9 @@ athena/
 | MergeResult | `src/modules/similarity/types.ts` | Merge outcome with transferred counts |
 | ScanProgress | `src/modules/similarity/types.ts` | Scan status with progress counters |
 | SimilarityConfig | `src/config/devSettings.ts` | Similarity settings (enabled, threshold, weights, merge defaults) |
+| DocumentTree | `src/modules/resources/extraction/types.ts` | Hierarchical document structure node (title, pages, summary, children) |
+| TreeExtractionResult | `src/modules/resources/extraction/types.ts` | Result of AI structure extraction (success, tree, stats) |
+| PdfConfig | `src/config/devSettings.ts` | PDF structure extraction settings (extractStructure, model, depth) |
 
 ---
 
@@ -319,6 +328,7 @@ athena/
 | WP | Feature | Status |
 |----|---------|--------|
 | 8.1 | Entity Resolution / Merge Candidates | ✅ |
+| 8.2 | Document Tree Structure | ✅ |
 
 ### Phase 7 Complete
 
@@ -347,6 +357,7 @@ window.__ATHENA_CHAT_SERVICE__    // Chat service instance (WP 7.3)
 window.__ATHENA_SIMILARITY_STATE__ // Similarity state (candidates, scan progress)
 window.__ATHENA_EXTRACTION__      // Browser extraction service
 window.__ATHENA_AI_EXTRACTION__   // AI extraction service
+window.__ATHENA_TREE_EXTRACTOR__ // Document tree extractor (WP 8.2)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

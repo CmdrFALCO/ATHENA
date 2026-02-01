@@ -135,6 +135,13 @@ export class SQLiteResourceAdapter implements IResourceAdapter {
     );
   }
 
+  async updateStructure(id: string, structure: string | null): Promise<void> {
+    await this.db.run(
+      `UPDATE resources SET structure = ?, updated_at = ? WHERE id = ? AND invalid_at IS NULL`,
+      [structure, new Date().toISOString(), id]
+    );
+  }
+
   private mapToResource(row: Record<string, unknown>): Resource {
     return {
       id: row.id as string,
@@ -146,6 +153,7 @@ export class SQLiteResourceAdapter implements IResourceAdapter {
       storageKey: row.storage_key as string | undefined,
       userNotes: row.user_notes as string | undefined,
       extractedText: row.extracted_text as string | undefined,
+      structure: row.structure as string | undefined,
       extractionStatus: row.extraction_status as Resource['extractionStatus'],
       extractionMethod: row.extraction_method as Resource['extractionMethod'] | undefined,
       url: row.url as string | undefined,

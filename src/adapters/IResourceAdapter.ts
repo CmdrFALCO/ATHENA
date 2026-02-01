@@ -14,4 +14,7 @@ export interface IResourceAdapter {
 
   // Position (for canvas)
   updatePosition(id: string, x: number, y: number): Promise<void>;
+
+  // Structure (WP 8.2 - document tree)
+  updateStructure(id: string, structure: string | null): Promise<void>;
 }

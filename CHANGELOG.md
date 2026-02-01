@@ -1,5 +1,52 @@
 # ATHENA Changelog
 
+## [8.2.0] - 2026-02-01
+
+### Added
+- **Document Tree Structure (WP 8.2)**: Hierarchical structure extraction for PDFs enabling reasoning-based retrieval
+  - `src/modules/resources/extraction/types.ts` - DocumentTree and TreeExtractionResult types
+  - `src/modules/resources/extraction/documentTree.ts` - DocumentTreeExtractor: AI-powered hierarchical structure extraction
+  - `src/modules/chat/services/contextStrategies/DocumentReasoningStrategy.ts` - Reason over document trees to find relevant sections
+  - `src/modules/resources/components/DocumentOutline.tsx` - Collapsible tree view of document structure in resource detail panel
+  - `src/modules/resources/components/index.ts` - Barrel export for resource components
+  - `src/database/migrations/009_resource_structure.ts` - Adds `structure` column to resources table
+- **Reasoning-Based Retrieval**: AI navigates document tree structure to find relevant sections instead of flat similarity search
+  - DocumentReasoningStrategy asks AI which sections match a query, with relevance scoring and reasoning
+  - Section content extracted by title matching or page proportion estimation
+- **Document Structure UI**: Expandable/collapsible outline in ResourceDetailPanel
+  - Shows section titles, page ranges, and AI-generated summaries
+  - Nested tree display with expand/collapse controls
+- **PDF Structure DevSettings**: Configuration for structure extraction behavior
+  - `resources.pdf.extractStructure` - Toggle structure extraction on/off (default: on)
+  - `resources.pdf.structureModel` - Model override for extraction (empty = default)
+  - `resources.pdf.maxStructureDepth` - Maximum tree nesting depth (default: 4)
+  - `resources.pdf.minPagesForStructure` - Minimum pages to trigger extraction (default: 5)
+
+### Changed
+- `src/shared/types/resources.ts` - Added `structure` field to Resource interface
+- `src/adapters/IResourceAdapter.ts` - Added `updateStructure()` method
+- `src/adapters/sqlite/SQLiteResourceAdapter.ts` - Implemented `updateStructure()`, added `structure` to mapper
+- `src/modules/resources/extraction/postExtraction.ts` - Triggers document tree extraction after PDF text extraction
+- `src/modules/resources/extraction/index.ts` - Exports DocumentTreeExtractor
+- `src/modules/chat/services/ContextBuilder.ts` - Added DocumentReasoningStrategy as strategy 2 (between selected and similarity)
+- `src/modules/chat/services/contextStrategies/index.ts` - Exports DocumentReasoningStrategy
+- `src/modules/sophia/components/ResourceDetailPanel.tsx` - Shows DocumentOutline when structure is available
+- `src/config/devSettings.ts` - Added PdfConfig interface, defaults, and 4 new action methods
+- `src/database/migrations/index.ts` - Added setupResourceStructure export
+- `src/database/init.ts` - Calls setupResourceStructure migration
+
+### Technical
+- **One AI Call Per Upload**: Structure extraction adds one AI generation call during PDF post-extraction
+- **One AI Call Per Query**: Document reasoning uses one AI call to navigate the tree per chat query
+- **Non-Fatal Extraction**: Structure extraction failures don't block normal resource usage
+- **Section Content Extraction**: Two strategies - title matching in text, or page proportion estimation
+- **Tree Stats**: Tracks section count and max depth for debugging
+- **Debug Access**: `window.__ATHENA_TREE_EXTRACTOR__` for console debugging
+
+### Phase 8 Progress
+- WP 8.1: Entity Resolution / Merge Candidates ✅
+- WP 8.2: Document Tree Structure ✅
+
 ## [8.1.0] - 2026-02-01
 
 ### Added

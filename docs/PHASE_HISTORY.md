@@ -13,8 +13,10 @@ This document archives all completed phases, work packages, bug fixes, and known
 | 2 | Graph Visualization | ✅ Complete | React Flow canvas, nodes, connections, inspector |
 | 3 | AI Layer | ✅ Complete | AI backends, embeddings, indexing, similarity, accept/reject |
 | 4 | Search | ✅ Complete | Command palette, FTS5, semantic search, hybrid RRF, faceted search |
-| 5 | Validation | ⏳ Planned | CPN validation engine |
-| 6 | Plans & Documents | ⏳ Planned | Pronoia and Ergane modules |
+| 5 | Validation | ✅ Complete | CPN validation engine |
+| 6 | Resources | ✅ Complete | Resource management, extraction pipeline, document storage |
+| 7 | AI Chat | ✅ Complete | Chat panel, GraphRAG context, proposals, spatial awareness |
+| 8 | Advanced Features | 🔄 In Progress | Entity resolution, document tree structure |
 
 ---
 
@@ -393,6 +395,102 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 ---
 
+## Phase 5: Validation
+
+**Status:** ✅ Complete
+
+### WP 5.1: CPN Validation Engine ✅
+- Constraint-based validation framework
+- CPN (Colored Petri Net) validation rules
+- Entity validation with constraint violations
+- Real-time validation feedback
+
+---
+
+## Phase 6: Resources
+
+**Status:** ✅ Complete
+
+### WP 6.1: Resource Management ✅
+- Resource types: PDF, DOCX, XLSX, Markdown, Image, URL
+- File upload with drag-and-drop
+- Blob storage for file resources
+- URL reference and AI extraction modes
+- Resource detail panel with metadata display
+
+### WP 6.2: Extraction Pipeline ✅
+- Browser-based text extraction (BrowserExtractionService)
+- AI-powered extraction for complex formats (AIExtractionService)
+- Post-extraction pipeline (embeddings + structure)
+- Extraction status tracking (pending → complete/failed/skipped)
+
+### WP 6.3: Resource Search & Embeddings ✅
+- Resource embedding generation via indexer
+- Similarity search across resources
+- FTS integration for resource text content
+
+---
+
+## Phase 7: AI Chat
+
+**Status:** ✅ Complete
+
+> **Full documentation:** [docs/modules/CHAT.md](modules/CHAT.md)
+
+### WP 7.1: Chat UI & State ✅
+- Slide-over chat panel with thread management
+- IndexedDB persistence for chat history
+- Legend-State observable chat state
+
+### WP 7.2: GraphRAG Context Builder ✅
+- Multi-strategy context gathering
+- Selected nodes, similarity search, graph traversal
+- Deduplication and relevance scoring
+
+### WP 7.3: Conversational Generation ✅
+- AI streaming responses with real-time display
+- System prompt with graph context injection
+- ChatService orchestrator
+
+### WP 7.4: Knowledge Extraction Parser ✅
+- AI-powered proposal extraction from conversation
+- Self-correction loop for parsing failures
+- Node and edge proposal types
+
+### WP 7.5: Proposal Cards UI ✅
+- Accept/reject workflow for AI suggestions
+- NodeProposalCard and EdgeProposalCard components
+- Edge dependency tracking (proposed → accepted nodes)
+- ProposalAcceptService for persisting accepted proposals
+
+### WP 7.6: Spatial Awareness ✅
+- @mention autocomplete with fuzzy search
+- Canvas selection → chat context bridge
+- Context chips UI for managing referenced nodes
+- Thread-level context persistence
+
+---
+
+## Phase 8: Advanced Features
+
+**Status:** 🔄 In Progress
+
+### WP 8.1: Entity Resolution ✅
+- Merge candidate detection via similarity
+- Merge candidate UI with accept/dismiss workflow
+- `merge_candidates` table with status tracking
+
+### WP 8.2: Document Tree Structure ✅
+- AI-powered hierarchical structure extraction for PDFs
+- DocumentTree type (title, node_id, pages, summary, children)
+- DocumentTreeExtractor service with validation
+- DocumentReasoningStrategy for context building
+- DocumentOutline UI component (collapsible tree view)
+- Database migration: `structure` column on resources table
+- DevSettings: `resources.pdf` configuration
+
+---
+
 ## Bug Fixes
 
 ### Post WP 3.5
@@ -440,6 +538,14 @@ This document archives all completed phases, work packages, bug fixes, and known
 | `clusters` | N-way groupings | WP 0.5 |
 | `cluster_members` | Cluster membership | WP 0.5 |
 | `schema_meta` | Migration tracking | WP 0.2 |
+| `resources` | Uploaded files, URLs, extracted content | WP 6.1 |
+| `merge_candidates` | Entity resolution candidates | WP 8.1 |
+
+### Notable Column Additions
+
+| Table | Column | Purpose | Added |
+|-------|--------|---------|-------|
+| `resources` | `structure` | Document tree JSON (hierarchical ToC) | WP 8.2 |
 
 ### Indexes
 
@@ -462,8 +568,8 @@ This document archives all completed phases, work packages, bug fixes, and known
 
 | WP | What's Added |
 |----|--------------|
-| **5.x** | CPN validation engine |
-| **6.x** | Plans and documents (Pronoia, Ergane modules) |
+| **8.3+** | Additional Phase 8 advanced features |
+| **Future** | Plans and documents (Pronoia, Ergane modules) |
 | **Future** | Additional AI backends (Ollama, Anthropic, OpenAI, Mistral) |
 
 ---

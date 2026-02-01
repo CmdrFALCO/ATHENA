@@ -19,6 +19,8 @@ import {
 } from '@/store';
 import { formatRelativeTime } from '@/shared/utils/formatTime';
 import type { ResourceType, ExtractionStatus } from '@/shared/types/resources';
+import type { DocumentTree } from '@/modules/resources/extraction/types';
+import { DocumentOutline } from '@/modules/resources/components/DocumentOutline';
 
 // Icon mapping for resource types
 const RESOURCE_ICONS: Record<ResourceType, React.ComponentType<{ className?: string }>> = {
@@ -182,6 +184,23 @@ export function ResourceDetailPanel({ resourceId }: ResourceDetailPanelProps) {
             </div>
           </div>
         )}
+
+        {/* Document structure outline (WP 8.2) */}
+        {resource.structure && (() => {
+          try {
+            const tree = JSON.parse(resource.structure) as DocumentTree;
+            return (
+              <DocumentOutline
+                tree={tree}
+                onSectionClick={(nodeId) => {
+                  console.log('[ResourceDetailPanel] Navigate to section:', nodeId);
+                }}
+              />
+            );
+          } catch {
+            return null;
+          }
+        })()}
 
         {/* Extracted text preview */}
         {resource.extractedText && (

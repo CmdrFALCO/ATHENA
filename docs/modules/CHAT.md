@@ -25,7 +25,13 @@ src/modules/chat/
 │   ├── ChatService.ts         # Main chat orchestrator (WP 7.3)
 │   ├── ContextBuilder.ts      # GraphRAG context gathering (WP 7.2)
 │   ├── ProposalParser.ts      # Extract proposals from AI (WP 7.4)
-│   └── ProposalAcceptService.ts # Accept flow (WP 7.5)
+│   ├── ProposalAcceptService.ts # Accept flow (WP 7.5)
+│   └── contextStrategies/
+│       ├── types.ts                    # ContextItem, ContextOptions, ContextResult
+│       ├── SelectedNodesStrategy.ts    # Explicit user-selected context
+│       ├── SimilarityStrategy.ts       # Semantic similarity search
+│       ├── TraversalStrategy.ts        # Graph neighborhood expansion
+│       └── DocumentReasoningStrategy.ts # Document tree reasoning (WP 8.2)
 ├── hooks/                      # WP 7.6: Spatial Awareness
 │   ├── useMentions.ts         # @mention parsing with fuzzy search
 │   └── useCanvasSelection.ts  # Bridge canvas ↔ chat context
@@ -420,6 +426,46 @@ interface SpatialContextConfig {
 // Access
 devSettings$.chat.mentions.enabled.get()
 devSettings$.chat.spatialContext.showContextChips.get()
+```
+
+## Context Builder (WP 7.2 + WP 8.2)
+
+The ContextBuilder orchestrates four strategies to gather relevant context for AI conversations. Items are deduplicated across strategies and sorted by relevance score.
+
+### Strategy Execution Order
+
+| # | Strategy | Source | Priority |
+|---|----------|--------|----------|
+| 1 | Selected Nodes | Explicit user selection | Highest |
+| 2 | Document Reasoning | AI navigation of document trees (WP 8.2) | High |
+| 3 | Similarity Search | Semantic similarity to query | Medium |
+| 4 | Graph Traversal | 1-hop neighborhood expansion | Lower |
+
+### Document Reasoning Strategy (WP 8.2)
+
+For resources that have a document tree structure (extracted via `DocumentTreeExtractor`), the ContextBuilder uses AI-powered reasoning to navigate the tree and find the most relevant sections instead of relying on flat similarity search.
+
+**Flow:**
+1. Check selected resources for `structure` field
+2. Parse document tree JSON
+3. AI reasons over tree nodes to identify relevant sections (scores + reasoning)
+4. Extract section content via title matching or page proportion estimation
+5. Return as `ContextItem` entries with relevance scores
+
+**Key insight:** Similarity ≠ Relevance. A section titled "Methodology" may not match the word "approach" in embedding space, but an AI reading the table of contents knows it's relevant.
+
+### DevSettings (Context)
+
+```typescript
+interface ContextConfig {
+  maxItems: number;              // Max context items (default: 10)
+  similarityThreshold: number;   // Min similarity score (default: 0.7)
+  includeTraversal: boolean;     // Enable graph traversal (default: true)
+  traversalDepth: number;        // Hops for traversal (default: 1)
+}
+
+// Access
+devSettings$.chat.context.maxItems.get()
 ```
 
 ## Phase 7 Complete

@@ -2,11 +2,15 @@ import { resourceState$ } from '@/store/resourceState';
 import { getAIService } from '@/modules/ai/AIService';
 import { getDatabase } from '@/database';
 import { SQLiteEmbeddingAdapter } from '@/adapters/sqlite/SQLiteEmbeddingAdapter';
+import { SQLiteResourceAdapter } from '@/adapters/sqlite/SQLiteResourceAdapter';
+import { DocumentTreeExtractor } from './documentTree';
+import { devSettings$ } from '@/config/devSettings';
 
 /**
  * Post-extraction processing for resources:
  * 1. FTS is automatically updated via triggers when extractedText is saved
- * 2. Generate embedding for semantic search (this function)
+ * 2. Generate embedding for semantic search
+ * 3. Extract document tree structure for PDFs (WP 8.2)
  *
  * Called after BrowserExtractionService.extract() completes successfully.
  */
@@ -56,5 +60,45 @@ export async function postExtraction(resourceId: string): Promise<void> {
     console.log(`[PostExtraction] Indexed resource ${resourceId} with ${result.vector.length}-dim embedding`);
   } catch (error) {
     console.error(`[PostExtraction] Failed to index resource ${resourceId}:`, error);
+  }
+
+  // WP 8.2: Extract document tree structure for PDFs
+  const pdfSettings = devSettings$.resources.pdf?.peek();
+  if (
+    resource.mimeType === 'application/pdf' &&
+    pdfSettings?.extractStructure &&
+    resource.extractedText
+  ) {
+    try {
+      const treeExtractor = new DocumentTreeExtractor(aiService);
+
+      // Expose for debugging
+      if (typeof window !== 'undefined') {
+        (window as unknown as { __ATHENA_TREE_EXTRACTOR__: DocumentTreeExtractor }).__ATHENA_TREE_EXTRACTOR__ = treeExtractor;
+      }
+
+      const treeResult = await treeExtractor.extract(
+        resource.extractedText,
+        null,
+        resource.name
+      );
+
+      if (treeResult.success && treeResult.tree) {
+        const resourceAdapter = new SQLiteResourceAdapter(db);
+        await resourceAdapter.updateStructure(resourceId, JSON.stringify(treeResult.tree));
+
+        // Update in-memory state
+        resourceObservable.structure.set(JSON.stringify(treeResult.tree));
+
+        console.log(
+          `[PostExtraction] Extracted document tree for ${resource.name}: ${treeResult.sectionCount} sections, depth ${treeResult.maxDepth}`
+        );
+      } else if (treeResult.error) {
+        console.warn(`[PostExtraction] Document tree extraction failed for ${resource.name}: ${treeResult.error}`);
+      }
+    } catch (error) {
+      console.warn('[PostExtraction] Document tree extraction error:', error);
+      // Non-fatal - resource is still usable without structure
+    }
   }
 }

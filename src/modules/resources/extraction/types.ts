@@ -15,3 +15,36 @@ export interface IExtractor {
    */
   extract(blob: Blob, fileName: string): Promise<ExtractionResult>;
 }
+
+/**
+ * Hierarchical document structure for reasoning-based retrieval (WP 8.2)
+ */
+export interface DocumentTree {
+  /** Section title */
+  title: string;
+  /** Unique identifier within document (e.g., "root", "1", "1.1") */
+  node_id: string;
+  /** Starting page number (1-indexed) */
+  start_page: number;
+  /** Ending page number (inclusive) */
+  end_page: number;
+  /** AI-generated section summary (1-2 sentences) */
+  summary: string;
+  /** Child sections */
+  children: DocumentTree[];
+}
+
+/**
+ * Result of document tree extraction
+ */
+export interface TreeExtractionResult {
+  success: boolean;
+  tree: DocumentTree | null;
+  error?: string;
+  /** Total sections in tree */
+  sectionCount: number;
+  /** Maximum depth reached */
+  maxDepth: number;
+  /** Model used for extraction */
+  model: string;
+}
