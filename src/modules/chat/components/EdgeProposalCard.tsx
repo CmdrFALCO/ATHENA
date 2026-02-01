@@ -16,6 +16,7 @@ import type { EdgeProposal } from '../types';
 import { chatActions } from '../store';
 import { useAdapters } from '@/adapters/hooks';
 import { ProposalAcceptService } from '../services/ProposalAcceptService';
+import { preferenceActions } from '@/modules/ai/preferences/preferenceActions';
 
 interface EdgeProposalCardProps {
   messageId: string;
@@ -86,6 +87,7 @@ export function EdgeProposalCard({
 
   const handleReject = () => {
     chatActions.updateProposalStatus(messageId, proposal.id, 'rejected');
+    preferenceActions.recordEdgeReject(proposal);
   };
 
   if (proposal.status !== 'pending') {

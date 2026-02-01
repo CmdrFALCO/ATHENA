@@ -15,6 +15,7 @@ import type { NodeProposal } from '../types';
 import { chatActions } from '../store';
 import { useAdapters } from '@/adapters/hooks';
 import { ProposalAcceptService } from '../services/ProposalAcceptService';
+import { preferenceActions } from '@/modules/ai/preferences/preferenceActions';
 
 interface NodeProposalCardProps {
   messageId: string;
@@ -56,6 +57,7 @@ export function NodeProposalCard({ messageId, proposal, onAccepted }: NodePropos
 
   const handleReject = () => {
     chatActions.updateProposalStatus(messageId, proposal.id, 'rejected');
+    preferenceActions.recordNodeReject(proposal);
   };
 
   // Don't render if already processed

@@ -11,6 +11,7 @@ import type { KnowledgeProposals, EdgeProposal } from '../types';
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
 import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
 import { RawProposalsSchema, formatZodErrors } from './proposalSchema';
+import { preferenceActions } from '@/modules/ai/preferences/preferenceActions';
 
 /**
  * Regex to find the athena-proposals code block
@@ -184,6 +185,39 @@ export async function resolveProposalReferences(
   };
 
   return resolved;
+}
+
+/**
+ * Apply learned confidence adjustments to proposals (WP 8.4)
+ *
+ * Uses historical accept/reject patterns to adjust AI confidence scores.
+ * Safe to call even when preference learning is disabled (returns original proposals).
+ */
+export async function applyLearnedAdjustments(
+  proposals: KnowledgeProposals
+): Promise<KnowledgeProposals> {
+  const adjustedNodes = await Promise.all(
+    proposals.nodes.map(async (node) => {
+      const adjustment = await preferenceActions.adjustNodeConfidence(
+        node.confidence
+      );
+      return { ...node, confidence: adjustment.adjusted };
+    })
+  );
+
+  const adjustedEdges = await Promise.all(
+    proposals.edges.map(async (edge) => {
+      const adjustment = await preferenceActions.adjustConnectionConfidence(
+        edge.confidence
+      );
+      return { ...edge, confidence: adjustment.adjusted };
+    })
+  );
+
+  return {
+    nodes: adjustedNodes,
+    edges: adjustedEdges,
+  };
 }
 
 /**

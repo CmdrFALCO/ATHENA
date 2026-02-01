@@ -57,6 +57,7 @@ export {
   hasProposalBlock,
   resolveProposalReferences,
   canCreateEdge,
+  applyLearnedAdjustments,
 } from './services/ProposalParser';
 export type { ExtractionResult } from './services/ProposalParser';
 

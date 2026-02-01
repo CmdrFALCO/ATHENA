@@ -15,7 +15,7 @@ import { chatActions, chatState$ } from '../store';
 import { ContextBuilder } from './ContextBuilder';
 import { ContextFormatter } from './ContextFormatter';
 import { formatSystemPrompt } from './promptTemplates';
-import { extractProposals, stripProposalBlock, resolveProposalReferences } from './ProposalParser';
+import { extractProposals, stripProposalBlock, resolveProposalReferences, applyLearnedAdjustments } from './ProposalParser';
 import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
 import type { ChatMessage as StoredChatMessage, KnowledgeProposals } from '../types';
@@ -159,6 +159,11 @@ export class ChatService {
           this.resourceAdapter
         );
         console.log(`[ChatService] Parsed ${proposals.nodes.length} nodes, ${proposals.edges.length} edges`);
+      }
+
+      // Apply learned confidence adjustments (WP 8.4)
+      if (proposals) {
+        proposals = await applyLearnedAdjustments(proposals);
       }
 
       // Filter low-confidence proposals

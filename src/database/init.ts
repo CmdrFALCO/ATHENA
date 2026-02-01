@@ -11,6 +11,7 @@ import {
   addResourceEmbeddingsSupport,
   setupMergeCandidates,
   setupResourceStructure,
+  setupPreferenceSignals,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -118,6 +119,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Add structure column to resources for document tree (WP 8.2, idempotent)
   await setupResourceStructure(connection);
+
+  // Set up preference signals for preference learning (WP 8.4, idempotent)
+  await setupPreferenceSignals(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

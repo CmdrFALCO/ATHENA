@@ -16,6 +16,7 @@ import type { Block } from '@/shared/types';
 import { appState$ } from '@/store/state';
 import { runValidation } from '@/modules/validation/store';
 import type { Violation } from '@/modules/validation/types';
+import { preferenceActions } from '@/modules/ai/preferences/preferenceActions';
 
 export interface AcceptNodeResult {
   noteId: string;
@@ -89,6 +90,9 @@ export class ProposalAcceptService {
     // 4. Run validation and collect warnings
     const validationWarnings = await this.runValidationForNode(note.id);
 
+    // 5. Record preference signal (WP 8.4)
+    await preferenceActions.recordNodeAccept(proposal);
+
     return {
       noteId: note.id,
       connectionIds,
@@ -122,6 +126,9 @@ export class ProposalAcceptService {
 
     // 3. Run validation
     const validationWarnings = await this.runValidationForConnection(connection.id);
+
+    // 4. Record preference signal (WP 8.4)
+    await preferenceActions.recordEdgeAccept(proposal);
 
     return {
       connectionId: connection.id,
