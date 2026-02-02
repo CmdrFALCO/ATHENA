@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.10 (Export Renderers) |
+| **Last WP Completed** | 9A.1 (AXIOM Engine Core) |
 | **Last Updated** | February 2026 |
-| **Phase** | 8 (Publishing, Templates, Advanced Features) |
-| **Milestone** | Phase 8 - Advanced Features |
+| **Phase** | 9A (AXIOM — Neuro-Symbolic Validation) |
+| **Milestone** | Phase 9A - AXIOM CPN Engine |
 
 ---
 
@@ -61,7 +61,8 @@ athena/
 │   │   ├── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
-│   │   └── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
+│   │   ├── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
+│   │   └── axiom/              # ✅ AXIOM CPN engine: tokens, places, transitions, stores, events (WP 9A.1)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -113,6 +114,7 @@ athena/
 | Synthesis | `src/modules/synthesis/` | — | ✅ |
 | Views | `src/modules/views/` | — | ✅ |
 | Export | `src/modules/export/` | — | ✅ |
+| AXIOM | `src/modules/axiom/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---

@@ -1,5 +1,38 @@
 # ATHENA Changelog
 
+## [9A.1.0] - 2026-02-02
+
+### Added
+- **AXIOM Engine Core (WP 9A.1)**: Foundational CPN (Coloured Petri Net) engine for neuro-symbolic validation
+  - **Color Sets**: `PROPOSAL`, `VALIDATION_RESULT`, `FEEDBACK`, `TokenColor` type definitions following Jensen's CPN notation
+  - **AetherToken**: Generic token type with full audit metadata (`_meta.transitionHistory`, `_meta.validationTrace`), retry tracking, and accumulated `feedbackHistory`
+  - **CorrectionFeedback**: Structured error messages for LLM regeneration with `formatFeedbackForLLM()` prompt formatter
+  - **Place**: Token container with capacity limits, color validation, and sink semantics
+  - **Transition**: Firing logic with synchronous guards, async actions, priority ordering, and mandatory `reason` recording
+  - **AXIOMEngine**: Core CPN executor — `step()`, `run()`, `pause()`, `resume()`, `reset()` with max-steps safety limit
+  - **InMemoryTokenStore**: Map-based token store for testing and debug mode
+  - **IndexedDBTokenStore**: Persistent token store with indexes on `correlationId`, `color`, `currentPlace`, `createdAt`
+  - **Guard Helpers**: `hasMinTokens`, `hasColor`, `allOf`, `anyOf`, `not` composition utilities
+  - **Termination Guards**: `canRetry`, `shouldEscalate`, `maxStepsReached`
+  - **Event System**: `AXIOMEventBridge` with configurable routing (console, Legend-State, persistence) and verbosity levels
+  - **Legend-State Store**: `axiomState$` observable with `axiomActions` for reactive UI updates
+  - **Debug Globals**: `window.__ATHENA_AXIOM__` with state inspection, manual control, and token inspection
+  - `src/modules/axiom/` — Complete module with types, engine, stores, guards, events, store
+
+### Changed
+- `src/config/devSettings.ts` — Added `AXIOMConfig` with persistence, workflow, events, and debug settings + action methods
+
+### Technical
+- Three non-negotiable principles enforced throughout:
+  1. **Minimal Abstraction**: All token `_meta` data exposed, no opaque wrappers
+  2. **Transparency**: Every transition records `reason` in history, no silent failures
+  3. **Auditability**: Full `transitionHistory` in `_meta`, CPN model IS the specification
+- Guards are enforced synchronous at the TypeScript level (`GuardFunction` returns `boolean`, not `Promise<boolean>`)
+- `createToken()` factory generates proper UUIDs via `crypto.randomUUID()` and initializes all metadata
+- IndexedDB follows `BlobStorageService` pattern with lazy `getDb()` initialization
+- `createDefaultEngine()` factory configures engine from DevSettings, wires stores and event bridge
+- Debug: `window.__ATHENA_AXIOM__`, `window.__ATHENA_AXIOM_STATE__`
+
 ## [8.10.0] - 2026-02-02
 
 ### Added

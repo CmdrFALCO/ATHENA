@@ -436,6 +436,86 @@ const DEFAULT_EXPORT_CONFIG: ExportConfig = {
   defaultFormat: 'markdown',
 };
 
+// AXIOM Engine configuration (WP 9A.1)
+export interface AXIOMConfig {
+  /** Master toggle */
+  enabled: boolean;
+
+  /** Persistence settings */
+  persistence: {
+    /** false = memory-only mode */
+    enabled: boolean;
+    /** IndexedDB store name */
+    storeName: string;
+    /** Auto-cleanup old tokens after this many days */
+    retentionDays: number;
+    /** Safety limit: max tokens per workflow */
+    maxTokensPerWorkflow: number;
+  };
+
+  /** Workflow settings */
+  workflow: {
+    /** Default retry limit */
+    maxRetries: number;
+    /** Safety limit for engine steps */
+    maxSteps: number;
+    /** true = skip human confirmation for commits */
+    autoCommit: boolean;
+  };
+
+  /** Event routing settings */
+  events: {
+    /** Log events to console */
+    logToConsole: boolean;
+    /** Update Legend-State observable */
+    updateLegendState: boolean;
+    /** Persist events to IndexedDB */
+    persistToHistory: boolean;
+    /** Console verbosity level */
+    verbosity: 'minimal' | 'normal' | 'verbose';
+  };
+
+  /** Debug settings */
+  debug: {
+    /** Allow manual step-through */
+    enableStepping: boolean;
+    /** Keep completed workflow history */
+    preserveCompletedWorkflows: boolean;
+    /** Expose window.__ATHENA_AXIOM__ */
+    exposeGlobals: boolean;
+  };
+}
+
+const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
+  enabled: true,
+
+  persistence: {
+    enabled: true,
+    storeName: 'axiom_tokens',
+    retentionDays: 30,
+    maxTokensPerWorkflow: 1000,
+  },
+
+  workflow: {
+    maxRetries: 3,
+    maxSteps: 100,
+    autoCommit: false,
+  },
+
+  events: {
+    logToConsole: true,
+    updateLegendState: true,
+    persistToHistory: true,
+    verbosity: 'normal',
+  },
+
+  debug: {
+    enableStepping: true,
+    preserveCompletedWorkflows: true,
+    exposeGlobals: true,
+  },
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -475,6 +555,7 @@ export const devSettings$ = observable({
   synthesis: { ...DEFAULT_SYNTHESIS_CONFIG } as SynthesisConfig,
   views: { ...DEFAULT_VIEWS_CONFIG } as ViewsConfig,
   export: { ...DEFAULT_EXPORT_CONFIG } as ExportConfig,
+  axiom: { ...DEFAULT_AXIOM_CONFIG } as AXIOMConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -522,6 +603,7 @@ export const devSettingsActions = {
     devSettings$.synthesis.set({ ...DEFAULT_SYNTHESIS_CONFIG });
     devSettings$.views.set({ ...DEFAULT_VIEWS_CONFIG });
     devSettings$.export.set({ ...DEFAULT_EXPORT_CONFIG });
+    devSettings$.axiom.set({ ...DEFAULT_AXIOM_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -962,6 +1044,57 @@ export const devSettingsActions = {
 
   setExportDefaultFormat(format: ExportConfig['defaultFormat']) {
     devSettings$.export.defaultFormat.set(format);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // AXIOM config actions (WP 9A.1)
+  setAXIOMEnabled(enabled: boolean) {
+    devSettings$.axiom.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMPersistenceEnabled(enabled: boolean) {
+    devSettings$.axiom.persistence.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMRetentionDays(days: number) {
+    devSettings$.axiom.persistence.retentionDays.set(Math.max(1, days));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMMaxRetries(retries: number) {
+    devSettings$.axiom.workflow.maxRetries.set(Math.max(1, Math.min(10, retries)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMMaxSteps(steps: number) {
+    devSettings$.axiom.workflow.maxSteps.set(Math.max(1, Math.min(1000, steps)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMAutoCommit(autoCommit: boolean) {
+    devSettings$.axiom.workflow.autoCommit.set(autoCommit);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMEventVerbosity(verbosity: AXIOMConfig['events']['verbosity']) {
+    devSettings$.axiom.events.verbosity.set(verbosity);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMLogToConsole(enabled: boolean) {
+    devSettings$.axiom.events.logToConsole.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMExposeGlobals(enabled: boolean) {
+    devSettings$.axiom.debug.exposeGlobals.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMEnableStepping(enabled: boolean) {
+    devSettings$.axiom.debug.enableStepping.set(enabled);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };
