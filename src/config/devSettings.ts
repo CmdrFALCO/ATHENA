@@ -461,6 +461,16 @@ export interface AXIOMConfig {
     maxSteps: number;
     /** true = skip human confirmation for commits */
     autoCommit: boolean;
+    /** Run mode: 'auto' = run until stable, 'step' = manual step-through */
+    runMode: 'auto' | 'step';
+  };
+
+  /** Feedback loop settings (WP 9A.4) */
+  feedback: {
+    /** Include all previous feedback in regeneration prompts */
+    includeHistory: boolean;
+    /** Detail level for feedback sent to LLM */
+    verbosity: 'minimal' | 'normal' | 'verbose';
   };
 
   /** Event routing settings */
@@ -510,6 +520,12 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
     maxRetries: 3,
     maxSteps: 100,
     autoCommit: false,
+    runMode: 'auto',
+  },
+
+  feedback: {
+    includeHistory: true,
+    verbosity: 'normal',
   },
 
   events: {
@@ -1111,6 +1127,22 @@ export const devSettingsActions = {
 
   setAXIOMEnableStepping(enabled: boolean) {
     devSettings$.axiom.debug.enableStepping.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // AXIOM workflow + feedback actions (WP 9A.4)
+  setAXIOMRunMode(mode: AXIOMConfig['workflow']['runMode']) {
+    devSettings$.axiom.workflow.runMode.set(mode);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMFeedbackIncludeHistory(include: boolean) {
+    devSettings$.axiom.feedback.includeHistory.set(include);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMFeedbackVerbosity(verbosity: AXIOMConfig['feedback']['verbosity']) {
+    devSettings$.axiom.feedback.verbosity.set(verbosity);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

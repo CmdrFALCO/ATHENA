@@ -14,7 +14,7 @@
 import { chatActions, chatState$ } from '../store';
 import { ContextBuilder } from './ContextBuilder';
 import { ContextFormatter } from './ContextFormatter';
-import { formatSystemPrompt } from './promptTemplates';
+import { formatSystemPrompt, formatRegenerationPrompt } from './promptTemplates';
 import { extractProposals, stripProposalBlock, resolveProposalReferences, applyLearnedAdjustments } from './ProposalParser';
 import { getSelfCorrectingExtractor } from './SelfCorrectingExtractor';
 import { devSettings$ } from '@/config/devSettings';
@@ -258,6 +258,115 @@ export class ChatService {
     chatActions.setLoading(false);
     chatActions.setStreaming(null);
     // TODO: Implement actual cancellation with AbortController
+  }
+
+  /**
+   * Regenerate proposals with structured feedback from AXIOM.
+   * WP 9A.4 - AXIOM Integration
+   *
+   * Unlike sendMessage(), this method:
+   * - Uses a regeneration-specific system prompt
+   * - Includes structured validation feedback
+   * - Does not update streaming UI state
+   * - Returns a parsed PROPOSAL directly
+   *
+   * @param correlationId - Links to original proposal batch
+   * @param feedbackPrompt - Formatted feedback for LLM
+   * @param context - Regeneration context with history
+   */
+  async regenerate(
+    correlationId: string,
+    feedbackPrompt: string,
+    context: {
+      originalProposal: { nodes: unknown[]; edges: unknown[] };
+      feedbackHistory: unknown[];
+      attempt: number;
+    },
+  ): Promise<{
+    id: string;
+    correlationId: string;
+    nodes: import('../types').NodeProposal[];
+    edges: import('../types').EdgeProposal[];
+    attempt: number;
+    feedbackHistory: unknown[];
+    generatedAt: string;
+    generatedBy: string;
+  }> {
+    const generationConfig = devSettings$.chat.generation?.peek();
+    const maxAttempts = devSettings$.axiom.workflow.maxRetries.peek();
+
+    // Build regeneration system prompt
+    const systemPrompt = formatRegenerationPrompt({
+      originalProposal: context.originalProposal,
+      feedback: feedbackPrompt,
+      attempt: context.attempt,
+      maxAttempts,
+    });
+
+    // Build messages for AI
+    const messages: AIChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: `Please regenerate the proposals addressing the validation feedback above. This is attempt ${context.attempt} of ${maxAttempts}.`,
+      },
+    ];
+
+    // Call AI (non-streaming — no UI update needed)
+    let fullResponse = '';
+    const result = await this.aiService.generateStream({
+      messages,
+      temperature: Math.min((generationConfig?.temperature ?? 0.7) + 0.1, 1.0),
+      maxTokens: generationConfig?.maxTokens ?? 4096,
+      onChunk: (chunk: string) => {
+        fullResponse += chunk;
+      },
+      onError: (error: Error) => {
+        console.error('[ChatService] Regeneration stream error:', error);
+      },
+    });
+
+    // Add feedback message to thread for transparency
+    const threadId = chatState$.activeThreadId.peek();
+    if (threadId) {
+      await chatActions.addMessage({
+        threadId,
+        role: 'system',
+        content: `[AXIOM Feedback - Attempt ${context.attempt}]\n\n${feedbackPrompt}`,
+      });
+    }
+
+    // Parse proposals from response
+    const extractionResult = extractProposals(result.fullResponse);
+    const proposals: KnowledgeProposals = extractionResult.success && extractionResult.proposals
+      ? extractionResult.proposals
+      : { nodes: [], edges: [] };
+
+    // Resolve title references if adapters available
+    let resolvedProposals = proposals;
+    if (this.noteAdapter && (proposals.nodes.length > 0 || proposals.edges.length > 0)) {
+      resolvedProposals = await resolveProposalReferences(
+        proposals,
+        this.noteAdapter,
+        this.resourceAdapter,
+      );
+    }
+
+    console.log(
+      `[ChatService] Regeneration attempt ${context.attempt}: ${resolvedProposals.nodes.length} nodes, ${resolvedProposals.edges.length} edges`,
+    );
+
+    // Build PROPOSAL-compatible return
+    return {
+      id: crypto.randomUUID(),
+      correlationId,
+      nodes: resolvedProposals.nodes,
+      edges: resolvedProposals.edges,
+      attempt: context.attempt,
+      feedbackHistory: context.feedbackHistory,
+      generatedAt: new Date().toISOString(),
+      generatedBy: 'axiom-regeneration',
+    };
   }
 }
 

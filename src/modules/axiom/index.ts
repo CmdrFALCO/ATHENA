@@ -86,6 +86,12 @@ export type { AXIOMState } from './store';
 // Hooks (WP 9A.3)
 export { useAXIOMPanel } from './hooks';
 
+// Hooks (WP 9A.4)
+export { useAXIOM } from './hooks';
+export { useTokens, useTokenCount, useHasToken, useTotalTokenCount } from './hooks';
+export { useWorkflowState } from './hooks';
+export type { WorkflowPhase } from './hooks';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -120,6 +126,18 @@ export type {
   WorkflowResult,
 } from './workflows';
 
+// Integration (WP 9A.4)
+export {
+  validateProposal,
+  regenerateWithFeedback,
+  commitToGraph,
+  setGraphAdapters,
+  hasGraphAdapters,
+} from './integration';
+
+// Services (WP 9A.4)
+export { AXIOMValidationService, axiomValidationService } from './services/AXIOMValidationService';
+
 // --- Debug Globals ---
 
 import { devSettings$ } from '@/config/devSettings';
@@ -130,6 +148,7 @@ import { AXIOMEventBridge } from './events';
 import { InMemoryTokenStore } from './stores/InMemoryTokenStore';
 import { IndexedDBTokenStore } from './stores/IndexedDBTokenStore';
 import type { PlaceId } from './workflows/types';
+import type { PROPOSAL } from './types/colorSets';
 
 /**
  * Create and configure the default AXIOM engine instance
@@ -176,6 +195,16 @@ export function createDefaultEngine(): AXIOMEngine {
 
       // Export
       exportState: () => JSON.stringify(axiomState$.peek(), null, 2),
+
+      // WP 9A.4: Integration access
+      processProposal: async (p: PROPOSAL) => {
+        const { axiomValidationService } = await import('./services/AXIOMValidationService');
+        return axiomValidationService.processProposal(p);
+      },
+      getService: async () => {
+        const { axiomValidationService } = await import('./services/AXIOMValidationService');
+        return axiomValidationService;
+      },
     };
 
     // UI debug globals (WP 9A.3)

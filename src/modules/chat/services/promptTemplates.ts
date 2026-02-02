@@ -85,6 +85,40 @@ The user has the following notes that may be relevant:
 Be helpful, concise, and conversational. Reference the user's notes when relevant.`;
 
 /**
+ * System prompt for AXIOM regeneration with corrective feedback.
+ * WP 9A.4 - AXIOM Integration
+ *
+ * Used when AXIOM detects validation errors and asks the LLM to
+ * regenerate proposals with structured guidance.
+ */
+export const REGENERATION_SYSTEM_PROMPT = `You are helping refine knowledge graph proposals based on validation feedback.
+
+## Original Proposal
+{originalProposal}
+
+## Validation Feedback (Attempt {attempt}/{maxAttempts})
+The following issues were found with the previous proposal:
+
+{feedback}
+
+## Instructions
+Please regenerate the proposals addressing ALL feedback items:
+1. Fix structural issues (missing fields, invalid formats)
+2. Resolve constraint violations (duplicates, self-references)
+3. Improve semantic quality (weak connections, vague labels)
+
+Respond with ONLY valid proposals in the same format as before.
+Do NOT repeat the same mistakes.
+
+\`\`\`athena-proposals
+{
+  "nodes": [...],
+  "edges": [...]
+}
+\`\`\`
+`;
+
+/**
  * Format system prompt with context.
  *
  * @param contextText - Formatted context from ContextFormatter
@@ -100,4 +134,21 @@ export function formatSystemPrompt(
     : SIMPLE_CHAT_SYSTEM_PROMPT;
 
   return template.replace('{context}', contextText || 'No relevant notes in context.');
+}
+
+/**
+ * Format a regeneration prompt with feedback and original proposal.
+ * WP 9A.4 - AXIOM Integration
+ */
+export function formatRegenerationPrompt(params: {
+  originalProposal: unknown;
+  feedback: string;
+  attempt: number;
+  maxAttempts: number;
+}): string {
+  return REGENERATION_SYSTEM_PROMPT
+    .replace('{originalProposal}', JSON.stringify(params.originalProposal, null, 2))
+    .replace('{feedback}', params.feedback)
+    .replace('{attempt}', String(params.attempt))
+    .replace('{maxAttempts}', String(params.maxAttempts));
 }

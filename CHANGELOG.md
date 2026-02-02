@@ -1,5 +1,42 @@
 # ATHENA Changelog
 
+## [9A.4.0] - 2026-02-02
+
+### Added
+- **AXIOM Integration (WP 9A.4)**: Wiring Der Supervisor into Phase 5A (Validation) and Phase 7 (AI Chat) — closing the corrective feedback loop
+  - **validationIntegration**: Connects AXIOM to Phase 5A RulesEngine — builds `ValidationContext` from proposal + existing graph, runs `rulesEngine.evaluate()`, maps violations to `VALIDATION_RESULT` with 3-level pass/fail analysis
+  - **chatIntegration**: Connects AXIOM to Phase 7 ChatService for feedback-driven regeneration — formats `CorrectionFeedback[]` as LLM prompt, calls `ChatService.regenerate()`, returns new `PROPOSAL` with accumulated feedback history
+  - **graphIntegration**: Commits accepted proposals to the knowledge graph — adapter injection via `setGraphAdapters()`, creates nodes first (tracking ID mappings), then edges with resolved IDs, refreshes `appState$`
+  - **AXIOMValidationService**: Full `IValidationService` implementation using AXIOM CPN workflow — lazy engine initialization, creates token → adds to P_proposals → runs engine → inspects final position → builds `WorkflowResult`
+  - **ChatService.regenerate()**: New method for feedback-driven regeneration — builds regeneration prompt from template, calls AI non-streaming, parses proposals, adds feedback system message to thread for transparency
+  - **REGENERATION_SYSTEM_PROMPT**: Prompt template for LLM regeneration with `{originalProposal}`, `{feedback}`, `{attempt}`, `{maxAttempts}` placeholders
+  - **useAXIOM**: Main hook for AXIOM engine state and actions — reactive state, pause/resume/reset, `processProposal()` with lazy service import
+  - **useTokens**: Token access hooks — `useTokens(placeId?)`, `useTokenCount()`, `useHasToken()`, `useTotalTokenCount()`
+  - **useWorkflowState**: High-level workflow phase hook — determines phase from token placement (idle/validating/deciding/feedback/committed/rejected), retry count, transition history
+  - **getValidationService()**: Factory function that returns `axiomValidationService` when AXIOM enabled, `validationService` otherwise
+  - `src/modules/axiom/integration/` — 3 integration files + barrel export
+  - `src/modules/axiom/services/AXIOMValidationService.ts` — Service singleton
+  - `src/modules/axiom/hooks/useAXIOM.ts`, `useTokens.ts`, `useWorkflowState.ts` — React hooks
+
+### Changed
+- `src/config/devSettings.ts` — Added `workflow.runMode` ('auto'|'step'), `feedback` section (includeHistory, verbosity) to `AXIOMConfig` + 3 new action methods
+- `src/modules/axiom/workflows/placeholders.ts` — Added real implementation re-exports and `createRealPlaceholders()` factory
+- `src/modules/axiom/index.ts` — Exported integration, services, hooks; extended `__ATHENA_AXIOM__` debug globals with `processProposal` and `getService`
+- `src/modules/axiom/hooks/index.ts` — Exported useAXIOM, useTokens, useTokenCount, useHasToken, useTotalTokenCount, useWorkflowState
+- `src/modules/chat/services/ChatService.ts` — Added `regenerate()` method for feedback-driven proposal regeneration
+- `src/modules/chat/services/promptTemplates.ts` — Added `REGENERATION_SYSTEM_PROMPT` and `formatRegenerationPrompt()`
+- `src/modules/chat/services/ProposalAcceptService.ts` — Added AXIOM routing: `acceptNodeViaAXIOM()`, `acceptEdgeViaAXIOM()` with fallback to direct creation
+- `src/modules/validation/services/index.ts` — Added `getValidationService()` factory for AXIOM/simple switching
+
+### Technical
+- **Corrective feedback loop now live**: Validation violations → `FeedbackBuilder.fromViolations()` → `CorrectionFeedback[]` → `formatFeedbackForLLM()` → `ChatService.regenerate()` → new `PROPOSAL` → re-validation
+- **Three-level validation**: L1 (schema: orphan-note, self-loop), L2 (constraints: duplicate-connection, bidirectional), L3 (semantic: weakly-connected, stale-suggestion)
+- **Adapter injection pattern**: `setGraphAdapters(notes, connections)` for DI without circular imports
+- **Lazy initialization**: `AXIOMValidationService.ensureInitialized()` creates engine + wires net on first use
+- **DevSettings toggle**: `devSettings$.axiom.enabled` switches between AXIOM and SimpleValidationService at runtime
+- **Feedback accumulation**: Each regeneration appends feedback to `feedbackHistory` — never replaces
+- **Engine re-initialization**: Each workflow creates a fresh engine to avoid stale state between runs
+
 ## [9A.3.0] - 2026-02-02
 
 ### Added

@@ -17,6 +17,7 @@ import { appState$ } from '@/store/state';
 import { runValidation } from '@/modules/validation/store';
 import type { Violation } from '@/modules/validation/types';
 import { preferenceActions } from '@/modules/ai/preferences/preferenceActions';
+import { devSettings$ } from '@/config/devSettings';
 
 export interface AcceptNodeResult {
   noteId: string;
@@ -38,9 +39,15 @@ export class ProposalAcceptService {
   constructor(private adapters: ProposalAdapters) {}
 
   /**
-   * Accept a node proposal: create note, create suggested connections, refresh state, run validation
+   * Accept a node proposal: create note, create suggested connections, refresh state, run validation.
+   * When AXIOM is enabled, routes through the AXIOM workflow for validation with feedback loop.
    */
   async acceptNode(proposal: NodeProposal): Promise<AcceptNodeResult> {
+    // WP 9A.4: Route through AXIOM when enabled
+    if (devSettings$.axiom.enabled.peek()) {
+      return this.acceptNodeViaAXIOM(proposal);
+    }
+
     const { notes: noteAdapter, connections: connectionAdapter } = this.adapters;
     const connectionIds: string[] = [];
 
@@ -101,11 +108,16 @@ export class ProposalAcceptService {
   }
 
   /**
-   * Accept an edge proposal: create connection, refresh state, run validation
+   * Accept an edge proposal: create connection, refresh state, run validation.
+   * When AXIOM is enabled, routes through the AXIOM workflow for validation with feedback loop.
    */
   async acceptEdge(
     proposal: EdgeProposal & { fromId: string; toId: string }
   ): Promise<AcceptEdgeResult> {
+    // WP 9A.4: Route through AXIOM when enabled
+    if (devSettings$.axiom.enabled.peek()) {
+      return this.acceptEdgeViaAXIOM(proposal);
+    }
     const { connections: connectionAdapter } = this.adapters;
 
     // 1. Create the connection
@@ -226,5 +238,163 @@ export class ProposalAcceptService {
       console.warn('Validation failed after edge accept:', err);
       return [];
     }
+  }
+
+  // --- WP 9A.4: AXIOM routing methods ---
+
+  /**
+   * Route a node proposal through AXIOM workflow.
+   * Wraps the node as a PROPOSAL and processes through the validation loop.
+   */
+  private async acceptNodeViaAXIOM(proposal: NodeProposal): Promise<AcceptNodeResult> {
+    const { axiomValidationService } = await import(
+      '@/modules/axiom/services/AXIOMValidationService'
+    );
+
+    const axiomProposal = {
+      id: crypto.randomUUID(),
+      correlationId: crypto.randomUUID(),
+      nodes: [proposal],
+      edges: [],
+      attempt: 1,
+      feedbackHistory: [] as import('@/modules/axiom/types/feedback').CorrectionFeedback[],
+      generatedAt: new Date().toISOString(),
+      generatedBy: 'user-accept',
+    };
+
+    const result = await axiomValidationService.processProposal(axiomProposal);
+
+    // Record preference signal regardless of AXIOM outcome (WP 8.4)
+    await preferenceActions.recordNodeAccept(proposal);
+
+    if (result.success) {
+      // AXIOM committed — get the created note ID from app state
+      // After commit, the note should be in app state
+      const notes = appState$.entities.notes.peek();
+      const createdNote = Object.values(notes).find(
+        (n) => n.title === proposal.title && n.metadata?.source === 'axiom-commit',
+      );
+
+      return {
+        noteId: createdNote?.id ?? axiomProposal.id,
+        connectionIds: [],
+        validationWarnings: [],
+      };
+    }
+
+    // AXIOM rejected — fall back to direct creation
+    console.warn('[ProposalAcceptService] AXIOM rejected proposal, falling back to direct creation');
+    return this.acceptNodeDirect(proposal);
+  }
+
+  /**
+   * Route an edge proposal through AXIOM workflow.
+   */
+  private async acceptEdgeViaAXIOM(
+    proposal: EdgeProposal & { fromId: string; toId: string },
+  ): Promise<AcceptEdgeResult> {
+    const { axiomValidationService } = await import(
+      '@/modules/axiom/services/AXIOMValidationService'
+    );
+
+    const axiomProposal = {
+      id: crypto.randomUUID(),
+      correlationId: crypto.randomUUID(),
+      nodes: [],
+      edges: [proposal],
+      attempt: 1,
+      feedbackHistory: [] as import('@/modules/axiom/types/feedback').CorrectionFeedback[],
+      generatedAt: new Date().toISOString(),
+      generatedBy: 'user-accept',
+    };
+
+    const result = await axiomValidationService.processProposal(axiomProposal);
+
+    // Record preference signal regardless (WP 8.4)
+    await preferenceActions.recordEdgeAccept(proposal);
+
+    if (result.success) {
+      return {
+        connectionId: axiomProposal.id,
+        validationWarnings: [],
+      };
+    }
+
+    // AXIOM rejected — fall back to direct creation
+    console.warn('[ProposalAcceptService] AXIOM rejected edge, falling back to direct creation');
+    return this.acceptEdgeDirect(proposal);
+  }
+
+  /**
+   * Direct node creation (fallback when AXIOM rejects).
+   */
+  private async acceptNodeDirect(proposal: NodeProposal): Promise<AcceptNodeResult> {
+    const { notes: noteAdapter, connections: connectionAdapter } = this.adapters;
+    const connectionIds: string[] = [];
+
+    const note = await noteAdapter.create({
+      type: 'note',
+      subtype: 'ai-generated',
+      title: proposal.title,
+      content: this.contentToTiptap(proposal.content),
+      metadata: {
+        source: 'chat-proposal',
+        confidence: proposal.confidence,
+      },
+      position_x: 0,
+      position_y: 0,
+    });
+
+    for (const targetRef of proposal.suggestedConnections) {
+      const targetId = await this.resolveNoteReference(targetRef);
+      if (!targetId || targetId === note.id) continue;
+      try {
+        const connection = await connectionAdapter.create({
+          source_id: note.id,
+          target_id: targetId,
+          source_type: 'entity',
+          target_type: 'entity',
+          type: 'semantic',
+          color: 'green',
+          label: null,
+          created_by: 'ai',
+          confidence: proposal.confidence,
+        });
+        connectionIds.push(connection.id);
+      } catch (err) {
+        console.warn(`Failed to create suggested connection to ${targetRef}:`, err);
+      }
+    }
+
+    await this.refreshState();
+    const validationWarnings = await this.runValidationForNode(note.id);
+
+    return { noteId: note.id, connectionIds, validationWarnings };
+  }
+
+  /**
+   * Direct edge creation (fallback when AXIOM rejects).
+   */
+  private async acceptEdgeDirect(
+    proposal: EdgeProposal & { fromId: string; toId: string },
+  ): Promise<AcceptEdgeResult> {
+    const { connections: connectionAdapter } = this.adapters;
+
+    const connection = await connectionAdapter.create({
+      source_id: proposal.fromId,
+      target_id: proposal.toId,
+      source_type: 'entity',
+      target_type: 'entity',
+      type: 'semantic',
+      color: 'green',
+      label: proposal.label,
+      created_by: 'ai',
+      confidence: proposal.confidence,
+    });
+
+    await this.refreshState();
+    const validationWarnings = await this.runValidationForConnection(connection.id);
+
+    return { connectionId: connection.id, validationWarnings };
   }
 }

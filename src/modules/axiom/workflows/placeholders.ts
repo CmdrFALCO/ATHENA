@@ -71,3 +71,30 @@ export function createPlaceholders(
     commitProposal: overrides?.commitProposal ?? defaultCommitProposal,
   };
 }
+
+// Re-export real implementations for direct use (WP 9A.4)
+export {
+  validateProposal as realValidateProposal,
+} from '../integration/validationIntegration';
+export {
+  regenerateWithFeedback as realRegenerateProposal,
+} from '../integration/chatIntegration';
+export {
+  commitToGraph as realCommitProposal,
+} from '../integration/graphIntegration';
+
+/**
+ * Create a full set of placeholders using real implementations.
+ * WP 9A.4 — for production use when AXIOM is enabled.
+ */
+export async function createRealPlaceholders(): Promise<ValidationPlaceholders> {
+  const { validateProposal } = await import('../integration/validationIntegration');
+  const { regenerateWithFeedback } = await import('../integration/chatIntegration');
+  const { commitToGraph } = await import('../integration/graphIntegration');
+
+  return {
+    validateProposal,
+    regenerateProposal: regenerateWithFeedback,
+    commitProposal: commitToGraph,
+  };
+}

@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9A.3 (AXIOM Visualization) |
+| **Last WP Completed** | 9A.4 (AXIOM Integration) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9A (AXIOM — Neuro-Symbolic Validation) |
-| **Milestone** | Phase 9A - AXIOM Visualization |
+| **Milestone** | Phase 9A - AXIOM Integration |
 
 ---
 
@@ -62,7 +62,7 @@ athena/
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
 │   │   ├── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
-│   │   └── axiom/              # ✅ AXIOM CPN engine + workflow + visualization + feedback loop (WP 9A.1-9A.3)
+│   │   └── axiom/              # ✅ AXIOM CPN engine + workflow + visualization + integration (WP 9A.1-9A.4)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -311,6 +311,14 @@ athena/
 | InterventionModal | `src/modules/axiom/components/InterventionModal.tsx` | Human escalation: Accept Anyway / Edit & Retry / Reject |
 | AXIOMControls | `src/modules/axiom/components/AXIOMControls.tsx` | Pause/Step/Resume/Reset controls with step counter |
 | useAXIOMPanel | `src/modules/axiom/hooks/useAXIOMPanel.ts` | Panel state hook with Ctrl+Shift+A keyboard shortcut |
+| validationIntegration | `src/modules/axiom/integration/validationIntegration.ts` | Connects AXIOM to Phase 5A RulesEngine: builds ValidationContext, evaluates, maps to VALIDATION_RESULT |
+| chatIntegration | `src/modules/axiom/integration/chatIntegration.ts` | Connects AXIOM to Phase 7 ChatService: formats feedback, calls regenerate(), returns new PROPOSAL |
+| graphIntegration | `src/modules/axiom/integration/graphIntegration.ts` | Commits proposals to knowledge graph: adapter injection, node/edge creation, state refresh |
+| AXIOMValidationService | `src/modules/axiom/services/AXIOMValidationService.ts` | IValidationService implementation using AXIOM CPN workflow with lazy engine initialization |
+| useAXIOM | `src/modules/axiom/hooks/useAXIOM.ts` | Main hook: isRunning, isPaused, stepCount, processProposal() |
+| useTokens | `src/modules/axiom/hooks/useTokens.ts` | Token access: useTokens(placeId?), useTokenCount, useHasToken, useTotalTokenCount |
+| useWorkflowState | `src/modules/axiom/hooks/useWorkflowState.ts` | Workflow phase from token placement: idle/validating/deciding/feedback/committed/rejected |
+| getValidationService | `src/modules/validation/services/index.ts` | Factory: returns axiomValidationService or validationService based on devSettings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -477,8 +485,8 @@ athena/
 |----|---------|--------|
 | 9A.1 | AXIOM Engine Core (tokens, places, transitions, stores, events) | ✅ |
 | 9A.2 | Validation Workflow Net + Feedback Builder | ✅ |
-| 9A.3 | AXIOM UI Components | ❌ |
-| 9A.4 | Integration (ChatService, ValidationService) | ❌ |
+| 9A.3 | AXIOM UI Components | ✅ |
+| 9A.4 | Integration (ChatService, ValidationService) | ✅ |
 
 ### Phase 8 Complete
 
