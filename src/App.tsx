@@ -28,6 +28,9 @@ import './modules/synthesis/store/synthesisActions';
 // Import views store to expose window.__ATHENA_VIEWS__ and window.__ATHENA_VIEW_STATE__
 import './modules/views/store/viewActions';
 
+// Import export store to expose window.__ATHENA_EXPORT__ and window.__ATHENA_EXPORT_STATE__
+import './modules/export/store/exportActions';
+
 function App() {
   const [adapters, setAdapters] = useState<Adapters | null>(null);
   const [error, setError] = useState<string>('');

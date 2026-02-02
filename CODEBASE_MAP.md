@@ -17,7 +17,7 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 8.9 (Smart Views) |
+| **Last WP Completed** | 8.10 (Export Renderers) |
 | **Last Updated** | February 2026 |
 | **Phase** | 8 (Publishing, Templates, Advanced Features) |
 | **Milestone** | Phase 8 - Advanced Features |
@@ -60,7 +60,8 @@ athena/
 │   │   ├── schema/              # ✅ Knowledge schema templates for guided extraction (WP 8.5)
 │   │   ├── jobs/                # ✅ Background jobs for graph maintenance (WP 8.6)
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
-│   │   └── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
+│   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
+│   │   └── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -111,6 +112,7 @@ athena/
 | Jobs | `src/modules/jobs/` | — | ✅ |
 | Synthesis | `src/modules/synthesis/` | — | ✅ |
 | Views | `src/modules/views/` | — | ✅ |
+| Export | `src/modules/export/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -273,6 +275,21 @@ athena/
 | View Hooks | `src/modules/views/hooks/useViews.ts` | useViews for state + actions, useView for single view by ID |
 | View Migration | `src/database/migrations/013_smart_views.ts` | smart_views table for custom view persistence |
 | Views Config | `src/config/devSettings.ts` | `views.*` settings for enabled, showInSidebar, maxResults |
+| Renderer Interface | `src/modules/export/renderers/IRenderer.ts` | IRenderer interface + RendererRegistry for plugin-based export |
+| Markdown Renderer | `src/modules/export/renderers/MarkdownRenderer.ts` | .md export with frontmatter, wiki/markdown links, connections section |
+| JSON Renderer | `src/modules/export/renderers/JSONRenderer.ts` | Flat objects or JSON-Graph (nodes+edges) format |
+| CSV Renderer | `src/modules/export/renderers/CSVRenderer.ts` | Configurable columns, delimiter, content inclusion |
+| HTML Renderer | `src/modules/export/renderers/HTMLRenderer.ts` | Styled self-contained HTML with dark/light theme |
+| Export Service | `src/modules/export/services/ExportService.ts` | Orchestrates renderers, N-hop expansion, entity/connection loading |
+| Download Service | `src/modules/export/services/DownloadService.ts` | Triggers browser download via Blob URL |
+| Export State | `src/modules/export/store/exportState.ts` | Legend-State slice for dialog, progress, last options |
+| Export Actions | `src/modules/export/store/exportActions.ts` | openDialog, doExport, quickExport, closeDialog |
+| Export Dropdown | `src/modules/export/components/ExportDropdown.tsx` | Quick format picker + "More options..." full dialog |
+| Export Dialog | `src/modules/export/components/ExportDialog.tsx` | Full export options with format-specific panels |
+| Export Button | `src/modules/export/components/ExportButton.tsx` | Reusable trigger button with selection count |
+| Format Options | `src/modules/export/components/FormatOptions.tsx` | Per-format option panels (Markdown, JSON, CSV, HTML) |
+| Export Hook | `src/modules/export/hooks/useExport.ts` | useExportInit (adapter wiring) + useExport (state/actions) |
+| Export Config | `src/config/devSettings.ts` | `export.*` settings for enabled, showInCanvasToolbar, defaultFormat |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -374,6 +391,19 @@ athena/
 | CreateViewInput | `src/modules/views/types.ts` | Input for creating a custom view |
 | UpdateViewInput | `src/modules/views/types.ts` | Input for updating an existing view |
 | IViewAdapter | `src/modules/views/adapters/IViewAdapter.ts` | Interface for view persistence |
+| ExportFormat | `src/modules/export/types.ts` | 'markdown' \| 'json' \| 'csv' \| 'html' |
+| FormatInfo | `src/modules/export/types.ts` | Format metadata (name, extension, mimeType, icon) |
+| ExportSource | `src/modules/export/types.ts` | 'single' \| 'selection' \| 'view' \| 'synthesis' |
+| ExportEntity | `src/modules/export/types.ts` | Entity snapshot for export (id, title, type, content, metadata) |
+| ExportConnection | `src/modules/export/types.ts` | Connection snapshot for export (source/target titles, label, type) |
+| ExportData | `src/modules/export/types.ts` | Full export payload (entities, connections, metadata) |
+| ExportOptions | `src/modules/export/types.ts` | Union of MarkdownExportOptions \| JSONExportOptions \| CSVExportOptions \| HTMLExportOptions |
+| RenderResult | `src/modules/export/types.ts` | Renderer output (content string/Blob, filename, mimeType) |
+| RenderContext | `src/modules/export/types.ts` | Context passed to renderers (source, options) |
+| ExportState | `src/modules/export/types.ts` | Legend-State slice for dialog, progress, error, lastOptions |
+| ExportConfig | `src/modules/export/types.ts` | Export settings (enabled, showInCanvasToolbar, defaultFormat) |
+| IRenderer | `src/modules/export/renderers/IRenderer.ts` | Renderer interface (canRender, render) |
+| RendererRegistry | `src/modules/export/renderers/IRenderer.ts` | Plugin registry for format renderers |
 
 ---
 
@@ -428,6 +458,7 @@ athena/
 | 8.7.2 | Chat Resource Context | ✅ |
 | 8.8 | Multi-Hop Reasoning | ✅ |
 | 8.9 | Smart Views (Canned Queries) | ✅ |
+| 8.10 | Export Renderers | ✅ |
 
 ### Phase 7 Complete
 
@@ -469,6 +500,9 @@ window.__ATHENA_SYNTHESIS__      // Synthesis actions for testing (WP 8.7)
 window.__ATHENA_SYNTHESIS_SERVICE__() // Synthesis service instance (WP 8.7)
 window.__ATHENA_VIEW_STATE__      // View state (views, results, panel) (WP 8.9)
 window.__ATHENA_VIEWS__           // View actions for testing (WP 8.9)
+window.__ATHENA_EXPORT_STATE__    // Export state (dialog, progress, error) (WP 8.10)
+window.__ATHENA_EXPORT__          // Export actions for testing (WP 8.10)
+window.__ATHENA_EXPORT_SERVICE__() // Export service instance (WP 8.10)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

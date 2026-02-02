@@ -4,6 +4,7 @@ import type { SchemaConfig } from '@/modules/schema/types';
 import type { JobsConfig } from '@/modules/jobs/types';
 import type { SynthesisConfig } from '@/modules/synthesis/types';
 import type { ViewsConfig } from '@/modules/views/types';
+import type { ExportConfig } from '@/modules/export/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -428,6 +429,13 @@ const DEFAULT_VIEWS_CONFIG: ViewsConfig = {
   maxResults: 50,
 };
 
+// Export Renderers configuration (WP 8.10)
+const DEFAULT_EXPORT_CONFIG: ExportConfig = {
+  enabled: true,
+  showInCanvasToolbar: true,
+  defaultFormat: 'markdown',
+};
+
 // Default values (conservative - features off until implemented)
 const DEFAULT_FLAGS: FeatureFlags = {
   // AI (off until Phase 3)
@@ -466,6 +474,7 @@ export const devSettings$ = observable({
   jobs: { ...DEFAULT_JOBS_CONFIG } as JobsConfig,
   synthesis: { ...DEFAULT_SYNTHESIS_CONFIG } as SynthesisConfig,
   views: { ...DEFAULT_VIEWS_CONFIG } as ViewsConfig,
+  export: { ...DEFAULT_EXPORT_CONFIG } as ExportConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -512,6 +521,7 @@ export const devSettingsActions = {
     devSettings$.jobs.set({ ...DEFAULT_JOBS_CONFIG });
     devSettings$.synthesis.set({ ...DEFAULT_SYNTHESIS_CONFIG });
     devSettings$.views.set({ ...DEFAULT_VIEWS_CONFIG });
+    devSettings$.export.set({ ...DEFAULT_EXPORT_CONFIG });
     devSettings$.lastModified.set(new Date().toISOString());
   },
 
@@ -936,6 +946,22 @@ export const devSettingsActions = {
 
   setViewsMaxResults(max: number) {
     devSettings$.views.maxResults.set(Math.max(1, Math.min(200, max)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Export config actions (WP 8.10)
+  setExportEnabled(enabled: boolean) {
+    devSettings$.export.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setExportShowInToolbar(show: boolean) {
+    devSettings$.export.showInCanvasToolbar.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setExportDefaultFormat(format: ExportConfig['defaultFormat']) {
+    devSettings$.export.defaultFormat.set(format);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

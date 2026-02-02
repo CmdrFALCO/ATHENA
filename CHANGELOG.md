@@ -1,5 +1,38 @@
 # ATHENA Changelog
 
+## [8.10.0] - 2026-02-02
+
+### Added
+- **Export Renderers Module (WP 8.10)**: Plugin-based export system with multiple output formats
+  - `RendererRegistry` with `IRenderer` interface for extensible format plugins
+  - **Markdown Renderer**: YAML frontmatter, wiki-link or markdown-link format, connections section, Obsidian-compatible
+  - **JSON Renderer**: Flat objects or JSON-Graph (nodes + edges) format, pretty-print toggle
+  - **CSV Renderer**: Configurable columns, comma/tab delimiter, content inclusion toggle
+  - **HTML Renderer**: Self-contained styled page with dark/light theme, table of contents, inline connections
+  - `ExportService` orchestrates renderers, loads entities/connections via adapters, supports N-hop neighbor expansion (1-3 hops)
+  - `DownloadService` triggers browser download via Blob URL
+  - `ExportDropdown` — quick export with format picker + "More options..." for full dialog
+  - `ExportDialog` — full options dialog with format selector, common options, and per-format panels
+  - `ExportButton` — reusable trigger button with selection count badge
+  - `FormatOptions` — per-format option panels (frontmatter, shape, delimiter, theme, etc.)
+  - `useExportInit` hook for adapter wiring, `useExport` hook for state/actions
+  - Export sources: single entity, multi-selection, Smart View results, synthesis reports
+  - `ExportConfig` in devSettings with `enabled`, `showInCanvasToolbar`, `defaultFormat`
+  - `src/modules/export/` — Complete module with types, renderers, services, store, hooks, components
+
+### Changed
+- `src/config/devSettings.ts` — Added ExportConfig with enabled, showInCanvasToolbar, defaultFormat settings and action methods
+- `src/app/routes/SophiaPage.tsx` — Added ExportDropdown to canvas toolbar alongside SynthesisButton, ExportDialog overlay, useExportInit hook
+- `src/App.tsx` — Import export store for window debug exposure
+
+### Technical
+- Follows Datasette "Renderers as Plugins" pattern — new formats can be added by implementing IRenderer and registering with rendererRegistry
+- N-hop expansion uses BFS traversal via IConnectionAdapter.getConnectionsFor(), visiting neighbor entities layer by layer
+- ExportService creates ExportData snapshots: entities loaded via INoteAdapter, connections filtered to include only edges where both endpoints are in the export set
+- Quick export remembers last-used options per session via exportState$.lastOptions
+- Synthesis export creates a synthetic ExportEntity from the report content
+- Debug: `window.__ATHENA_EXPORT_STATE__`, `window.__ATHENA_EXPORT__`, `window.__ATHENA_EXPORT_SERVICE__()`
+
 ## [8.9.0] - 2026-02-01
 
 ### Added
