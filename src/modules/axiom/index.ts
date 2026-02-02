@@ -83,6 +83,21 @@ export type {
 export { axiomState$, axiomActions } from './store';
 export type { AXIOMState } from './store';
 
+// Hooks (WP 9A.3)
+export { useAXIOMPanel } from './hooks';
+
+// Components (WP 9A.3)
+export {
+  AXIOMIndicator,
+  AXIOMPanel,
+  AXIOMControls,
+  WorkflowGraph,
+  TokenInspector,
+  TransitionLog,
+  FeedbackDisplay,
+  InterventionModal,
+} from './components';
+
 // Workflows
 export {
   PLACE_IDS,
@@ -109,10 +124,12 @@ export type {
 
 import { devSettings$ } from '@/config/devSettings';
 import { axiomState$ } from './store';
+import { axiomActions } from './store';
 import { AXIOMEngine } from './engine';
 import { AXIOMEventBridge } from './events';
 import { InMemoryTokenStore } from './stores/InMemoryTokenStore';
 import { IndexedDBTokenStore } from './stores/IndexedDBTokenStore';
+import type { PlaceId } from './workflows/types';
 
 /**
  * Create and configure the default AXIOM engine instance
@@ -159,6 +176,23 @@ export function createDefaultEngine(): AXIOMEngine {
 
       // Export
       exportState: () => JSON.stringify(axiomState$.peek(), null, 2),
+    };
+
+    // UI debug globals (WP 9A.3)
+    (window as Record<string, unknown>).__ATHENA_AXIOM_UI__ = {
+      openPanel: () => axiomActions.openPanel(),
+      closePanel: () => axiomActions.closePanel(),
+      togglePanel: () => axiomActions.togglePanel(),
+      selectToken: (id: string) => axiomActions.selectToken(id),
+      selectPlace: (id: PlaceId) => axiomActions.selectPlace(id),
+      selectTab: (tab: 'graph' | 'tokens' | 'history') => axiomActions.selectTab(tab),
+      getUIState: () => ({
+        panelOpen: axiomState$.panelOpen.peek(),
+        selectedTab: axiomState$.selectedTab.peek(),
+        selectedTokenId: axiomState$.selectedTokenId.peek(),
+        selectedPlaceId: axiomState$.selectedPlaceId.peek(),
+        interventionPending: axiomState$.interventionPending.peek(),
+      }),
     };
   }
 

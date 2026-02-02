@@ -9,6 +9,7 @@
 
 import { observable } from '@legendapp/state';
 import type { AXIOMEvent } from '../events/types';
+import type { PlaceId } from '../workflows/types';
 
 export interface AXIOMState {
   // Engine state
@@ -33,6 +34,14 @@ export interface AXIOMState {
     failedWorkflows: number;
     averageRetries: number;
   };
+
+  // --- UI state (WP 9A.3) ---
+  panelOpen: boolean;
+  selectedTab: 'graph' | 'tokens' | 'history';
+  selectedTokenId: string | null;
+  selectedPlaceId: PlaceId | null;
+  lastError: string | null;
+  interventionPending: boolean;
 }
 
 export const axiomState$ = observable<AXIOMState>({
@@ -49,6 +58,14 @@ export const axiomState$ = observable<AXIOMState>({
     failedWorkflows: 0,
     averageRetries: 0,
   },
+
+  // UI state (WP 9A.3)
+  panelOpen: false,
+  selectedTab: 'graph',
+  selectedTokenId: null,
+  selectedPlaceId: null,
+  lastError: null,
+  interventionPending: false,
 });
 
 // Expose for debugging (follows codebase pattern)

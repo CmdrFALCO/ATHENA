@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9A.2 (Validation Workflow Net + Feedback Builder) |
+| **Last WP Completed** | 9A.3 (AXIOM Visualization) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9A (AXIOM — Neuro-Symbolic Validation) |
-| **Milestone** | Phase 9A - AXIOM Validation Workflow |
+| **Milestone** | Phase 9A - AXIOM Visualization |
 
 ---
 
@@ -62,7 +62,7 @@ athena/
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
 │   │   ├── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
-│   │   └── axiom/              # ✅ AXIOM CPN engine + validation workflow + feedback loop (WP 9A.1-9A.2)
+│   │   └── axiom/              # ✅ AXIOM CPN engine + workflow + visualization + feedback loop (WP 9A.1-9A.3)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -302,6 +302,15 @@ athena/
 | Validation Net Factory | `src/modules/axiom/workflows/validationNet.ts` | createValidationNet, wireValidationNet, createProposalToken |
 | Workflow Placeholders | `src/modules/axiom/workflows/placeholders.ts` | Stub implementations for Phase 5A integration (WP 9A.4) |
 | AXIOM Workflow Types | `src/modules/axiom/workflows/types.ts` | PLACE_IDS, TRANSITION_IDS, ValidatedPayload, ValidationPlaceholders |
+| AXIOMIndicator | `src/modules/axiom/components/AXIOMIndicator.tsx` | Header status indicator: workflow state, token counts, pulsing dot, error badge |
+| AXIOMPanel | `src/modules/axiom/components/AXIOMPanel.tsx` | Main sidebar panel (480px slide-over) with Graph/Tokens/History tabs |
+| WorkflowGraph | `src/modules/axiom/components/WorkflowGraph.tsx` | React Flow CPN visualization: 7 place nodes, 6 transition nodes, edges |
+| TokenInspector | `src/modules/axiom/components/TokenInspector.tsx` | Raw _meta data display (Principle 1) with JSON trees, feedback, clipboard |
+| TransitionLog | `src/modules/axiom/components/TransitionLog.tsx` | Decision trail (Principle 2): every transition with reason, filterable, exportable |
+| FeedbackDisplay | `src/modules/axiom/components/FeedbackDisplay.tsx` | Structured corrective feedback: constraint level, severity, actual/expected, suggestion |
+| InterventionModal | `src/modules/axiom/components/InterventionModal.tsx` | Human escalation: Accept Anyway / Edit & Retry / Reject |
+| AXIOMControls | `src/modules/axiom/components/AXIOMControls.tsx` | Pause/Step/Resume/Reset controls with step counter |
+| useAXIOMPanel | `src/modules/axiom/hooks/useAXIOMPanel.ts` | Panel state hook with Ctrl+Shift+A keyboard shortcut |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 

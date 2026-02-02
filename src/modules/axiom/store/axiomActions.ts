@@ -9,6 +9,7 @@
 
 import { axiomState$ } from './axiomState';
 import type { AXIOMEvent } from '../events/types';
+import type { PlaceId } from '../workflows/types';
 
 const MAX_RECENT_EVENTS = 50;
 
@@ -20,6 +21,7 @@ export const axiomActions = {
     axiomState$.isRunning.set(true);
     axiomState$.isPaused.set(false);
     axiomState$.stepCount.set(0);
+    axiomState$.lastError.set(null);
   },
 
   pauseWorkflow(): void {
@@ -129,6 +131,40 @@ export const axiomActions = {
     });
   },
 
+  // --- UI Panel actions (WP 9A.3) ---
+
+  openPanel(): void {
+    axiomState$.panelOpen.set(true);
+  },
+
+  closePanel(): void {
+    axiomState$.panelOpen.set(false);
+  },
+
+  togglePanel(): void {
+    axiomState$.panelOpen.set(!axiomState$.panelOpen.peek());
+  },
+
+  selectTab(tab: 'graph' | 'tokens' | 'history'): void {
+    axiomState$.selectedTab.set(tab);
+  },
+
+  selectToken(id: string | null): void {
+    axiomState$.selectedTokenId.set(id);
+  },
+
+  selectPlace(id: PlaceId | null): void {
+    axiomState$.selectedPlaceId.set(id);
+  },
+
+  setLastError(error: string | null): void {
+    axiomState$.lastError.set(error);
+  },
+
+  setInterventionPending(pending: boolean): void {
+    axiomState$.interventionPending.set(pending);
+  },
+
   // --- Reset ---
 
   reset(): void {
@@ -145,5 +181,11 @@ export const axiomActions = {
       failedWorkflows: 0,
       averageRetries: 0,
     });
+    axiomState$.panelOpen.set(false);
+    axiomState$.selectedTab.set('graph');
+    axiomState$.selectedTokenId.set(null);
+    axiomState$.selectedPlaceId.set(null);
+    axiomState$.lastError.set(null);
+    axiomState$.interventionPending.set(false);
   },
 };

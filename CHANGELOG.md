@@ -1,5 +1,29 @@
 # ATHENA Changelog
 
+## [9A.3.0] - 2026-02-02
+
+### Added
+- **AXIOM Visualization (WP 9A.3)**: Making Der Supervisor visible — visibility IS the trust mechanism
+  - **AXIOMIndicator**: Status bar indicator in header showing workflow state, token counts, pulsing dot when active, error badge
+  - **AXIOMPanel**: Full workflow sidebar panel (480px slide-over) with Graph/Tokens/History tabs, Ctrl+Shift+A toggle
+  - **WorkflowGraph**: React Flow CPN visualization rendering 7 places as nodes, 6 transitions as bars, with token count badges and enabled-state highlighting
+  - **TokenInspector**: Raw `_meta` data display (Principle 1: Minimal Abstraction) with expandable JSON trees, feedback history, copy-to-clipboard
+  - **TransitionLog**: Chronological decision trail (Principle 2: Transparency) with every transition's `reason` always visible, filterable, searchable, exportable as JSON
+  - **FeedbackDisplay**: Structured corrective feedback view with constraint level badges, severity indicators, actual/expected values, and suggestion display
+  - **InterventionModal**: Human escalation modal for Accept Anyway / Edit & Retry / Reject decisions when token exceeds retry threshold
+  - **AXIOMControls**: Pause/Step/Resume/Reset controls with step counter display
+  - **useAXIOMPanel**: Hook for panel state management with Ctrl+Shift+A keyboard shortcut
+  - `src/modules/axiom/components/` — 8 visualization components + barrel export
+  - `src/modules/axiom/hooks/` — Panel management hook
+
+### Changed
+- `src/config/devSettings.ts` — Added `visualization` section to `AXIOMConfig` (showIndicator, showPanelButton, autoOpenOnError)
+- `src/modules/axiom/store/axiomState.ts` — Added UI state fields (panelOpen, selectedTab, selectedTokenId, selectedPlaceId, lastError, interventionPending)
+- `src/modules/axiom/store/axiomActions.ts` — Added panel/selection/error actions
+- `src/app/layout/Header.tsx` — Integrated AXIOMIndicator (controlled by devSettings)
+- `src/app/layout/AppLayout.tsx` — Integrated AXIOMPanel and InterventionModal overlays
+- `src/modules/axiom/index.ts` — Exported components, hooks, and added `__ATHENA_AXIOM_UI__` debug globals
+
 ## [9A.2.0] - 2026-02-02
 
 ### Added

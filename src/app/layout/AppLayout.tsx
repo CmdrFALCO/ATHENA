@@ -11,6 +11,8 @@ import { ChatPanel, ChatToggleButton } from '@/modules/chat';
 import { MergeCandidatesPanel, useSimilarityPanel } from '@/modules/similarity';
 import { SynthesisPanel } from '@/modules/synthesis';
 import { ViewResultsPanel } from '@/modules/views';
+import { AXIOMPanel, InterventionModal } from '@/modules/axiom/components';
+import { useAXIOMPanel } from '@/modules/axiom/hooks';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -46,6 +48,9 @@ export function AppLayout() {
 
   // WP 8.1: Similarity / Merge Candidates Panel state (Ctrl+Shift+M)
   const { isOpen: isSimilarityPanelOpen, close: closeSimilarityPanel } = useSimilarityPanel();
+
+  // WP 9A.3: AXIOM Panel state (Ctrl+Shift+A)
+  useAXIOMPanel();
 
   return (
     <div className="h-screen flex flex-col bg-athena-bg text-athena-text">
@@ -85,6 +90,10 @@ export function AppLayout() {
       {/* Chat Panel - slide-over chat interface (WP 7.1) - Ctrl+Shift+C */}
       <ChatPanel />
       <ChatToggleButton />
+
+      {/* AXIOM Panel - workflow visualization (WP 9A.3) - Ctrl+Shift+A */}
+      <AXIOMPanel />
+      <InterventionModal />
     </div>
   );
 }

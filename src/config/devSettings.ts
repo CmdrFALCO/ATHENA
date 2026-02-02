@@ -475,6 +475,16 @@ export interface AXIOMConfig {
     verbosity: 'minimal' | 'normal' | 'verbose';
   };
 
+  /** Visualization settings (WP 9A.3) */
+  visualization: {
+    /** Show AXIOM status indicator in header */
+    showIndicator: boolean;
+    /** Show panel toggle button */
+    showPanelButton: boolean;
+    /** Auto-open panel on workflow error */
+    autoOpenOnError: boolean;
+  };
+
   /** Debug settings */
   debug: {
     /** Allow manual step-through */
@@ -507,6 +517,12 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
     updateLegendState: true,
     persistToHistory: true,
     verbosity: 'normal',
+  },
+
+  visualization: {
+    showIndicator: true,
+    showPanelButton: true,
+    autoOpenOnError: true,
   },
 
   debug: {

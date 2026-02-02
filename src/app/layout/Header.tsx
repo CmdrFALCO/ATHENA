@@ -1,11 +1,16 @@
 import { Menu, Search, Settings } from 'lucide-react';
+import { useSelector } from '@legendapp/state/react';
 import { uiActions } from '@/store';
+import { devSettings$ } from '@/config/devSettings';
+import { AXIOMIndicator } from '@/modules/axiom/components';
 
 interface HeaderProps {
   onSearchClick?: () => void;
 }
 
 export function Header({ onSearchClick }: HeaderProps) {
+  const showAXIOMIndicator = useSelector(() => devSettings$.axiom.visualization.showIndicator.get());
+
   return (
     <header className="h-12 bg-athena-surface border-b border-athena-border flex items-center px-4 shrink-0">
       <button
@@ -19,6 +24,9 @@ export function Header({ onSearchClick }: HeaderProps) {
       <h1 className="text-lg font-semibold text-athena-text ml-4">ΛTHENΛ</h1>
 
       <div className="flex-1" />
+
+      {/* AXIOM status indicator (WP 9A.3) */}
+      {showAXIOMIndicator && <AXIOMIndicator className="mr-2" />}
 
       <div className="flex items-center gap-2">
         <button
