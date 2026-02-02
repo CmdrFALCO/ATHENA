@@ -1,5 +1,32 @@
 # ATHENA Changelog
 
+## [9A.2.0] - 2026-02-02
+
+### Added
+- **Validation Workflow Net (WP 9A.2)**: CPN workflow for the corrective feedback loop — the core AXIOM innovation
+  - **7 Places**: P_proposals (source), P_validating (reserved), P_deciding, P_verified, P_feedback, P_committed (sink), P_rejected (sink)
+  - **6 Transitions**: T_validate, T_accept, T_prepare_retry, T_regenerate, T_reject, T_commit with priority-based routing
+  - **FeedbackBuilder**: Converts Phase 5A `Violation[]` into `CorrectionFeedback[]` with rule-level inference, suggestion mapping, and custom feedback support
+  - **Validation Guards**: `isValid`, `hasErrors`, `hasWarningsOnly`, `tokenCanRetry`, `tokenShouldEscalate`, `allLevelsPassed`, `levelPassed`
+  - **Schema Guards (Level 1)**: `nodesHaveRequiredFields`, `edgesHaveRequiredFields`, `schemaValid`
+  - **Constraint Guards (Level 2)**: `noSelfLoops`, `noDuplicateEdges`, `referencedNodesExist`
+  - **Semantic Guards (Level 3)**: `semanticallyRelevant`, `contentCoherent`, `notDuplicate` (stubs for WP 9A.4)
+  - **Validation Net Factory**: `createValidationNet()`, `wireValidationNet()`, `createProposalToken()` for engine wiring
+  - **Placeholder Functions**: Stub implementations for `validateProposal`, `regenerateProposal`, `commitProposal` (replaced in WP 9A.4)
+  - `src/modules/axiom/workflows/` — Complete workflow module with places, transitions, placeholders, types
+  - `src/modules/axiom/engine/FeedbackBuilder.ts` — Violation-to-feedback bridge
+  - `src/modules/axiom/guards/` — 4 new guard files (validation, schema, constraints, semantic)
+
+### Technical
+- **Corrective feedback loop**: Validation errors become structured `CorrectionFeedback` → formatted for LLM prompt → guided regeneration → re-validation
+- **Feedback accumulation**: `feedbackHistory` is APPENDED (never replaced) on both `token.feedbackHistory` and `token.payload.feedbackHistory`
+- **Priority-based routing**: T_accept(20) > T_prepare_retry(15) > T_reject(10) with complementary guards
+- **Token routing via color**: Action functions set output token color; `Transition.fire()` deposits into first place that accepts that color
+- **Payload type**: `ValidatedPayload = PROPOSAL & { validationResult: VALIDATION_RESULT }` preserves original proposal across transitions
+- **Guard wrapper pattern**: `tokenCanRetry`/`tokenShouldEscalate` wrap single-token helpers for array-based `GuardFunction` interface
+- **`correlationId`** preserved across all token type transformations (PROPOSAL → ValidatedPayload → PROPOSAL)
+- `ViolationFixType` mapped to `CorrectionFeedback.suggestion.action`: delete_* → 'remove', create/update → 'modify', manual → 'rephrase'
+
 ## [9A.1.0] - 2026-02-02
 
 ### Added

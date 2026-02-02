@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9A.1 (AXIOM Engine Core) |
+| **Last WP Completed** | 9A.2 (Validation Workflow Net + Feedback Builder) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9A (AXIOM — Neuro-Symbolic Validation) |
-| **Milestone** | Phase 9A - AXIOM CPN Engine |
+| **Milestone** | Phase 9A - AXIOM Validation Workflow |
 
 ---
 
@@ -62,7 +62,7 @@ athena/
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
 │   │   ├── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
-│   │   └── axiom/              # ✅ AXIOM CPN engine: tokens, places, transitions, stores, events (WP 9A.1)
+│   │   └── axiom/              # ✅ AXIOM CPN engine + validation workflow + feedback loop (WP 9A.1-9A.2)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -292,6 +292,16 @@ athena/
 | Format Options | `src/modules/export/components/FormatOptions.tsx` | Per-format option panels (Markdown, JSON, CSV, HTML) |
 | Export Hook | `src/modules/export/hooks/useExport.ts` | useExportInit (adapter wiring) + useExport (state/actions) |
 | Export Config | `src/config/devSettings.ts` | `export.*` settings for enabled, showInCanvasToolbar, defaultFormat |
+| AXIOM Workflow Places | `src/modules/axiom/workflows/places.ts` | 7 CPN places: proposals (source), validating, deciding, verified, feedback, committed (sink), rejected (sink) |
+| AXIOM Workflow Transitions | `src/modules/axiom/workflows/transitions.ts` | 6 transitions: validate, accept, prepare_retry, regenerate, reject, commit with priority routing |
+| FeedbackBuilder | `src/modules/axiom/engine/FeedbackBuilder.ts` | Converts Phase 5A Violations to CorrectionFeedback for LLM regeneration |
+| Validation Guards | `src/modules/axiom/guards/validation.ts` | Workflow routing: isValid, hasErrors, tokenCanRetry, tokenShouldEscalate |
+| Schema Guards | `src/modules/axiom/guards/schema.ts` | Level 1: nodesHaveRequiredFields, edgesHaveRequiredFields, schemaValid |
+| Constraint Guards | `src/modules/axiom/guards/constraints.ts` | Level 2: noSelfLoops, noDuplicateEdges, referencedNodesExist |
+| Semantic Guards | `src/modules/axiom/guards/semantic.ts` | Level 3 stubs: semanticallyRelevant, contentCoherent, notDuplicate |
+| Validation Net Factory | `src/modules/axiom/workflows/validationNet.ts` | createValidationNet, wireValidationNet, createProposalToken |
+| Workflow Placeholders | `src/modules/axiom/workflows/placeholders.ts` | Stub implementations for Phase 5A integration (WP 9A.4) |
+| AXIOM Workflow Types | `src/modules/axiom/workflows/types.ts` | PLACE_IDS, TRANSITION_IDS, ValidatedPayload, ValidationPlaceholders |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
 
@@ -406,6 +416,13 @@ athena/
 | ExportConfig | `src/modules/export/types.ts` | Export settings (enabled, showInCanvasToolbar, defaultFormat) |
 | IRenderer | `src/modules/export/renderers/IRenderer.ts` | Renderer interface (canRender, render) |
 | RendererRegistry | `src/modules/export/renderers/IRenderer.ts` | Plugin registry for format renderers |
+| ValidatedPayload | `src/modules/axiom/workflows/types.ts` | PROPOSAL & { validationResult: VALIDATION_RESULT } intersection type |
+| ValidationPlaceholders | `src/modules/axiom/workflows/types.ts` | Contract for Phase 5A integration functions (validate, regenerate, commit) |
+| ValidationNetOptions | `src/modules/axiom/workflows/types.ts` | Options for creating validation workflow (maxRetries, placeholders) |
+| ValidationNetResult | `src/modules/axiom/workflows/types.ts` | Created net with placeConfigs, transitionConfigs, IDs |
+| WorkflowResult | `src/modules/axiom/workflows/types.ts` | Execution result with success, finalPlace, retries, feedbackHistory |
+| PlaceId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 7 place IDs |
+| TransitionId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 6 transition IDs |
 
 ---
 
@@ -443,9 +460,18 @@ athena/
 
 | Phase | What's Added |
 |-------|--------------|
-| **Phase 8** | Publishing, Templates, Advanced Features |
+| **Phase 9A** | AXIOM — Neuro-Symbolic Validation |
 
-### Phase 8 Progress
+### Phase 9A Progress
+
+| WP | Feature | Status |
+|----|---------|--------|
+| 9A.1 | AXIOM Engine Core (tokens, places, transitions, stores, events) | ✅ |
+| 9A.2 | Validation Workflow Net + Feedback Builder | ✅ |
+| 9A.3 | AXIOM UI Components | ❌ |
+| 9A.4 | Integration (ChatService, ValidationService) | ❌ |
+
+### Phase 8 Complete
 
 | WP | Feature | Status |
 |----|---------|--------|

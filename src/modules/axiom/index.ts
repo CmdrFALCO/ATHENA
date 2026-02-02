@@ -35,16 +35,36 @@ export type {
 export { createToken, formatFeedbackForLLM, SINK_COLORS, ACTIVE_COLORS } from './types';
 
 // Engine
-export { Place, Transition, AXIOMEngine } from './engine';
+export { Place, Transition, AXIOMEngine, FeedbackBuilder, mapFixTypeToAction } from './engine';
 export type { AXIOMEngineOptions, EngineState, EngineStats } from './engine';
 
 // Stores
 export type { ITokenStore, TokenFilter } from './stores';
 export { InMemoryTokenStore, IndexedDBTokenStore } from './stores';
 
-// Guards
+// Guards — helpers + termination
 export { hasMinTokens, hasColor, allOf, anyOf, not } from './guards';
 export { canRetry, shouldEscalate, maxStepsReached } from './guards';
+
+// Guards — validation workflow
+export {
+  isValid,
+  hasErrors,
+  hasWarningsOnly,
+  tokenCanRetry,
+  tokenShouldEscalate,
+  allLevelsPassed,
+  levelPassed,
+} from './guards';
+
+// Guards — schema (Level 1)
+export { nodesHaveRequiredFields, edgesHaveRequiredFields, schemaValid } from './guards';
+
+// Guards — constraints (Level 2)
+export { noSelfLoops, noDuplicateEdges, referencedNodesExist } from './guards';
+
+// Guards — semantic (Level 3 stubs)
+export { semanticallyRelevant, contentCoherent, notDuplicate } from './guards';
 
 // Events
 export { AXIOMEventBridge } from './events';
@@ -62,6 +82,28 @@ export type {
 // Store (Legend-State)
 export { axiomState$, axiomActions } from './store';
 export type { AXIOMState } from './store';
+
+// Workflows
+export {
+  PLACE_IDS,
+  TRANSITION_IDS,
+  VALIDATION_PLACES,
+  ALL_PLACES,
+  createValidationNet,
+  wireValidationNet,
+  createProposalToken,
+  createPlaceholders,
+  createAllTransitions,
+} from './workflows';
+export type {
+  PlaceId,
+  TransitionId,
+  ValidatedPayload,
+  ValidationPlaceholders,
+  ValidationNetOptions,
+  ValidationNetResult,
+  WorkflowResult,
+} from './workflows';
 
 // --- Debug Globals ---
 
