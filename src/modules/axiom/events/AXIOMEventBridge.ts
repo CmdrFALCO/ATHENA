@@ -28,6 +28,9 @@ const MINIMAL_EVENTS: AXIOMEventType[] = [
   'engine:maxSteps',
   'workflow:completed',
   'workflow:failed',
+  // WP 9B.1: Critique results are always important
+  'critique:completed',
+  'critique:rejected',
 ];
 
 /** Events logged in normal mode (minimal + these) */
@@ -39,6 +42,10 @@ const NORMAL_EVENTS: AXIOMEventType[] = [
   'transition:blocked',
   'engine:paused',
   'engine:resumed',
+  // WP 9B.1: Critique lifecycle
+  'critique:started',
+  'critique:skipped',
+  'critique:escalated',
 ];
 
 export class AXIOMEventBridge {

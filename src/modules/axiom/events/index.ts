@@ -18,6 +18,12 @@ export type {
   EngineMaxStepsEventData,
   WorkflowCompletedEventData,
   WorkflowFailedEventData,
+  // WP 9B.1: Critique events
+  CritiqueStartedEventData,
+  CritiqueCompletedEventData,
+  CritiqueSkippedEventData,
+  CritiqueEscalatedEventData,
+  CritiqueRejectedEventData,
 } from './types';
 
 export { AXIOMEventBridge } from './AXIOMEventBridge';

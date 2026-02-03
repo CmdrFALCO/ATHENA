@@ -30,9 +30,26 @@ export type {
   TransitionConfig,
   TransitionContext,
   CorrectionFeedback,
+  // WP 9B.1: Critique types
+  CRITIQUE_RESULT,
+  CounterArgument,
+  RiskFactor,
+  CritiqueTriggerConfig,
+  CritiqueBehaviorConfig,
+  CritiqueUIConfig,
+  CritiqueConfig,
 } from './types';
 
-export { createToken, formatFeedbackForLLM, SINK_COLORS, ACTIVE_COLORS } from './types';
+export {
+  createToken,
+  formatFeedbackForLLM,
+  SINK_COLORS,
+  ACTIVE_COLORS,
+  // WP 9B.1
+  SEVERITY_WEIGHTS,
+  calculateSurvivalScore,
+  adjustConfidence,
+} from './types';
 
 // Engine
 export { Place, Transition, AXIOMEngine, FeedbackBuilder, mapFixTypeToAction } from './engine';
@@ -66,6 +83,13 @@ export { noSelfLoops, noDuplicateEdges, referencedNodesExist } from './guards';
 // Guards — semantic (Level 3 stubs)
 export { semanticallyRelevant, contentCoherent, notDuplicate } from './guards';
 
+// Guards — critique (WP 9B.1)
+export { shouldCritique, survived, reconsider, critiqueRejected } from './guards';
+
+// Agents (WP 9B.1)
+export { DevilsAdvocateAgent } from './agents';
+export type { IAgent, AgentInput, AgentOutput } from './agents';
+
 // Events
 export { AXIOMEventBridge } from './events';
 export type {
@@ -77,6 +101,12 @@ export type {
   TransitionFiredEventData,
   WorkflowCompletedEventData,
   WorkflowFailedEventData,
+  // WP 9B.1: Critique events
+  CritiqueStartedEventData,
+  CritiqueCompletedEventData,
+  CritiqueSkippedEventData,
+  CritiqueEscalatedEventData,
+  CritiqueRejectedEventData,
 } from './events';
 
 // Store (Legend-State)
@@ -92,6 +122,9 @@ export { useTokens, useTokenCount, useHasToken, useTotalTokenCount } from './hoo
 export { useWorkflowState } from './hooks';
 export type { WorkflowPhase } from './hooks';
 
+// Hooks (WP 9B.1)
+export { useCritiqueResult } from './hooks';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -102,6 +135,7 @@ export {
   TransitionLog,
   FeedbackDisplay,
   InterventionModal,
+  CritiqueSection, // WP 9B.1
 } from './components';
 
 // Workflows
@@ -115,6 +149,17 @@ export {
   createProposalToken,
   createPlaceholders,
   createAllTransitions,
+  // WP 9B.1: Critique workflow
+  P_critiqued,
+  P_escalated,
+  CRITIQUE_PLACES,
+  createT_critique,
+  createT_skip_critique,
+  createT_critique_accept,
+  createT_critique_escalate,
+  createT_critique_reject,
+  createAllCritiqueTransitions,
+  extendWithCritique,
 } from './workflows';
 export type {
   PlaceId,
@@ -124,6 +169,7 @@ export type {
   ValidationNetOptions,
   ValidationNetResult,
   WorkflowResult,
+  CritiqueNetOptions, // WP 9B.1
 } from './workflows';
 
 // Integration (WP 9A.4)
@@ -205,6 +251,18 @@ export function createDefaultEngine(): AXIOMEngine {
         const { axiomValidationService } = await import('./services/AXIOMValidationService');
         return axiomValidationService;
       },
+
+      // WP 9B.1: Critique debug access
+      critiqueProposal: async (p: PROPOSAL) => {
+        const { DevilsAdvocateAgent } = await import('./agents');
+        const { getAIService } = await import('@/modules/ai/AIService');
+        const backend = getAIService().getBackend();
+        if (!backend) throw new Error('No AI backend configured');
+        const critiqueConfig = devSettings$.axiom.critique.peek();
+        const agent = new DevilsAdvocateAgent(backend, critiqueConfig.behavior);
+        return agent.execute({ proposal: p });
+      },
+      getCritiqueConfig: () => devSettings$.axiom.critique.peek(),
     };
 
     // UI debug globals (WP 9A.3)

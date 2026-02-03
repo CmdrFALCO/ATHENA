@@ -12,3 +12,6 @@ export { useAXIOM } from './useAXIOM';
 export { useTokens, useTokenCount, useHasToken, useTotalTokenCount } from './useTokens';
 export { useWorkflowState } from './useWorkflowState';
 export type { WorkflowPhase } from './useWorkflowState';
+
+// WP 9B.1
+export { useCritiqueResult } from './useCritiqueResult';

@@ -7,12 +7,14 @@
  */
 
 import { useCallback, useState, useMemo } from 'react';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, Swords, Loader2 } from 'lucide-react';
 import type { KnowledgeProposals } from '../types';
 import { NodeProposalCard } from './NodeProposalCard';
 import { EdgeProposalCard } from './EdgeProposalCard';
 import { useSelector } from '@legendapp/state/react';
 import { devSettings$ } from '@/config/devSettings';
+import { useCritiqueResult } from '@/modules/axiom/hooks/useCritiqueResult';
+import { CritiqueSection } from '@/modules/axiom/components/CritiqueSection';
 
 interface ProposalCardsProps {
   messageId: string;
@@ -32,6 +34,13 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
     devSettings$.chat.extraction.minConfidenceThreshold.get()
   );
 
+  // WP 9B.1: Critique settings
+  const critiqueUIConfig = useSelector(() => devSettings$.axiom.critique.ui.get());
+  const critiqueEnabled = useSelector(() => devSettings$.axiom.critique.enabled.get());
+
+  // WP 9B.1: Get critique result for this proposal batch (uses messageId as correlationId)
+  const { critiqueResult, critiqueSkipped, isBeingCritiqued } = useCritiqueResult(messageId);
+
   // Filter proposals by confidence and status
   const pendingNodes = proposals.nodes.filter(
     (n) => n.status === 'pending' && n.confidence >= minConfidence
@@ -49,11 +58,37 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
     return null;
   }
 
+  const showCritiqueSection = critiqueUIConfig.showInProposalCard && critiqueResult;
+  const showChallengeButton =
+    critiqueEnabled &&
+    critiqueUIConfig.allowManualCritique &&
+    !critiqueResult &&
+    !critiqueSkipped &&
+    !isBeingCritiqued;
+
   return (
     <div className="mt-3 space-y-2">
       <div className="text-xs text-athena-muted font-medium flex items-center gap-1">
         <Lightbulb className="w-3 h-3 text-amber-500" />
         <span>Suggested additions to your knowledge graph:</span>
+        {/* WP 9B.1: Challenge button */}
+        {showChallengeButton && (
+          <button
+            className="ml-auto flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+              text-amber-400 border border-amber-500/30 rounded hover:bg-amber-500/10 transition-colors"
+            title="Run Devil's Advocate critique on these proposals"
+          >
+            <Swords className="w-3 h-3" />
+            Challenge
+          </button>
+        )}
+        {/* WP 9B.1: Critiquing indicator */}
+        {isBeingCritiqued && (
+          <span className="ml-auto flex items-center gap-1 text-[10px] text-amber-400">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Critiquing...
+          </span>
+        )}
       </div>
 
       {/* Render node proposals first */}
@@ -75,6 +110,11 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
           acceptedNodeIds={acceptedNodeIdsMap}
         />
       ))}
+
+      {/* WP 9B.1: Devil's Advocate critique section */}
+      {showCritiqueSection && (
+        <CritiqueSection result={critiqueResult} />
+      )}
     </div>
   );
 }

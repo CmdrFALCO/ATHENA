@@ -41,3 +41,11 @@ export {
   contentCoherent,
   notDuplicate,
 } from './semantic';
+
+// Critique guards (WP 9B.1)
+export {
+  shouldCritique,
+  survived,
+  reconsider,
+  critiqueRejected,
+} from './critique';

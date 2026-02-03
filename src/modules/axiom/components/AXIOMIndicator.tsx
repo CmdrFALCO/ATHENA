@@ -8,9 +8,10 @@
  */
 
 import { useSelector } from '@legendapp/state/react';
-import { Activity, AlertCircle } from 'lucide-react';
+import { Activity, AlertCircle, Swords } from 'lucide-react';
 import { axiomState$ } from '../store/axiomState';
 import { axiomActions } from '../store/axiomActions';
+import { PLACE_IDS } from '../workflows/types';
 
 interface AXIOMIndicatorProps {
   className?: string;
@@ -24,7 +25,7 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
   const tokensByPlace = useSelector(() => axiomState$.tokensByPlace.get());
 
   // Compute pending count (tokens not in sink places)
-  const sinkPlaces = new Set(['P_committed', 'P_rejected']);
+  const sinkPlaces = new Set(['P_committed', 'P_rejected', 'P_escalated']);
   let pendingCount = 0;
   for (const [placeId, tokenIds] of Object.entries(tokensByPlace)) {
     if (!sinkPlaces.has(placeId)) {
@@ -32,9 +33,15 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
     }
   }
 
+  // WP 9B.1: Detect critiquing state
+  const isCritiquing =
+    (tokensByPlace[PLACE_IDS.P_verified]?.length ?? 0) > 0 ||
+    (tokensByPlace[PLACE_IDS.P_critiqued]?.length ?? 0) > 0;
+
   const getStatusText = () => {
     if (lastError) return 'Error';
     if (isPaused) return 'Paused';
+    if (isCritiquing) return 'Critiquing...';
     if (isRunning) return 'Validating...';
     return 'Idle';
   };
@@ -51,17 +58,21 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
       {/* Status dot */}
       <span className="relative flex h-2 w-2">
         {isRunning && !isPaused && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
+            isCritiquing ? 'bg-amber-400' : 'bg-blue-400'
+          } opacity-75`} />
         )}
         <span
           className={`relative inline-flex h-2 w-2 rounded-full ${
             lastError
               ? 'bg-red-500'
-              : isRunning && !isPaused
-                ? 'bg-blue-500'
-                : isPaused
-                  ? 'bg-yellow-500'
-                  : 'bg-athena-muted'
+              : isCritiquing
+                ? 'bg-amber-500'
+                : isRunning && !isPaused
+                  ? 'bg-blue-500'
+                  : isPaused
+                    ? 'bg-yellow-500'
+                    : 'bg-athena-muted'
           }`}
         />
       </span>
@@ -86,8 +97,12 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
       )}
 
       {/* Activity icon when running */}
-      {isRunning && !lastError && (
+      {isRunning && !lastError && !isCritiquing && (
         <Activity className="w-3 h-3 text-blue-400 ml-0.5" />
+      )}
+      {/* WP 9B.1: Critique icon when critiquing */}
+      {isCritiquing && !lastError && (
+        <Swords className="w-3 h-3 text-amber-400 ml-0.5" />
       )}
     </button>
   );

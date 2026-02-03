@@ -9,6 +9,7 @@
 
 import type { TokenColor } from './colorSets';
 import type { CorrectionFeedback } from './feedback';
+import type { CRITIQUE_RESULT } from './critique';
 
 /**
  * AetherToken — A typed token carrying payload through the CPN
@@ -75,6 +76,16 @@ export interface TokenMetadata {
 
   /** Constraints that failed */
   constraintsFailed: string[];
+
+  // Critique tracking (WP 9B.1)
+  /** Result from Devil's Advocate agent */
+  critiqueResult?: CRITIQUE_RESULT;
+  /** How long the critique took (ms) */
+  critiqueDurationMs?: number;
+  /** True if critique was skipped (fast path) */
+  critiqueSkipped?: boolean;
+  /** Reason critique was skipped */
+  critiqueSkipReason?: string;
 }
 
 /**

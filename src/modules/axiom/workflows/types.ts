@@ -23,6 +23,9 @@ export const PLACE_IDS = {
   P_feedback: 'P_feedback',
   P_committed: 'P_committed',
   P_rejected: 'P_rejected',
+  // WP 9B.1: Critique places
+  P_critiqued: 'P_critiqued',
+  P_escalated: 'P_escalated',
 } as const;
 
 export type PlaceId = (typeof PLACE_IDS)[keyof typeof PLACE_IDS];
@@ -35,6 +38,12 @@ export const TRANSITION_IDS = {
   T_regenerate: 'T_regenerate',
   T_reject: 'T_reject',
   T_commit: 'T_commit',
+  // WP 9B.1: Critique transitions
+  T_critique: 'T_critique',
+  T_skip_critique: 'T_skip_critique',
+  T_critique_accept: 'T_critique_accept',
+  T_critique_escalate: 'T_critique_escalate',
+  T_critique_reject: 'T_critique_reject',
 } as const;
 
 export type TransitionId = (typeof TRANSITION_IDS)[keyof typeof TRANSITION_IDS];

@@ -66,6 +66,7 @@ export type TokenColor =
   | 'deciding'
   | 'verified'
   | 'feedback'
+  | 'critiqued'     // WP 9B.1: Post-critique, awaiting routing
   | 'committed'
   | 'rejected'
   | 'escalated';

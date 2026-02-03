@@ -43,9 +43,34 @@ export {
 // Placeholders
 export { createPlaceholders } from './placeholders';
 
+// Placeholders (real implementations)
+export {
+  realValidateProposal,
+  realRegenerateProposal,
+  realCommitProposal,
+  createRealPlaceholders,
+} from './placeholders';
+
 // Factory
 export {
   createValidationNet,
   wireValidationNet,
   createProposalToken,
 } from './validationNet';
+
+// WP 9B.1: Critique places
+export { P_critiqued, P_escalated, CRITIQUE_PLACES } from './critiquePlaces';
+
+// WP 9B.1: Critique transitions
+export {
+  createT_critique,
+  createT_skip_critique,
+  createT_critique_accept,
+  createT_critique_escalate,
+  createT_critique_reject,
+  createAllCritiqueTransitions,
+} from './critiqueTransitions';
+
+// WP 9B.1: Critique net extension
+export { extendWithCritique } from './critiqueNet';
+export type { CritiqueNetOptions } from './critiqueNet';

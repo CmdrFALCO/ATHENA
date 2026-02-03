@@ -16,6 +16,8 @@ export type WorkflowPhase =
   | 'validating'
   | 'deciding'
   | 'feedback'
+  | 'critiquing'   // WP 9B.1: Devil's Advocate critique in progress
+  | 'escalated'    // WP 9B.1: Critique flagged for human review
   | 'committed'
   | 'rejected';
 
@@ -34,9 +36,14 @@ export function useWorkflowState() {
     if ((tokensByPlace[PLACE_IDS.P_committed]?.length ?? 0) > 0) return 'committed';
     if ((tokensByPlace[PLACE_IDS.P_rejected]?.length ?? 0) > 0) return 'rejected';
 
+    // WP 9B.1: Check critique states
+    if ((tokensByPlace[PLACE_IDS.P_escalated]?.length ?? 0) > 0) return 'escalated';
+    if ((tokensByPlace[PLACE_IDS.P_critiqued]?.length ?? 0) > 0) return 'critiquing';
+
     // Check active states
     if ((tokensByPlace[PLACE_IDS.P_feedback]?.length ?? 0) > 0) return 'feedback';
     if ((tokensByPlace[PLACE_IDS.P_deciding]?.length ?? 0) > 0) return 'deciding';
+    if ((tokensByPlace[PLACE_IDS.P_verified]?.length ?? 0) > 0) return 'critiquing';
     if ((tokensByPlace[PLACE_IDS.P_validating]?.length ?? 0) > 0) return 'validating';
     if ((tokensByPlace[PLACE_IDS.P_proposals]?.length ?? 0) > 0) return 'validating';
 
@@ -64,6 +71,6 @@ export function useWorkflowState() {
     stepCount,
     retryCount,
     transitionHistory,
-    isTerminal: currentPhase === 'committed' || currentPhase === 'rejected',
+    isTerminal: currentPhase === 'committed' || currentPhase === 'rejected' || currentPhase === 'escalated',
   };
 }

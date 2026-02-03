@@ -25,23 +25,35 @@ import {
   type ValidationNetOptions,
   type ValidationNetResult,
 } from './types';
+import { extendWithCritique, type CritiqueNetOptions } from './critiqueNet';
 
 /**
  * Create the validation net configuration (places + transitions).
  * Does not require an engine — returns configs that can be inspected/tested.
+ *
+ * When critiqueOptions is provided, extends the net with the Devil's Advocate
+ * critique path (WP 9B.1). When omitted, behavior is unchanged.
  */
 export function createValidationNet(
   options?: ValidationNetOptions,
+  critiqueOptions?: CritiqueNetOptions,
 ): ValidationNetResult {
   const placeholders = createPlaceholders(options?.placeholders);
   const transitionConfigs = createAllTransitions(placeholders);
 
-  return {
+  const baseNet: ValidationNetResult = {
     placeConfigs: ALL_PLACES,
     transitionConfigs,
     placeIds: PLACE_IDS,
     transitionIds: TRANSITION_IDS,
   };
+
+  // WP 9B.1: Extend with critique if options provided
+  if (critiqueOptions) {
+    return extendWithCritique(baseNet, critiqueOptions, options?.placeholders);
+  }
+
+  return baseNet;
 }
 
 /**

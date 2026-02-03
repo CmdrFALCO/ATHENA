@@ -22,7 +22,13 @@ export type AXIOMEventType =
   | 'engine:step'
   | 'engine:maxSteps'
   | 'workflow:completed'
-  | 'workflow:failed';
+  | 'workflow:failed'
+  // WP 9B.1: Critique events
+  | 'critique:started'
+  | 'critique:completed'
+  | 'critique:skipped'
+  | 'critique:escalated'
+  | 'critique:rejected';
 
 /**
  * AXIOMEvent — A typed event emitted by the engine
@@ -102,4 +108,34 @@ export interface WorkflowFailedEventData {
   workflowId: string;
   reason: string;
   lastError?: string;
+}
+
+// WP 9B.1: Critique event data types
+
+export interface CritiqueStartedEventData {
+  correlationId: string;
+  scope: 'batch' | 'individual';
+}
+
+export interface CritiqueCompletedEventData {
+  correlationId: string;
+  survivalScore: number;
+  recommendation: 'proceed' | 'reconsider' | 'reject';
+  counterArgumentCount: number;
+  durationMs: number;
+}
+
+export interface CritiqueSkippedEventData {
+  correlationId: string;
+  reason: string;
+}
+
+export interface CritiqueEscalatedEventData {
+  correlationId: string;
+  survivalScore: number;
+}
+
+export interface CritiqueRejectedEventData {
+  correlationId: string;
+  survivalScore: number;
 }

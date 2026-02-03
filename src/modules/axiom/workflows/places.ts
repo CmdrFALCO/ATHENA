@@ -15,6 +15,7 @@
 
 import type { PlaceConfig } from '../types/place';
 import { PLACE_IDS } from './types';
+import { CRITIQUE_PLACES, P_critiqued, P_escalated } from './critiquePlaces';
 
 /** Entry point — incoming proposals from Der Generator (LLM) */
 export const P_proposals: PlaceConfig = {
@@ -84,6 +85,9 @@ export const VALIDATION_PLACES: Record<string, PlaceConfig> = {
   [PLACE_IDS.P_feedback]: P_feedback,
   [PLACE_IDS.P_committed]: P_committed,
   [PLACE_IDS.P_rejected]: P_rejected,
+  // WP 9B.1: Critique places
+  [PLACE_IDS.P_critiqued]: P_critiqued,
+  [PLACE_IDS.P_escalated]: P_escalated,
 };
 
 /** All place configs in registration order */
@@ -95,4 +99,6 @@ export const ALL_PLACES: PlaceConfig[] = [
   P_feedback,
   P_committed,
   P_rejected,
+  // WP 9B.1: Critique places
+  ...CRITIQUE_PLACES,
 ];

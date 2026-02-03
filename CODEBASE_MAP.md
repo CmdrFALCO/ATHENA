@@ -292,8 +292,8 @@ athena/
 | Format Options | `src/modules/export/components/FormatOptions.tsx` | Per-format option panels (Markdown, JSON, CSV, HTML) |
 | Export Hook | `src/modules/export/hooks/useExport.ts` | useExportInit (adapter wiring) + useExport (state/actions) |
 | Export Config | `src/config/devSettings.ts` | `export.*` settings for enabled, showInCanvasToolbar, defaultFormat |
-| AXIOM Workflow Places | `src/modules/axiom/workflows/places.ts` | 7 CPN places: proposals (source), validating, deciding, verified, feedback, committed (sink), rejected (sink) |
-| AXIOM Workflow Transitions | `src/modules/axiom/workflows/transitions.ts` | 6 transitions: validate, accept, prepare_retry, regenerate, reject, commit with priority routing |
+| AXIOM Workflow Places | `src/modules/axiom/workflows/places.ts` | 9 CPN places: proposals (source), validating, deciding, verified, feedback, critiqued, committed (sink), rejected (sink), escalated (sink) |
+| AXIOM Workflow Transitions | `src/modules/axiom/workflows/transitions.ts` | 6 base transitions: validate, accept, prepare_retry, regenerate, reject, commit with priority routing |
 | FeedbackBuilder | `src/modules/axiom/engine/FeedbackBuilder.ts` | Converts Phase 5A Violations to CorrectionFeedback for LLM regeneration |
 | Validation Guards | `src/modules/axiom/guards/validation.ts` | Workflow routing: isValid, hasErrors, tokenCanRetry, tokenShouldEscalate |
 | Schema Guards | `src/modules/axiom/guards/schema.ts` | Level 1: nodesHaveRequiredFields, edgesHaveRequiredFields, schemaValid |
@@ -304,7 +304,7 @@ athena/
 | AXIOM Workflow Types | `src/modules/axiom/workflows/types.ts` | PLACE_IDS, TRANSITION_IDS, ValidatedPayload, ValidationPlaceholders |
 | AXIOMIndicator | `src/modules/axiom/components/AXIOMIndicator.tsx` | Header status indicator: workflow state, token counts, pulsing dot, error badge |
 | AXIOMPanel | `src/modules/axiom/components/AXIOMPanel.tsx` | Main sidebar panel (480px slide-over) with Graph/Tokens/History tabs |
-| WorkflowGraph | `src/modules/axiom/components/WorkflowGraph.tsx` | React Flow CPN visualization: 7 place nodes, 6 transition nodes, edges |
+| WorkflowGraph | `src/modules/axiom/components/WorkflowGraph.tsx` | React Flow CPN visualization: 9 place nodes, 11 transition nodes, critique path |
 | TokenInspector | `src/modules/axiom/components/TokenInspector.tsx` | Raw _meta data display (Principle 1) with JSON trees, feedback, clipboard |
 | TransitionLog | `src/modules/axiom/components/TransitionLog.tsx` | Decision trail (Principle 2): every transition with reason, filterable, exportable |
 | FeedbackDisplay | `src/modules/axiom/components/FeedbackDisplay.tsx` | Structured corrective feedback: constraint level, severity, actual/expected, suggestion |
@@ -317,7 +317,15 @@ athena/
 | AXIOMValidationService | `src/modules/axiom/services/AXIOMValidationService.ts` | IValidationService implementation using AXIOM CPN workflow with lazy engine initialization |
 | useAXIOM | `src/modules/axiom/hooks/useAXIOM.ts` | Main hook: isRunning, isPaused, stepCount, processProposal() |
 | useTokens | `src/modules/axiom/hooks/useTokens.ts` | Token access: useTokens(placeId?), useTokenCount, useHasToken, useTotalTokenCount |
-| useWorkflowState | `src/modules/axiom/hooks/useWorkflowState.ts` | Workflow phase from token placement: idle/validating/deciding/feedback/committed/rejected |
+| useWorkflowState | `src/modules/axiom/hooks/useWorkflowState.ts` | Workflow phase from token placement: idle/validating/deciding/feedback/critiquing/escalated/committed/rejected |
+| useCritiqueResult | `src/modules/axiom/hooks/useCritiqueResult.ts` | WP 9B.1: Bridges AXIOM critique events to React (critiqueResult, isBeingCritiqued) |
+| Critique Types | `src/modules/axiom/types/critique.ts` | WP 9B.1: CRITIQUE_RESULT, CounterArgument, RiskFactor, survival scoring |
+| Critique Guards | `src/modules/axiom/guards/critique.ts` | WP 9B.1: shouldCritique, survived, reconsider, critiqueRejected guard factories |
+| DevilsAdvocateAgent | `src/modules/axiom/agents/DevilsAdvocateAgent.ts` | WP 9B.1: AI-powered critique agent using IAIBackend for adversarial analysis |
+| Critique Transitions | `src/modules/axiom/workflows/critiqueTransitions.ts` | WP 9B.1: 5 transitions: critique, skip_critique, critique_accept, critique_escalate, critique_reject |
+| Critique Places | `src/modules/axiom/workflows/critiquePlaces.ts` | WP 9B.1: P_critiqued (intermediate), P_escalated (sink) |
+| Critique Net | `src/modules/axiom/workflows/critiqueNet.ts` | WP 9B.1: extendWithCritique() — replaces T_commit with critique path |
+| CritiqueSection | `src/modules/axiom/components/CritiqueSection.tsx` | WP 9B.1: Survival bar, counter-arguments, risk factors, human override buttons |
 | getValidationService | `src/modules/validation/services/index.ts` | Factory: returns axiomValidationService or validationService based on devSettings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -438,8 +446,11 @@ athena/
 | ValidationNetOptions | `src/modules/axiom/workflows/types.ts` | Options for creating validation workflow (maxRetries, placeholders) |
 | ValidationNetResult | `src/modules/axiom/workflows/types.ts` | Created net with placeConfigs, transitionConfigs, IDs |
 | WorkflowResult | `src/modules/axiom/workflows/types.ts` | Execution result with success, finalPlace, retries, feedbackHistory |
-| PlaceId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 7 place IDs |
-| TransitionId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 6 transition IDs |
+| PlaceId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 9 place IDs (includes critique places) |
+| TransitionId | `src/modules/axiom/workflows/types.ts` | Type-safe union of 11 transition IDs (includes critique transitions) |
+| CRITIQUE_RESULT | `src/modules/axiom/types/critique.ts` | WP 9B.1: Critique output with survivalScore, counterArguments, blindSpots, riskFactors |
+| CritiqueConfig | `src/modules/axiom/types/critique.ts` | WP 9B.1: Full critique config (triggers, behavior, UI) |
+| CritiqueNetOptions | `src/modules/axiom/workflows/critiqueNet.ts` | WP 9B.1: Options for critique net extension (aiBackend, configs) |
 
 ---
 

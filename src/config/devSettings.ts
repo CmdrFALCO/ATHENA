@@ -5,6 +5,7 @@ import type { JobsConfig } from '@/modules/jobs/types';
 import type { SynthesisConfig } from '@/modules/synthesis/types';
 import type { ViewsConfig } from '@/modules/views/types';
 import type { ExportConfig } from '@/modules/export/types';
+import type { CritiqueConfig } from '@/modules/axiom/types/critique';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -504,6 +505,9 @@ export interface AXIOMConfig {
     /** Expose window.__ATHENA_AXIOM__ */
     exposeGlobals: boolean;
   };
+
+  /** Devil's Advocate critique settings (WP 9B.1) */
+  critique: CritiqueConfig;
 }
 
 const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
@@ -545,6 +549,33 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
     enableStepping: true,
     preserveCompletedWorkflows: true,
     exposeGlobals: true,
+  },
+
+  // WP 9B.1: Devil's Advocate critique
+  critique: {
+    enabled: true,
+    triggers: {
+      minConfidence: 0.85,
+      skipBelowConfidence: 0.5,
+      minConnections: 3,
+      entityTypes: ['decision', 'claim', 'argument'],
+      probabilisticRate: 0,
+    },
+    behavior: {
+      scope: 'batch' as const,
+      model: '',
+      temperature: 0.7,
+      maxCounterArguments: 5,
+      survivalThreshold: 0.7,
+      rejectThreshold: 0.3,
+    },
+    ui: {
+      showInProposalCard: true,
+      showSurvivalScore: true,
+      collapseWhenSurvived: true,
+      allowManualCritique: true,
+      allowHumanOverride: true,
+    },
   },
 };
 
@@ -1143,6 +1174,31 @@ export const devSettingsActions = {
 
   setAXIOMFeedbackVerbosity(verbosity: AXIOMConfig['feedback']['verbosity']) {
     devSettings$.axiom.feedback.verbosity.set(verbosity);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // AXIOM critique actions (WP 9B.1)
+  setAXIOMCritiqueEnabled(enabled: boolean) {
+    devSettings$.axiom.critique.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMCritiqueScope(scope: 'batch' | 'individual') {
+    devSettings$.axiom.critique.behavior.scope.set(scope);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMCritiqueSurvivalThreshold(threshold: number) {
+    devSettings$.axiom.critique.behavior.survivalThreshold.set(
+      Math.max(0, Math.min(1, threshold)),
+    );
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAXIOMCritiqueRejectThreshold(threshold: number) {
+    devSettings$.axiom.critique.behavior.rejectThreshold.set(
+      Math.max(0, Math.min(1, threshold)),
+    );
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

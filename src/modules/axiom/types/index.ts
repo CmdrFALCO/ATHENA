@@ -27,3 +27,19 @@ export type {
 // Feedback
 export type { CorrectionFeedback } from './feedback';
 export { formatFeedbackForLLM } from './feedback';
+
+// Critique (WP 9B.1)
+export type {
+  CRITIQUE_RESULT,
+  CounterArgument,
+  RiskFactor,
+  CritiqueTriggerConfig,
+  CritiqueBehaviorConfig,
+  CritiqueUIConfig,
+  CritiqueConfig,
+} from './critique';
+export {
+  SEVERITY_WEIGHTS,
+  calculateSurvivalScore,
+  adjustConfidence,
+} from './critique';

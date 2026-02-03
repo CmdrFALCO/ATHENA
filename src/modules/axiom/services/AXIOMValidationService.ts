@@ -33,6 +33,8 @@ import { devSettings$ } from '@/config/devSettings';
 import { validateProposal } from '../integration/validationIntegration';
 import { regenerateWithFeedback } from '../integration/chatIntegration';
 import { commitToGraph } from '../integration/graphIntegration';
+import { getAIService } from '@/modules/ai/AIService';
+import type { CritiqueNetOptions } from '../workflows/critiqueNet';
 
 export class AXIOMValidationService implements IValidationService {
   private engine: AXIOMEngine | null = null;
@@ -48,6 +50,8 @@ export class AXIOMValidationService implements IValidationService {
 
   /**
    * Ensure the engine is initialized with the validation workflow.
+   * When critique is enabled and an AI backend is available,
+   * extends the net with the Devil's Advocate critique path (WP 9B.1).
    */
   private ensureInitialized(): void {
     if (this.isInitialized && this.engine) return;
@@ -55,14 +59,33 @@ export class AXIOMValidationService implements IValidationService {
     // Create engine from devSettings
     this.engine = createDefaultEngine();
 
+    // Build critique options if critique is enabled
+    const critiqueConfig = devSettings$.axiom.critique.peek();
+    let critiqueOptions: CritiqueNetOptions | undefined;
+
+    if (critiqueConfig.enabled) {
+      const aiBackend = getAIService().getBackend();
+      if (aiBackend) {
+        critiqueOptions = {
+          aiBackend,
+          triggerConfig: critiqueConfig.triggers,
+          behaviorConfig: critiqueConfig.behavior,
+          critiqueEnabled: critiqueConfig.enabled,
+        };
+      }
+    }
+
     // Create and wire the validation net with real implementations
-    const net = createValidationNet({
-      placeholders: {
-        validateProposal,
-        regenerateProposal: regenerateWithFeedback,
-        commitProposal: commitToGraph,
+    const net = createValidationNet(
+      {
+        placeholders: {
+          validateProposal,
+          regenerateProposal: regenerateWithFeedback,
+          commitProposal: commitToGraph,
+        },
       },
-    });
+      critiqueOptions,
+    );
     wireValidationNet(this.engine, net);
 
     this.isInitialized = true;
