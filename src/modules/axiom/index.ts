@@ -152,6 +152,28 @@ export type {
   AutonomousState,
 } from './autonomous';
 
+// Multi-Factor Confidence (WP 9B.3)
+export {
+  SourceTrustEvaluator,
+  EmbeddingSimilarityEvaluator,
+  NoveltyDetector,
+  NeighborhoodCoherenceStrategy,
+  MultiFactorConfidenceCalculator,
+  StaticThresholds,
+  GlobalRatioAdjuster,
+} from './autonomous';
+export type {
+  ConfidenceFactors,
+  ConfidenceExplanation,
+  ConfidenceResult,
+  ConfidenceWeights,
+  ConfidenceFloors,
+  ConfidenceConfig,
+  IGraphCoherenceStrategy,
+  IThresholdAdjuster,
+  NoveltyResult,
+} from './autonomous';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -306,6 +328,19 @@ export function createDefaultEngine(): AXIOMEngine {
         selectedTokenId: axiomState$.selectedTokenId.peek(),
         selectedPlaceId: axiomState$.selectedPlaceId.peek(),
         interventionPending: axiomState$.interventionPending.peek(),
+      }),
+    };
+
+    // Multi-factor confidence debug globals (WP 9B.3)
+    (window as Record<string, unknown>).__ATHENA_CONFIDENCE__ = {
+      getConfig: () => devSettings$.axiom.confidence.peek(),
+      getWeights: () => devSettings$.axiom.confidence.weights.peek(),
+      getFloors: () => devSettings$.axiom.confidence.floors.peek(),
+      getSourceTrust: () => devSettings$.axiom.confidence.sourceTrust.peek(),
+      getDynamicAdjustment: () => devSettings$.axiom.confidence.dynamicAdjustment.peek(),
+      getStrategies: () => ({
+        coherence: devSettings$.axiom.confidence.coherenceStrategy.peek(),
+        threshold: devSettings$.axiom.confidence.thresholdStrategy.peek(),
       }),
     };
 

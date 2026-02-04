@@ -2,6 +2,7 @@
  * ProposalCards - Container for all proposals in a message
  * WP 7.5 - Proposal Cards UI
  * WP 9B.2 - Autonomous mode support (auto-committed / queued / auto-rejected states)
+ * WP 9B.3 - Multi-factor confidence breakdown display
  *
  * Renders node proposals first (green cards), then edge proposals (blue cards).
  * Manages shared state for tracking accepted node IDs used by edge dependency resolution.
@@ -17,6 +18,7 @@ import { devSettings$ } from '@/config/devSettings';
 import { useCritiqueResult } from '@/modules/axiom/hooks/useCritiqueResult';
 import { CritiqueSection } from '@/modules/axiom/components/CritiqueSection';
 import type { AutonomousDecision } from '@/modules/axiom/autonomous/types';
+import type { ConfidenceResult, ConfidenceFactors, ConfidenceExplanation } from '@/modules/axiom/autonomous/confidence/types';
 
 interface ProposalCardsProps {
   messageId: string;
@@ -28,6 +30,139 @@ interface ProposalCardsProps {
   /** WP 9B.2: Callback to manually accept an auto-rejected proposal */
   onOverrideAccept?: () => void;
 }
+
+// === WP 9B.3: Confidence Breakdown Components ===
+
+/** Factor display order (most important first) */
+const FACTOR_ORDER: (keyof ConfidenceFactors)[] = [
+  'validationScore', 'critiqueSurvival', 'noveltyScore',
+  'graphCoherence', 'embeddingSimilarity', 'sourceQuality',
+  'extractionClarity', 'invarianceScore',
+];
+
+/** Short labels for the factor bars */
+const FACTOR_SHORT_LABELS: Record<keyof ConfidenceFactors, string> = {
+  validationScore: 'Validation',
+  critiqueSurvival: 'Critique',
+  noveltyScore: 'Novelty',
+  graphCoherence: 'Graph Fit',
+  embeddingSimilarity: 'Semantic',
+  sourceQuality: 'Source',
+  extractionClarity: 'Extraction',
+  invarianceScore: 'Invariance',
+};
+
+function getBarColor(score: number | null): string {
+  if (score === null) return 'bg-athena-border/40';
+  if (score >= 0.7) return 'bg-emerald-500';
+  if (score >= 0.4) return 'bg-yellow-500';
+  return 'bg-red-500';
+}
+
+function FactorBar({
+  factor,
+  score,
+  explanation,
+  isVeto,
+}: {
+  factor: keyof ConfidenceFactors;
+  score: number | null;
+  explanation?: ConfidenceExplanation;
+  isVeto: boolean;
+}) {
+  const label = FACTOR_SHORT_LABELS[factor];
+  const isNull = score === null;
+  const barWidth = isNull ? 0 : Math.round(score * 100);
+  const barColor = getBarColor(score);
+
+  return (
+    <div className={`flex items-center gap-2 ${isVeto ? 'ring-1 ring-red-500/50 rounded px-1 -mx-1' : ''}`}>
+      <span className="text-[10px] text-athena-muted w-16 shrink-0 text-right">
+        {label}
+      </span>
+      <div className="flex-1 h-1.5 bg-athena-border/30 rounded-full overflow-hidden">
+        {isNull ? (
+          <div className="h-full w-full bg-athena-border/20" />
+        ) : (
+          <div
+            className={`h-full rounded-full transition-all ${barColor}`}
+            style={{ width: `${barWidth}%` }}
+          />
+        )}
+      </div>
+      <span className="text-[10px] text-athena-muted w-10 text-right tabular-nums">
+        {isNull ? 'N/A' : `${barWidth}%`}
+      </span>
+      {isVeto && (
+        <span className="text-[9px] text-red-400 font-medium">VETO</span>
+      )}
+    </div>
+  );
+}
+
+function ConfidenceBreakdown({
+  result,
+}: {
+  result: ConfidenceResult;
+}) {
+  // Filter explanations to only warnings and criticals
+  const notableExplanations = result.explanations.filter(
+    (e) => e.severity === 'warning' || e.severity === 'critical',
+  );
+
+  return (
+    <div className="space-y-1.5">
+      {FACTOR_ORDER.map((factor) => (
+        <FactorBar
+          key={factor}
+          factor={factor}
+          score={result.factors[factor]}
+          explanation={result.explanations.find((e) => e.factor === factor)}
+          isVeto={result.vetoFactors.includes(factor)}
+        />
+      ))}
+
+      {/* Aggregate score */}
+      <div className="flex items-center gap-2 pt-1 border-t border-athena-border/30">
+        <span className="text-[10px] font-medium text-athena-text w-16 shrink-0 text-right">
+          Aggregate
+        </span>
+        <div className="flex-1 h-1.5 bg-athena-border/30 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${getBarColor(result.score)}`}
+            style={{ width: `${Math.round(result.score * 100)}%` }}
+          />
+        </div>
+        <span className="text-[10px] font-medium text-athena-text w-10 text-right tabular-nums">
+          {Math.round(result.score * 100)}%
+        </span>
+      </div>
+
+      {/* Floor veto notice */}
+      {result.hasFloorVeto && (
+        <div className="text-[10px] text-red-400 mt-1">
+          Forced review: {result.vetoFactors.map((f) => FACTOR_SHORT_LABELS[f]).join(', ')} below minimum threshold
+        </div>
+      )}
+
+      {/* Notable explanations */}
+      {notableExplanations.length > 0 && (
+        <div className="space-y-0.5 mt-1">
+          {notableExplanations.map((exp) => (
+            <div
+              key={exp.factor}
+              className={`text-[10px] ${exp.severity === 'critical' ? 'text-red-400' : 'text-yellow-400'}`}
+            >
+              {exp.explanation}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// === Main Component ===
 
 export function ProposalCards({
   messageId,
@@ -61,6 +196,9 @@ export function ProposalCards({
   const isQueuedForReview = autonomousDecision?.action === 'queue_for_review';
   const isAutoRejected = autonomousDecision?.action === 'auto_reject';
   const isRateLimited = autonomousDecision?.action === 'rate_limited';
+
+  // WP 9B.3: Multi-factor confidence result
+  const confidenceResult = autonomousDecision?.confidenceResult;
 
   // Filter proposals by confidence and status
   const pendingNodes = proposals.nodes.filter(
@@ -168,14 +306,17 @@ export function ProposalCards({
         )}
       </div>
 
-      {/* WP 9B.2: Confidence details (expandable) */}
+      {/* WP 9B.3: Confidence details (expandable) — shows multi-factor breakdown when available */}
       {autonomousDecision && autonomousDecision.action !== 'disabled' && (
         <button
           onClick={() => setShowConfidenceDetails(!showConfidenceDetails)}
           className="flex items-center gap-1 text-[10px] text-athena-muted hover:text-athena-text transition-colors"
         >
           <Zap className="w-3 h-3" />
-          <span>{autonomousDecision.reason}</span>
+          <span>
+            {confidenceResult ? 'Confidence Details' : autonomousDecision.reason}
+            {' '}({(autonomousDecision.confidence * 100).toFixed(0)}%)
+          </span>
           {showConfidenceDetails ? (
             <ChevronUp className="w-3 h-3" />
           ) : (
@@ -186,30 +327,38 @@ export function ProposalCards({
 
       {showConfidenceDetails && autonomousDecision && (
         <div className="bg-athena-bg/50 border border-athena-border rounded p-2 text-[10px] text-athena-muted space-y-1">
-          <div className="flex justify-between">
-            <span>Proposal confidence:</span>
-            <span>{(autonomousDecision.factors.proposalConfidence * 100).toFixed(0)}%</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Validation score:</span>
-            <span>{(autonomousDecision.factors.validationScore * 100).toFixed(0)}%</span>
-          </div>
-          {autonomousDecision.factors.critiqueSurvival !== null && (
-            <div className="flex justify-between">
-              <span>Critique survival:</span>
-              <span>{(autonomousDecision.factors.critiqueSurvival * 100).toFixed(0)}%</span>
-            </div>
+          {confidenceResult ? (
+            /* WP 9B.3: Multi-factor breakdown */
+            <ConfidenceBreakdown result={confidenceResult} />
+          ) : (
+            /* WP 9B.2 fallback: Simple factor display */
+            <>
+              <div className="flex justify-between">
+                <span>Proposal confidence:</span>
+                <span>{(autonomousDecision.factors.proposalConfidence * 100).toFixed(0)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Validation score:</span>
+                <span>{(autonomousDecision.factors.validationScore * 100).toFixed(0)}%</span>
+              </div>
+              {autonomousDecision.factors.critiqueSurvival !== null && (
+                <div className="flex justify-between">
+                  <span>Critique survival:</span>
+                  <span>{(autonomousDecision.factors.critiqueSurvival * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Novelty score:</span>
+                <span>{(autonomousDecision.factors.noveltyScore * 100).toFixed(0)}%</span>
+              </div>
+              <div className="flex justify-between font-medium text-athena-text">
+                <span>Aggregate:</span>
+                <span>{(autonomousDecision.confidence * 100).toFixed(0)}%</span>
+              </div>
+            </>
           )}
-          <div className="flex justify-between">
-            <span>Novelty score:</span>
-            <span>{(autonomousDecision.factors.noveltyScore * 100).toFixed(0)}%</span>
-          </div>
-          <div className="flex justify-between font-medium text-athena-text">
-            <span>Aggregate:</span>
-            <span>{(autonomousDecision.confidence * 100).toFixed(0)}%</span>
-          </div>
           {autonomousDecision.provenance_id && (
-            <div className="flex justify-between text-athena-muted/60">
+            <div className="flex justify-between text-athena-muted/60 pt-1 border-t border-athena-border/30">
               <span>Provenance:</span>
               <span className="font-mono">{autonomousDecision.provenance_id}</span>
             </div>

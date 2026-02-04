@@ -1,9 +1,14 @@
 /**
- * Provenance Adapter — WP 9B.2
+ * Provenance Adapter — WP 9B.2, extended WP 9B.3
  *
  * SQLite persistence for auto-commit audit trail.
  * Every autonomous commit creates an AutoCommitProvenance record
  * with full revert capability.
+ *
+ * WP 9B.3 additions:
+ * - threshold_adjustments table for dynamic threshold history
+ * - getRecentDecisionStats() for rejection rate analysis
+ * - recordThresholdAdjustment() for audit trail
  */
 
 import type { DatabaseConnection } from '@/database/init';
@@ -13,6 +18,7 @@ import type {
   ReviewStatus,
   RevertSnapshot,
 } from './types';
+import type { ThresholdAdjustment } from './confidence/types';
 
 export class ProvenanceAdapter implements IProvenanceAdapter {
   private initialized = false;
@@ -65,6 +71,9 @@ export class ProvenanceAdapter implements IProvenanceAdapter {
 
       console.log('[AXIOM/Provenance] Table created');
     }
+
+    // WP 9B.3: Ensure threshold_adjustments table exists
+    await this.ensureThresholdAdjustmentsTable();
 
     this.initialized = true;
   }
@@ -198,11 +207,168 @@ export class ProvenanceAdapter implements IProvenanceAdapter {
     return JSON.parse(rows[0].revert_snapshot) as RevertSnapshot;
   }
 
+  // === WP 9B.3: Decision stats for dynamic threshold adjustment ===
+
+  /**
+   * Get aggregated decision stats for the most recent N decisions.
+   * Used by GlobalRatioAdjuster to compute rejection rate.
+   */
+  async getRecentDecisionStats(windowSize: number): Promise<{
+    total: number;
+    autoApproved: number;
+    humanConfirmed: number;
+    humanReverted: number;
+    autoRejected: number;
+    pendingReview: number;
+  }> {
+    await this.ensureInitialized();
+
+    const rows = await this.db.exec<{ review_status: string; count: number }>(
+      `SELECT review_status, COUNT(*) as count FROM (
+        SELECT review_status FROM auto_commit_provenance
+        ORDER BY created_at DESC
+        LIMIT ?
+      ) GROUP BY review_status`,
+      [windowSize],
+    );
+
+    const stats = {
+      total: 0,
+      autoApproved: 0,
+      humanConfirmed: 0,
+      humanReverted: 0,
+      autoRejected: 0,
+      pendingReview: 0,
+    };
+
+    for (const row of rows) {
+      stats.total += row.count;
+      switch (row.review_status) {
+        case 'auto_approved':
+          stats.autoApproved = row.count;
+          break;
+        case 'human_confirmed':
+          stats.humanConfirmed = row.count;
+          break;
+        case 'human_reverted':
+          stats.humanReverted = row.count;
+          break;
+        case 'auto_rejected':
+          stats.autoRejected = row.count;
+          break;
+        case 'pending_review':
+          stats.pendingReview = row.count;
+          break;
+      }
+    }
+
+    return stats;
+  }
+
+  // === WP 9B.3: Threshold adjustment history ===
+
+  /**
+   * Record a threshold adjustment event.
+   */
+  async recordThresholdAdjustment(adjustment: ThresholdAdjustment): Promise<void> {
+    await this.ensureInitialized();
+
+    await this.db.run(
+      `INSERT INTO threshold_adjustments
+        (id, timestamp, strategy, previous_auto_accept, new_auto_accept,
+         previous_auto_reject, new_auto_reject, rejection_rate,
+         window_size, reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        adjustment.id,
+        adjustment.timestamp,
+        adjustment.strategy,
+        adjustment.previousAutoAccept,
+        adjustment.newAutoAccept,
+        adjustment.previousAutoReject,
+        adjustment.newAutoReject,
+        adjustment.rejectionRate,
+        adjustment.windowSize,
+        adjustment.reason,
+      ],
+    );
+  }
+
+  /**
+   * Get recent threshold adjustments.
+   */
+  async getRecentAdjustments(limit = 20): Promise<ThresholdAdjustment[]> {
+    await this.ensureInitialized();
+
+    const rows = await this.db.exec<{
+      id: string;
+      timestamp: string;
+      strategy: string;
+      previous_auto_accept: number;
+      new_auto_accept: number;
+      previous_auto_reject: number;
+      new_auto_reject: number;
+      rejection_rate: number;
+      window_size: number;
+      reason: string;
+    }>(
+      'SELECT * FROM threshold_adjustments ORDER BY timestamp DESC LIMIT ?',
+      [limit],
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      timestamp: row.timestamp,
+      strategy: row.strategy,
+      previousAutoAccept: row.previous_auto_accept,
+      newAutoAccept: row.new_auto_accept,
+      previousAutoReject: row.previous_auto_reject,
+      newAutoReject: row.new_auto_reject,
+      rejectionRate: row.rejection_rate,
+      windowSize: row.window_size,
+      reason: row.reason,
+    }));
+  }
+
   // --- Helpers ---
 
   private async ensureInitialized(): Promise<void> {
     if (!this.initialized) {
       await this.initialize();
+    }
+  }
+
+  /**
+   * WP 9B.3: Create threshold_adjustments table if it doesn't exist.
+   */
+  private async ensureThresholdAdjustmentsTable(): Promise<void> {
+    const existing = await this.db.exec<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='threshold_adjustments'",
+    );
+
+    if (existing.length === 0) {
+      console.log('[AXIOM/Provenance] Creating threshold_adjustments table...');
+
+      await this.db.run(`
+        CREATE TABLE threshold_adjustments (
+          id TEXT PRIMARY KEY,
+          timestamp TEXT NOT NULL,
+          strategy TEXT NOT NULL,
+          previous_auto_accept REAL NOT NULL,
+          new_auto_accept REAL NOT NULL,
+          previous_auto_reject REAL NOT NULL,
+          new_auto_reject REAL NOT NULL,
+          rejection_rate REAL NOT NULL,
+          window_size INTEGER NOT NULL,
+          reason TEXT NOT NULL
+        )
+      `);
+
+      await this.db.run(
+        'CREATE INDEX idx_threshold_adj_timestamp ON threshold_adjustments(timestamp)',
+      );
+
+      console.log('[AXIOM/Provenance] threshold_adjustments table created');
     }
   }
 

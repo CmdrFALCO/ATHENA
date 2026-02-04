@@ -1,5 +1,5 @@
 /**
- * Autonomous Commit Service — WP 9B.2
+ * Autonomous Commit Service — WP 9B.2, extended WP 9B.3
  *
  * Core decision logic: evaluate proposals against confidence gates,
  * scope rules, and rate limits. Auto-commit high-confidence proposals
@@ -8,6 +8,13 @@
  * This is a post-workflow decision layer — the AXIOM CPN workflow
  * stays unchanged. Autonomous mode intercepts the commit action
  * after the workflow completes.
+ *
+ * WP 9B.3 additions:
+ * - Multi-factor confidence scoring with 8 factors
+ * - Strategy-based graph coherence and threshold adjustment
+ * - Floor veto (any single factor below minimum forces review)
+ * - Dynamic threshold adjustment based on historical patterns
+ * - Falls back to SimpleConfidenceCalculator when config says 'simple'
  */
 
 import type { PROPOSAL } from '../types/colorsets';
@@ -25,6 +32,15 @@ import type { SimpleConfidenceCalculator } from './ConfidenceCalculator';
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
 import type { IConnectionAdapter } from '@/adapters/IConnectionAdapter';
 
+// WP 9B.3: Multi-factor confidence imports
+import type { MultiFactorConfidenceCalculator } from './confidence/MultiFactorConfidenceCalculator';
+import type { SourceTrustEvaluator } from './confidence/SourceTrustEvaluator';
+import type { IGraphCoherenceStrategy } from './confidence/IGraphCoherenceStrategy';
+import type { EmbeddingSimilarityEvaluator } from './confidence/EmbeddingSimilarityEvaluator';
+import type { NoveltyDetector } from './confidence/NoveltyDetector';
+import type { IThresholdAdjuster } from './confidence/IThresholdAdjuster';
+import type { ConfidenceFactors, ConfidenceResult, AdjustedThresholds } from './confidence/types';
+
 let idCounter = 0;
 function generateId(): string {
   return `auto_${Date.now()}_${++idCounter}`;
@@ -39,10 +55,26 @@ function emptyFactors(): ConfidenceSnapshot {
   };
 }
 
+/**
+ * WP 9B.3: Multi-factor confidence evaluation stack.
+ * Optional — only used when calculator mode is 'multi_factor'.
+ */
+export interface MultiFactorStack {
+  calculator: MultiFactorConfidenceCalculator;
+  sourceTrustEvaluator: SourceTrustEvaluator;
+  coherenceStrategy: IGraphCoherenceStrategy;
+  embeddingSimilarityEvaluator: EmbeddingSimilarityEvaluator;
+  noveltyDetector: NoveltyDetector;
+  thresholdAdjuster: IThresholdAdjuster;
+}
+
 export class AutonomousCommitService {
   /** Adapters for revert operations — injected externally */
   private noteAdapter: INoteAdapter | null = null;
   private connectionAdapter: IConnectionAdapter | null = null;
+
+  /** WP 9B.3: Multi-factor confidence stack (null = use simple calculator) */
+  private multiFactorStack: MultiFactorStack | null = null;
 
   constructor(
     private provenanceAdapter: IProvenanceAdapter,
@@ -60,6 +92,14 @@ export class AutonomousCommitService {
   }
 
   /**
+   * WP 9B.3: Set the multi-factor confidence stack.
+   * When set, evaluate() uses multi-factor scoring instead of simple.
+   */
+  setMultiFactorStack(stack: MultiFactorStack): void {
+    this.multiFactorStack = stack;
+  }
+
+  /**
    * Evaluate a completed AXIOM workflow result and decide whether to
    * auto-commit, queue for review, or auto-reject.
    */
@@ -67,6 +107,7 @@ export class AutonomousCommitService {
     proposal: PROPOSAL,
     workflowResult: WorkflowResult,
     config: AutonomousConfig,
+    resource?: { url?: string; type?: string } | null,
   ): Promise<AutonomousDecision> {
     // 0. Master toggle
     if (!config.enabled) {
@@ -94,11 +135,135 @@ export class AutonomousCommitService {
       };
     }
 
-    // 3. Build confidence factors from available data
+    // 3. Choose calculator mode
+    if (this.multiFactorStack) {
+      return this.evaluateMultiFactor(proposal, workflowResult, config, resource);
+    }
+
+    // Fallback: simple confidence calculation (WP 9B.2 behavior)
+    return this.evaluateSimple(proposal, workflowResult, config);
+  }
+
+  /**
+   * WP 9B.3: Multi-factor confidence evaluation path.
+   */
+  private async evaluateMultiFactor(
+    proposal: PROPOSAL,
+    workflowResult: WorkflowResult,
+    config: AutonomousConfig,
+    resource?: { url?: string; type?: string } | null,
+  ): Promise<AutonomousDecision> {
+    const stack = this.multiFactorStack!;
+
+    // Build all 8 factors
+    const factors = await this.buildMultiFactors(
+      proposal,
+      workflowResult,
+      stack,
+      resource,
+    );
+
+    // Calculate confidence with floor veto
+    const result = stack.calculator.calculate(factors);
+
+    // Get dynamically adjusted thresholds
+    const thresholds = await stack.thresholdAdjuster.adjust({
+      autoAcceptEntity: config.thresholds.autoAcceptEntity,
+      autoAcceptConnection: config.thresholds.autoAcceptConnection,
+      autoRejectBelow: config.thresholds.autoRejectBelow,
+    });
+
+    // Build legacy factors for backward compatibility
+    const legacyFactors = this.toLegacyFactors(factors, proposal, workflowResult);
+
+    // Floor veto: force review regardless of score
+    if (result.hasFloorVeto) {
+      const vetoNames = result.vetoFactors.join(', ');
+      return {
+        action: 'queue_for_review',
+        confidence: result.score,
+        factors: legacyFactors,
+        reason: `Floor veto triggered by: ${vetoNames}`,
+        confidenceResult: result,
+      };
+    }
+
+    // Auto-reject check
+    if (result.score < thresholds.autoRejectBelow) {
+      return {
+        action: 'auto_reject',
+        confidence: result.score,
+        factors: legacyFactors,
+        reason: `Confidence ${result.score.toFixed(2)} below auto-reject threshold ${thresholds.autoRejectBelow.toFixed(2)}`,
+        confidenceResult: result,
+      };
+    }
+
+    // Determine threshold (entities vs connections)
+    const hasEntities = proposal.nodes && proposal.nodes.length > 0;
+    const threshold = hasEntities
+      ? thresholds.autoAcceptEntity
+      : thresholds.autoAcceptConnection;
+
+    // Below auto-accept → queue for review
+    if (result.score < threshold) {
+      return {
+        action: 'queue_for_review',
+        confidence: result.score,
+        factors: legacyFactors,
+        reason: `Confidence ${result.score.toFixed(2)} below auto-accept threshold ${threshold.toFixed(2)}${thresholds.wasAdjusted ? ' (adjusted)' : ''}`,
+        confidenceResult: result,
+      };
+    }
+
+    // Critique requirement check
+    if (config.scope.requireCritique) {
+      const critiqueSurvival = this.extractCritiqueSurvival(workflowResult);
+      if (critiqueSurvival === null) {
+        return {
+          action: 'queue_for_review',
+          confidence: result.score,
+          factors: legacyFactors,
+          reason: 'Critique required but was not run',
+          confidenceResult: result,
+        };
+      }
+    }
+
+    // Rate limit check
+    const rateCheck = await this.rateLimiter.canCommit(config);
+    if (!rateCheck.allowed) {
+      return {
+        action: 'rate_limited',
+        confidence: result.score,
+        factors: legacyFactors,
+        reason: rateCheck.reason!,
+        confidenceResult: result,
+      };
+    }
+
+    // All gates passed → auto-commit
+    return {
+      action: 'auto_commit',
+      confidence: result.score,
+      factors: legacyFactors,
+      reason: `Confidence ${result.score.toFixed(2)} meets threshold ${threshold.toFixed(2)}${thresholds.wasAdjusted ? ' (adjusted)' : ''}`,
+      confidenceResult: result,
+    };
+  }
+
+  /**
+   * WP 9B.2 fallback: Simple confidence evaluation path.
+   */
+  private async evaluateSimple(
+    proposal: PROPOSAL,
+    workflowResult: WorkflowResult,
+    config: AutonomousConfig,
+  ): Promise<AutonomousDecision> {
     const factors = this.buildFactors(proposal, workflowResult);
     const confidence = this.confidenceCalculator.calculate(factors);
 
-    // 4. Auto-reject check
+    // Auto-reject check
     if (confidence < config.thresholds.autoRejectBelow) {
       return {
         action: 'auto_reject',
@@ -108,13 +273,13 @@ export class AutonomousCommitService {
       };
     }
 
-    // 5. Determine threshold (entities vs connections)
+    // Determine threshold (entities vs connections)
     const hasEntities = proposal.nodes && proposal.nodes.length > 0;
     const threshold = hasEntities
       ? config.thresholds.autoAcceptEntity
       : config.thresholds.autoAcceptConnection;
 
-    // 6. Below auto-accept → queue for review
+    // Below auto-accept → queue for review
     if (confidence < threshold) {
       return {
         action: 'queue_for_review',
@@ -124,7 +289,7 @@ export class AutonomousCommitService {
       };
     }
 
-    // 7. Critique requirement check
+    // Critique requirement check
     if (config.scope.requireCritique && factors.critiqueSurvival === null) {
       return {
         action: 'queue_for_review',
@@ -134,7 +299,7 @@ export class AutonomousCommitService {
       };
     }
 
-    // 8. Rate limit check
+    // Rate limit check
     const rateCheck = await this.rateLimiter.canCommit(config);
     if (!rateCheck.allowed) {
       return {
@@ -145,7 +310,7 @@ export class AutonomousCommitService {
       };
     }
 
-    // 9. All gates passed → auto-commit
+    // All gates passed → auto-commit
     return {
       action: 'auto_commit',
       confidence,
@@ -185,6 +350,7 @@ export class AutonomousCommitService {
       review_status: 'auto_approved',
       can_revert: true,
       revert_snapshot: revertSnapshot,
+      confidence_result: decision.confidenceResult,
     };
 
     await this.provenanceAdapter.record(provenance);
@@ -280,6 +446,86 @@ export class AutonomousCommitService {
     return null; // Scope check passed
   }
 
+  /**
+   * WP 9B.3: Build all 8 multi-factor confidence scores.
+   */
+  private async buildMultiFactors(
+    proposal: PROPOSAL,
+    workflowResult: WorkflowResult,
+    stack: MultiFactorStack,
+    resource?: { url?: string; type?: string } | null,
+  ): Promise<ConfidenceFactors> {
+    // Extract basic data
+    const nodeConfs = (proposal.nodes || []).map((n) => n.confidence ?? 0);
+    const edgeConfs = (proposal.edges || []).map((e) => e.confidence ?? 0);
+    const allConfs = [...nodeConfs, ...edgeConfs];
+    const extractionClarity =
+      allConfs.length > 0 ? Math.max(...allConfs) : 0.5;
+
+    // Run evaluators in parallel where possible
+    const sourceId = proposal.edges?.[0]?.source ?? proposal.nodes?.[0]?.id ?? '';
+    const targetId = proposal.edges?.[0]?.target ?? '';
+    const connectionType = proposal.edges?.[0]?.label;
+    const proposalTitle = proposal.nodes?.[0]?.title ?? '';
+    const proposalContent = proposal.nodes?.[0]?.content;
+
+    const [sourceQuality, graphCoherence, embeddingSimilarity, noveltyResult] =
+      await Promise.all([
+        Promise.resolve(stack.sourceTrustEvaluator.evaluate(resource, !resource)),
+        sourceId && targetId
+          ? stack.coherenceStrategy.evaluate(sourceId, targetId, connectionType)
+          : Promise.resolve(0.5), // No connection to evaluate
+        sourceId && targetId
+          ? stack.embeddingSimilarityEvaluator.evaluateConnection(sourceId, targetId)
+          : sourceId
+            ? stack.embeddingSimilarityEvaluator.evaluateEntity(sourceId)
+            : Promise.resolve(0.5),
+        proposalTitle
+          ? stack.noveltyDetector.evaluate(proposalTitle, proposalContent)
+          : Promise.resolve({ score: 1.0 }),
+      ]);
+
+    // Validation score
+    const validationScore = workflowResult.success ? 1.0 : 0.0;
+
+    // Critique survival
+    const critiqueSurvivalRaw = this.extractCritiqueSurvival(workflowResult);
+    const critiqueSurvival = critiqueSurvivalRaw ?? 0.5; // Default to neutral if not run
+
+    return {
+      sourceQuality,
+      extractionClarity,
+      graphCoherence,
+      embeddingSimilarity,
+      noveltyScore: noveltyResult.score,
+      validationScore,
+      critiqueSurvival,
+      invarianceScore: null, // Stub for WP 9B.5
+    };
+  }
+
+  /**
+   * Convert multi-factor scores to legacy ConfidenceSnapshot for backward compat.
+   */
+  private toLegacyFactors(
+    factors: ConfidenceFactors,
+    proposal: PROPOSAL,
+    workflowResult: WorkflowResult,
+  ): ConfidenceSnapshot {
+    const nodeConfs = (proposal.nodes || []).map((n) => n.confidence ?? 0);
+    const edgeConfs = (proposal.edges || []).map((e) => e.confidence ?? 0);
+    const allConfs = [...nodeConfs, ...edgeConfs];
+    const proposalConfidence =
+      allConfs.length > 0 ? Math.max(...allConfs) : 0;
+
+    return {
+      proposalConfidence,
+      validationScore: factors.validationScore,
+      critiqueSurvival: this.extractCritiqueSurvival(workflowResult),
+      noveltyScore: factors.noveltyScore,
+    };
+  }
+
   private buildFactors(
     proposal: PROPOSAL,
     result: WorkflowResult,
@@ -297,7 +543,7 @@ export class AutonomousCommitService {
     // critiqueSurvival: from feedback history if critique ran
     const critiqueSurvival = this.extractCritiqueSurvival(result);
 
-    // noveltyScore: placeholder 1.0 (WP 9B.3 will add real duplicate detection)
+    // noveltyScore: placeholder 1.0 (WP 9B.3 adds real duplicate detection via multi-factor path)
     const noveltyScore = 1.0;
 
     return { proposalConfidence, validationScore, critiqueSurvival, noveltyScore };

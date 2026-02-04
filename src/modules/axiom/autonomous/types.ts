@@ -90,6 +90,9 @@ export interface AutoCommitProvenance {
   /** Reversion support */
   can_revert: boolean;
   revert_snapshot?: RevertSnapshot;
+
+  /** WP 9B.3: Full multi-factor confidence breakdown (when multi_factor calculator used) */
+  confidence_result?: import('./confidence/types').ConfidenceResult;
 }
 
 export type ProvenanceSource =
@@ -141,6 +144,8 @@ export interface AutonomousDecision {
   reason: string;
   /** If committed, the provenance record ID */
   provenance_id?: string;
+  /** WP 9B.3: Full multi-factor confidence result (when multi_factor calculator used) */
+  confidenceResult?: import('./confidence/types').ConfidenceResult;
 }
 
 // === Adapter Interface ===

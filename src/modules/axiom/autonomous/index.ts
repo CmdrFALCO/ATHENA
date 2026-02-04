@@ -1,8 +1,9 @@
 /**
- * Autonomous Mode — Barrel Export (WP 9B.2)
+ * Autonomous Mode — Barrel Export (WP 9B.2 + 9B.3)
  *
  * AI auto-commit with deferred human oversight:
  * confidence gates, provenance tracking, rate limiting, and revert capability.
+ * WP 9B.3: Multi-factor confidence scoring with weighted factors, floor veto, and dynamic thresholds.
  */
 
 // Types
@@ -35,3 +36,31 @@ export type { AutonomousState } from './autonomousState';
 
 // Components
 export { AutoCommitToastContainer } from './AutoCommitToast';
+
+// WP 9B.3: Multi-Factor Confidence Scoring
+export type {
+  SourceTrustLevel,
+  ConfidenceFactors,
+  ConfidenceExplanation,
+  ConfidenceResult,
+  ConfidenceWeights,
+  ConfidenceFloors,
+  SourceTrustConfig,
+  DynamicAdjustmentConfig,
+  ThresholdAdjustment,
+  AdjustedThresholds,
+  ConfidenceConfig,
+  IGraphCoherenceStrategy,
+  IThresholdAdjuster,
+  NoveltyResult,
+} from './confidence';
+
+export {
+  SourceTrustEvaluator,
+  EmbeddingSimilarityEvaluator,
+  NoveltyDetector,
+  NeighborhoodCoherenceStrategy,
+  MultiFactorConfidenceCalculator,
+  StaticThresholds,
+  GlobalRatioAdjuster,
+} from './confidence';

@@ -7,6 +7,7 @@ import type { ViewsConfig } from '@/modules/views/types';
 import type { ExportConfig } from '@/modules/export/types';
 import type { CritiqueConfig } from '@/modules/axiom/types/critique';
 import type { AutonomousPreset } from '@/modules/axiom/autonomous/types';
+import type { ConfidenceConfig } from '@/modules/axiom/autonomous/confidence/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -510,6 +511,9 @@ export interface AXIOMConfig {
   /** Devil's Advocate critique settings (WP 9B.1) */
   critique: CritiqueConfig;
 
+  /** Multi-factor confidence scoring (WP 9B.3) */
+  confidence: ConfidenceConfig;
+
   /** Autonomous commit settings (WP 9B.2) */
   autonomous: {
     /** Master toggle — default: false */
@@ -581,6 +585,49 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
     preserveCompletedWorkflows: true,
     exposeGlobals: true,
   },
+
+  // WP 9B.3: Multi-factor confidence scoring
+  confidence: {
+    calculator: 'multi_factor' as const,
+    weights: {
+      sourceQuality: 0.15,
+      extractionClarity: 0.15,
+      graphCoherence: 0.15,
+      embeddingSimilarity: 0.15,
+      noveltyScore: 0.15,
+      validationScore: 0.10,
+      critiqueSurvival: 0.15,
+    },
+    floors: {
+      sourceQuality: 0.0,
+      extractionClarity: 0.0,
+      graphCoherence: 0.0,
+      embeddingSimilarity: 0.0,
+      noveltyScore: 0.2,
+      validationScore: 0.5,
+      critiqueSurvival: 0.0,
+    },
+    coherenceStrategy: 'neighborhood' as const,
+    thresholdStrategy: 'global_ratio' as const,
+    sourceTrust: {
+      trustedDomains: ['.edu', '.gov', '.gov.uk', 'arxiv.org', 'doi.org', 'pubmed.ncbi.nlm.nih.gov', 'scholar.google.com'],
+      untrustedDomains: [],
+      userOverrides: {},
+      userContentScore: 0.8,
+      trustedScore: 0.9,
+      neutralScore: 0.6,
+      untrustedScore: 0.3,
+    },
+    dynamicAdjustment: {
+      enabled: true,
+      windowSize: 50,
+      tightenAbove: 0.30,
+      loosenBelow: 0.10,
+      adjustmentStep: 0.03,
+      minThreshold: 0.50,
+      maxThreshold: 0.95,
+    },
+  } satisfies ConfidenceConfig,
 
   // WP 9B.1: Devil's Advocate critique
   critique: {

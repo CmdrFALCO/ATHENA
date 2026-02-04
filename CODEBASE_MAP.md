@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9B.2 (Autonomous Mode) |
+| **Last WP Completed** | 9B.3 (Multi-Factor Confidence Scoring) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
-| **Milestone** | Phase 9B - Autonomous Mode |
+| **Milestone** | Phase 9B - Multi-Factor Confidence |
 
 ---
 
@@ -330,8 +330,18 @@ athena/
 | Autonomous Presets | `src/modules/axiom/autonomous/presets.ts` | WP 9B.2: strict/balanced/permissive preset configs with different thresholds |
 | ProvenanceAdapter | `src/modules/axiom/autonomous/ProvenanceAdapter.ts` | WP 9B.2: SQLite persistence for auto-commit audit trail with revert snapshots |
 | RateLimiter | `src/modules/axiom/autonomous/RateLimiter.ts` | WP 9B.2: Hourly/daily/queue rate limits with in-memory ring buffer + DB fallback |
-| ConfidenceCalculator | `src/modules/axiom/autonomous/ConfidenceCalculator.ts` | WP 9B.2: Simple weighted confidence scoring (replaced by multi-factor in WP 9B.3) |
-| AutonomousCommitService | `src/modules/axiom/autonomous/AutonomousCommitService.ts` | WP 9B.2: Core decision logic — evaluate, commitWithProvenance, revert |
+| ConfidenceCalculator | `src/modules/axiom/autonomous/ConfidenceCalculator.ts` | WP 9B.2: Simple weighted confidence scoring (fallback when config says 'simple') |
+| AutonomousCommitService | `src/modules/axiom/autonomous/AutonomousCommitService.ts` | WP 9B.2+9B.3: Core decision logic with multi-factor confidence path |
+| Confidence Types | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: ConfidenceFactors (8 factors), weights, floors, explanations, config |
+| SourceTrustEvaluator | `src/modules/axiom/autonomous/confidence/SourceTrustEvaluator.ts` | WP 9B.3: Domain-based source trust scoring with suffix/exact/subdomain matching |
+| IGraphCoherenceStrategy | `src/modules/axiom/autonomous/confidence/IGraphCoherenceStrategy.ts` | WP 9B.3: Strategy interface for graph coherence evaluation |
+| NeighborhoodCoherenceStrategy | `src/modules/axiom/autonomous/confidence/NeighborhoodCoherenceStrategy.ts` | WP 9B.3: Shared-neighbor graph coherence via IConnectionAdapter |
+| EmbeddingSimilarityEvaluator | `src/modules/axiom/autonomous/confidence/EmbeddingSimilarityEvaluator.ts` | WP 9B.3: Cosine similarity for entity/connection semantic relatedness |
+| NoveltyDetector | `src/modules/axiom/autonomous/confidence/NoveltyDetector.ts` | WP 9B.3: Near-duplicate detection using similarity infrastructure |
+| MultiFactorConfidenceCalculator | `src/modules/axiom/autonomous/confidence/MultiFactorConfidenceCalculator.ts` | WP 9B.3: 8-factor weighted scoring with floor veto and explanations |
+| IThresholdAdjuster | `src/modules/axiom/autonomous/confidence/IThresholdAdjuster.ts` | WP 9B.3: Strategy interface for dynamic threshold adjustment |
+| StaticThresholds | `src/modules/axiom/autonomous/confidence/StaticThresholds.ts` | WP 9B.3: Pass-through threshold adjuster (no adjustment) |
+| GlobalRatioAdjuster | `src/modules/axiom/autonomous/confidence/GlobalRatioAdjuster.ts` | WP 9B.3: Rejection-rate-based threshold tightening/loosening |
 | autonomousState | `src/modules/axiom/autonomous/autonomousState.ts` | WP 9B.2: Legend-State slice for runtime stats (auto-commit counts, pause state) |
 | AutoCommitToast | `src/modules/axiom/autonomous/AutoCommitToast.tsx` | WP 9B.2: Notification toast for auto-commits with undo button |
 | useAutonomous | `src/modules/axiom/hooks/useAutonomous.ts` | WP 9B.2: React hook for autonomous config, stats, pause/resume |
@@ -466,6 +476,13 @@ athena/
 | ConfidenceSnapshot | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: Confidence factors (proposal, validation, critique, novelty) |
 | ReviewStatus | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: auto_approved/pending_review/human_confirmed/human_reverted/auto_rejected |
 | AutonomousState | `src/modules/axiom/autonomous/autonomousState.ts` | WP 9B.2: Runtime state (commit counts, pause state, recent decisions) |
+| ConfidenceFactors | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: 8 confidence factors (sourceQuality, extractionClarity, graphCoherence, embeddingSimilarity, noveltyScore, validationScore, critiqueSurvival, invarianceScore) |
+| ConfidenceResult | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Full result with score, factors, explanations, floor veto, weights used |
+| ConfidenceExplanation | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Human-readable factor explanation with severity (ok/warning/critical) |
+| ConfidenceConfig | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Full confidence config (weights, floors, strategies, source trust, dynamic adjustment) |
+| ThresholdAdjustment | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Recorded threshold adjustment with rejection rate and reason |
+| AdjustedThresholds | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Adjusted thresholds with wasAdjusted flag and reason |
+| NoveltyResult | `src/modules/axiom/autonomous/confidence/NoveltyDetector.ts` | WP 9B.3: Novelty score with optional nearest match info |
 
 ---
 
@@ -511,6 +528,7 @@ athena/
 |----|---------|--------|
 | 9B.1 | Devil's Advocate Critique Layer | ✅ |
 | 9B.2 | Autonomous Mode (auto-commit with deferred oversight) | ✅ |
+| 9B.3 | Multi-Factor Confidence Scoring | ✅ |
 
 ### Phase 9A Complete
 
@@ -583,6 +601,7 @@ window.__ATHENA_EXPORT__          // Export actions for testing (WP 8.10)
 window.__ATHENA_EXPORT_SERVICE__() // Export service instance (WP 8.10)
 window.__ATHENA_AUTONOMOUS__     // Autonomous mode debug (WP 9B.2)
 window.__ATHENA_AUTONOMOUS_STATE__ // Autonomous runtime state (WP 9B.2)
+window.__ATHENA_CONFIDENCE__     // Multi-factor confidence config/weights/floors (WP 9B.3)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```
