@@ -193,6 +193,24 @@ export type {
   ReviewActiveTab,
 } from './autonomous';
 
+// Structural Invariance (WP 9B.5)
+export {
+  ParaphraseStabilityTest,
+  CompressionSurvivalTest,
+  InvarianceService,
+  SQLiteInvarianceAdapter,
+} from './autonomous';
+export type {
+  RobustnessLabel,
+  CompressionInterpretation,
+  ParaphraseResult,
+  CompressionResult,
+  CompressionBreakdownPoint,
+  InvarianceEvidence,
+  InvarianceConfig,
+  IInvarianceAdapter,
+} from './autonomous';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -211,6 +229,9 @@ export {
   ReviewFilters,
   ReviewBatchActions,
   AutoCommitCard,
+  // WP 9B.5: Invariance UI
+  InvarianceBadge,
+  TestRobustnessButton,
 } from './components';
 
 // Workflows
@@ -431,6 +452,11 @@ export function createDefaultEngine(): AXIOMEngine {
         const { autonomousActions } = require('./autonomous/autonomousState');
         autonomousActions.resume();
       },
+    };
+
+    // Invariance debug globals (WP 9B.5)
+    (window as Record<string, unknown>).__ATHENA_INVARIANCE__ = {
+      getConfig: () => devSettings$.axiom.invariance.peek(),
     };
   }
 

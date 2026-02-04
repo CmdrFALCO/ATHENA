@@ -1,5 +1,47 @@
 # ATHENA Changelog
 
+## [9B.5.0] - 2026-02-04
+
+### Added
+- **Structural Invariance (WP 9B.5)**: Tests whether AI-suggested connections survive paraphrase rewriting and compression/summarization — populates the `invarianceScore` confidence factor with real evidence
+  - **ParaphraseStabilityTest**: Generates N paraphrase variants of each note via `IAIBackend.generate()`, computes NxN cosine similarity pairs via `IAIBackend.embed()`, measures survival rate (fraction of pairs ≥ threshold), variance, and min/max relative scores
+  - **CompressionSurvivalTest**: Compresses notes to progressively shorter lengths (50%, 30%, 20%), checks if connection similarity survives at each level, interprets deepest survival as `core_relationship | contextual_relationship | surface_pattern`
+  - **InvarianceService**: Orchestrates both tests, aggregates scores (60% paraphrase + 40% compression), assigns robustness labels (`robust ≥ 0.7`, `moderate ≥ 0.4`, `fragile < 0.4`, `untested`), generates human-readable failure modes
+  - **SQLiteInvarianceAdapter**: Persistence layer for `InvarianceEvidence` with upsert semantics, JSON serialization for compression curve and failure modes, query by label or score range
+  - **InvarianceBadge**: Compact UI badge showing robustness status with color-coded shield icons (ShieldCheck/Shield/ShieldAlert/ShieldQuestion), hover tooltip with test details and failure modes
+  - **TestRobustnessButton**: Reusable button triggering invariance tests with loading spinner, error state, and result display via InvarianceBadge
+  - **Database migration 015**: `connection_invariance` table with paraphrase/compression fields, invariance_score, robustness_label, failure_modes (JSON), indexed on score and label
+  - **Fragile floor veto**: Optional config (`fragileFloorVeto`) to force `queue_for_review` when invariance label is `'fragile'`, integrates with existing floor veto mechanism
+  - `src/modules/axiom/autonomous/invariance/` — 5 new files (types, ParaphraseStabilityTest, CompressionSurvivalTest, InvarianceService, SQLiteInvarianceAdapter, barrel)
+  - `src/modules/axiom/components/InvarianceBadge.tsx` — Robustness badge component
+  - `src/modules/axiom/components/TestRobustnessButton.tsx` — Test trigger button component
+
+### Changed
+- `src/modules/axiom/autonomous/AutonomousCommitService.ts` — Extended `MultiFactorStack` with optional `invarianceAdapter` and `invarianceConfig`; `buildMultiFactors()` now looks up pre-computed invariance evidence to populate `invarianceScore`; added fragile floor veto check in `evaluateMultiFactor()`
+- `src/modules/axiom/autonomous/confidence/MultiFactorConfidenceCalculator.ts` — Updated `invarianceScore` explanations (low: "wording artifact", high: "structurally robust")
+- `src/config/devSettings.ts` — Added `invariance: InvarianceConfig` to `AXIOMConfig` with defaults (disabled, manual trigger, 3 variants, 0.7 threshold, levels [0.5, 0.3, 0.2], weights 60/40, fragileFloorVeto: false) + 10 setter actions
+- `src/modules/canvas/components/ConnectionInspector.tsx` — Added "Structural Invariance" section with TestRobustnessButton (visible when `devSettings$.axiom.invariance.enabled`)
+- `src/modules/axiom/components/ReviewQueue/ReviewCard.tsx` — Added InvarianceBadge next to confidence badge, fragile border highlight (`border-red-500/40`)
+- `src/modules/axiom/autonomous/index.ts` — Exported invariance types and classes
+- `src/modules/axiom/components/index.ts` — Exported InvarianceBadge and TestRobustnessButton
+- `src/modules/axiom/index.ts` — Exported invariance module, added `__ATHENA_INVARIANCE__` debug global
+- `src/database/migrations/index.ts` — Exported `setupConnectionInvariance`
+- `src/database/init.ts` — Added `setupConnectionInvariance()` migration call
+- `CODEBASE_MAP.md` — Documented invariance module (10 new pattern entries, 7 type entries, 1 debug global)
+
+### Deferred
+- **Drift detection**: Re-test connections periodically to detect semantic drift over time
+- **Saturation testing**: Test if adding more paraphrase variants changes the survival rate
+- **CPN guard integration**: `invariancePassed` guard wired into AXIOM workflow transitions
+- **Auto-reject fragile**: Automatically reject connections with `fragile` invariance (currently only queues for review)
+
+### Technical
+- **Pre-computed evidence**: Invariance tests are expensive (multiple AI calls per connection) — results are cached in SQLite and looked up during confidence evaluation rather than computed inline
+- **Graceful degradation**: Both tests return `tested: false` on AI backend failure — null factors are skipped in weighted scoring
+- **Aggregate scoring**: 60% paraphrase survival + 40% compression survival; single test score used when only one test succeeds
+- **Compression normalization**: Deepest survival level mapped to 0–1 score via `(1.0 - level) / 0.8` (level 0.2 → score 1.0, level 1.0 → score 0.0)
+- **`testConnectionDirect()`**: Alternative entry point for proposals where connections don't yet exist in DB — accepts raw content strings instead of connection ID
+
 ## [9B.4.0] - 2026-02-04
 
 ### Added

@@ -84,3 +84,22 @@ export type {
   ReviewQueueState,
   ReviewActiveTab,
 } from './review';
+
+// WP 9B.5: Structural Invariance
+export type {
+  RobustnessLabel,
+  CompressionInterpretation,
+  ParaphraseResult,
+  CompressionResult,
+  CompressionBreakdownPoint,
+  InvarianceEvidence,
+  InvarianceConfig,
+  IInvarianceAdapter,
+} from './invariance';
+
+export {
+  ParaphraseStabilityTest,
+  CompressionSurvivalTest,
+  InvarianceService,
+  SQLiteInvarianceAdapter,
+} from './invariance';

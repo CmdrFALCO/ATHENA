@@ -10,3 +10,4 @@ export { setupKnowledgeSchemas } from './011_knowledge_schemas';
 export { setupBackgroundJobs } from './012_background_jobs';
 export { setupSmartViews } from './013_smart_views';
 export { setupAutoCommitProvenance } from './014_auto_commit_provenance';
+export { setupConnectionInvariance } from './015_connection_invariance';

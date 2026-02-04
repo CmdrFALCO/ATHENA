@@ -9,6 +9,7 @@ import type { CritiqueConfig } from '@/modules/axiom/types/critique';
 import type { AutonomousPreset } from '@/modules/axiom/autonomous/types';
 import type { ConfidenceConfig } from '@/modules/axiom/autonomous/confidence/types';
 import type { ReviewQueueConfig, ReviewSortField } from '@/modules/axiom/autonomous/review/types';
+import type { InvarianceConfig } from '@/modules/axiom/autonomous/invariance/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -515,6 +516,9 @@ export interface AXIOMConfig {
   /** Multi-factor confidence scoring (WP 9B.3) */
   confidence: ConfidenceConfig;
 
+  /** Structural invariance settings (WP 9B.5) */
+  invariance: InvarianceConfig;
+
   /** Review queue settings (WP 9B.4) */
   reviewQueue: ReviewQueueConfig;
 
@@ -659,6 +663,39 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
       allowHumanOverride: true,
     },
   },
+
+  // WP 9B.5: Structural invariance
+  invariance: {
+    enabled: false,
+    trigger: 'manual' as const,
+    autoTestMinConfidence: 0.7,
+
+    paraphrase: {
+      enabled: true,
+      variants: 3,
+      stabilityThreshold: 0.7,
+      minSurvivingVariants: 2,
+    },
+
+    compression: {
+      enabled: true,
+      levels: [0.5, 0.3, 0.2],
+      minimumSurvivalLevel: 0.3,
+    },
+
+    weights: {
+      paraphrase: 0.6,
+      compression: 0.4,
+    },
+
+    fragileFloorVeto: false,
+
+    ui: {
+      showInvarianceScores: true,
+      showFailureModes: true,
+      highlightFragile: true,
+    },
+  } satisfies InvarianceConfig,
 
   // WP 9B.4: Review queue
   reviewQueue: {
@@ -1410,6 +1447,57 @@ export const devSettingsActions = {
 
   setReviewQueueHighlightThreshold(threshold: number) {
     devSettings$.axiom.reviewQueue.highlightThreshold.set(Math.max(1, threshold));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Invariance config actions (WP 9B.5)
+  setInvarianceEnabled(enabled: boolean) {
+    devSettings$.axiom.invariance.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceTrigger(trigger: 'manual' | 'auto_high_confidence') {
+    devSettings$.axiom.invariance.trigger.set(trigger);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceAutoTestMinConfidence(min: number) {
+    devSettings$.axiom.invariance.autoTestMinConfidence.set(Math.max(0, Math.min(1, min)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceParaphraseEnabled(enabled: boolean) {
+    devSettings$.axiom.invariance.paraphrase.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceParaphraseVariants(variants: number) {
+    devSettings$.axiom.invariance.paraphrase.variants.set(Math.max(1, Math.min(10, variants)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceCompressionEnabled(enabled: boolean) {
+    devSettings$.axiom.invariance.compression.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceFragileFloorVeto(enabled: boolean) {
+    devSettings$.axiom.invariance.fragileFloorVeto.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceShowScores(show: boolean) {
+    devSettings$.axiom.invariance.ui.showInvarianceScores.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceShowFailureModes(show: boolean) {
+    devSettings$.axiom.invariance.ui.showFailureModes.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setInvarianceHighlightFragile(highlight: boolean) {
+    devSettings$.axiom.invariance.ui.highlightFragile.set(highlight);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

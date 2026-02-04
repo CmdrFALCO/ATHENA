@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9B.4 (Human Review Queue) |
+| **Last WP Completed** | 9B.5 (Structural Invariance) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
-| **Milestone** | Phase 9B - Human Review Queue |
+| **Milestone** | Phase 9B - Structural Invariance |
 
 ---
 
@@ -356,6 +356,15 @@ athena/
 | ReviewCard | `src/modules/axiom/components/ReviewQueue/ReviewCard.tsx` | WP 9B.4: Review card with confidence breakdown, inline edit, accept/reject actions |
 | AutoCommitCard | `src/modules/axiom/components/ReviewQueue/AutoCommitCard.tsx` | WP 9B.4: Spot-check card for auto-approved items with revert button |
 | Review Queue Config | `src/config/devSettings.ts` | WP 9B.4: `reviewQueue.*` settings (defaultSort, showAutoApproved, highlightThreshold) |
+| Invariance Types | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: InvarianceEvidence, ParaphraseResult, CompressionResult, InvarianceConfig |
+| ParaphraseStabilityTest | `src/modules/axiom/autonomous/invariance/ParaphraseStabilityTest.ts` | WP 9B.5: N-variant paraphrase stability test with cosine similarity |
+| CompressionSurvivalTest | `src/modules/axiom/autonomous/invariance/CompressionSurvivalTest.ts` | WP 9B.5: Multi-level compression survival test with interpretation |
+| InvarianceService | `src/modules/axiom/autonomous/invariance/InvarianceService.ts` | WP 9B.5: Orchestrates tests, computes aggregate score, persists evidence |
+| SQLiteInvarianceAdapter | `src/modules/axiom/autonomous/invariance/SQLiteInvarianceAdapter.ts` | WP 9B.5: SQLite persistence for invariance evidence |
+| Invariance Migration | `src/database/migrations/015_connection_invariance.ts` | WP 9B.5: connection_invariance table with score/label indexes |
+| InvarianceBadge | `src/modules/axiom/components/InvarianceBadge.tsx` | WP 9B.5: Compact robustness badge (robust/moderate/fragile/untested) with tooltip |
+| TestRobustnessButton | `src/modules/axiom/components/TestRobustnessButton.tsx` | WP 9B.5: Trigger button for invariance tests with loading/result states |
+| Invariance Config | `src/config/devSettings.ts` | WP 9B.5: `invariance.*` settings (enabled, paraphrase, compression, weights, ui) |
 | getValidationService | `src/modules/validation/services/index.ts` | Factory: returns axiomValidationService or validationService based on devSettings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -502,6 +511,12 @@ athena/
 | ReviewQueueState | `src/modules/axiom/autonomous/review/reviewState.ts` | WP 9B.4: Full state slice (items, stats, sort, filter, selectedIds, activeTab) |
 | ReviewActiveTab | `src/modules/axiom/autonomous/review/reviewState.ts` | WP 9B.4: 'workflow' \| 'review' top-level tab |
 | ReviewQueueReason | `src/modules/axiom/events/types.ts` | WP 9B.4: Queue reason (low_confidence, floor_veto, validation_failed, rate_limited, scope_restricted) |
+| InvarianceEvidence | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Full invariance evidence with paraphrase/compression results, score, label, failure modes |
+| ParaphraseResult | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Paraphrase test result (survivalRate, variance, pairCount, stable) |
+| CompressionResult | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Compression test result (lowestSurvivingLevel, interpretation, breakdownCurve) |
+| InvarianceConfig | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Config (enabled, trigger, paraphrase, compression, weights, fragileFloorVeto, ui) |
+| RobustnessLabel | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: 'robust' \| 'moderate' \| 'fragile' \| 'untested' |
+| IInvarianceAdapter | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Adapter interface for invariance evidence persistence |
 
 ---
 
@@ -549,6 +564,7 @@ athena/
 | 9B.2 | Autonomous Mode (auto-commit with deferred oversight) | ✅ |
 | 9B.3 | Multi-Factor Confidence Scoring | ✅ |
 | 9B.4 | Human Review Queue | ✅ |
+| 9B.5 | Structural Invariance (paraphrase + compression) | ✅ |
 
 ### Phase 9A Complete
 
@@ -624,6 +640,7 @@ window.__ATHENA_AUTONOMOUS_STATE__ // Autonomous runtime state (WP 9B.2)
 window.__ATHENA_CONFIDENCE__     // Multi-factor confidence config/weights/floors (WP 9B.3)
 window.__ATHENA_REVIEW_QUEUE__   // Review queue debug (getState, getItems, getStats, setActiveTab, refresh) (WP 9B.4)
 window.__ATHENA_REVIEW_STATE__   // Review queue Legend-State observable (WP 9B.4)
+window.__ATHENA_INVARIANCE__     // Invariance config debug (getConfig) (WP 9B.5)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

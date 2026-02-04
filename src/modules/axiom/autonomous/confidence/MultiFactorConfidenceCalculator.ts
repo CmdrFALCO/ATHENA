@@ -35,7 +35,7 @@ const LOW_SCORE_EXPLANATIONS: Record<keyof ConfidenceFactors, string> = {
   noveltyScore: 'Very similar content already exists',
   validationScore: 'Some validation rules failed',
   critiqueSurvival: 'Proposal did not survive critique well',
-  invarianceScore: 'Structural invariance check raised concerns',
+  invarianceScore: 'Connection broke under paraphrase or compression — may be a wording artifact',
 };
 
 /** Explanation templates for high-scoring factors */
@@ -47,7 +47,7 @@ const HIGH_SCORE_EXPLANATIONS: Record<keyof ConfidenceFactors, string> = {
   noveltyScore: 'Content is novel and unique',
   validationScore: 'All validation rules passed',
   critiqueSurvival: 'Proposal survived adversarial critique',
-  invarianceScore: 'Structural invariance verified',
+  invarianceScore: 'Connection held under paraphrase and compression — structurally robust',
 };
 
 export class MultiFactorConfidenceCalculator {

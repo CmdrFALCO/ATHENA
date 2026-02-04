@@ -43,6 +43,9 @@ import type { ConfidenceFactors, ConfidenceResult, AdjustedThresholds } from './
 import type { AXIOMEventBridge } from '../events/AXIOMEventBridge';
 import type { ReviewQueueReason } from '../events/types';
 
+// WP 9B.5: Structural invariance imports
+import type { IInvarianceAdapter, InvarianceConfig } from './invariance/types';
+
 let idCounter = 0;
 function generateId(): string {
   return `auto_${Date.now()}_${++idCounter}`;
@@ -68,6 +71,10 @@ export interface MultiFactorStack {
   embeddingSimilarityEvaluator: EmbeddingSimilarityEvaluator;
   noveltyDetector: NoveltyDetector;
   thresholdAdjuster: IThresholdAdjuster;
+  /** WP 9B.5: Optional invariance adapter for structural invariance lookup */
+  invarianceAdapter?: IInvarianceAdapter;
+  /** WP 9B.5: Invariance config for fragile floor veto */
+  invarianceConfig?: InvarianceConfig;
 }
 
 export class AutonomousCommitService {
@@ -198,6 +205,28 @@ export class AutonomousCommitService {
         reason: `Floor veto triggered by: ${vetoNames}`,
         confidenceResult: result,
       };
+    }
+
+    // WP 9B.5: Fragile floor veto — if enabled and invariance is fragile, force review
+    if (stack.invarianceConfig?.fragileFloorVeto && stack.invarianceAdapter) {
+      try {
+        for (const edge of proposal.edges || []) {
+          if (edge.id) {
+            const evidence = await stack.invarianceAdapter.get(edge.id);
+            if (evidence && evidence.robustnessLabel === 'fragile') {
+              return {
+                action: 'queue_for_review',
+                confidence: result.score,
+                factors: legacyFactors,
+                reason: `Fragile invariance veto: connection ${edge.id} is structurally fragile`,
+                confidenceResult: result,
+              };
+            }
+          }
+        }
+      } catch {
+        // Non-fatal: proceed without veto
+      }
     }
 
     // Auto-reject check
@@ -478,6 +507,7 @@ export class AutonomousCommitService {
    */
   private classifyQueueReason(decision: AutonomousDecision): ReviewQueueReason {
     const r = decision.reason.toLowerCase();
+    if (r.includes('fragile invariance')) return 'floor_veto';
     if (r.includes('floor veto')) return 'floor_veto';
     if (r.includes('rate limit')) return 'rate_limited';
     if (r.includes('validation')) return 'validation_failed';
@@ -569,6 +599,25 @@ export class AutonomousCommitService {
     const critiqueSurvivalRaw = this.extractCritiqueSurvival(workflowResult);
     const critiqueSurvival = critiqueSurvivalRaw ?? 0.5; // Default to neutral if not run
 
+    // WP 9B.5: Look up existing invariance evidence for the connection
+    let invarianceScore: number | null = null;
+    if (stack.invarianceAdapter && sourceId && targetId) {
+      try {
+        // Try to find invariance evidence for any edge in the proposal
+        for (const edge of proposal.edges || []) {
+          if (edge.id) {
+            const evidence = await stack.invarianceAdapter.get(edge.id);
+            if (evidence && evidence.robustnessLabel !== 'untested') {
+              invarianceScore = evidence.invarianceScore;
+              break;
+            }
+          }
+        }
+      } catch {
+        // Invariance lookup failure is non-fatal
+      }
+    }
+
     return {
       sourceQuality,
       extractionClarity,
@@ -577,7 +626,7 @@ export class AutonomousCommitService {
       noveltyScore: noveltyResult.score,
       validationScore,
       critiqueSurvival,
-      invarianceScore: null, // Stub for WP 9B.5
+      invarianceScore,
     };
   }
 

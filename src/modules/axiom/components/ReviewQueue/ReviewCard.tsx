@@ -20,6 +20,8 @@ import {
 import type { ReviewQueueItem } from '../../autonomous/review/types';
 import type { ReviewQueueReason } from '../../events/types';
 import type { ConfidenceResult, ConfidenceFactors, ConfidenceExplanation } from '../../autonomous/confidence/types';
+import type { InvarianceEvidence } from '../../autonomous/invariance/types';
+import { InvarianceBadge } from '../InvarianceBadge';
 import { formatRelativeTime } from '@/shared/utils/formatTime';
 
 interface ReviewCardProps {
@@ -29,6 +31,10 @@ interface ReviewCardProps {
   onApprove: (id: string) => void;
   onReject: (id: string, reason?: string) => void;
   onEditAndApprove: (id: string, edits: { title?: string; description?: string }) => void;
+  /** WP 9B.5: Invariance evidence for the connection (if available) */
+  invarianceEvidence?: InvarianceEvidence | null;
+  /** WP 9B.5: Whether to highlight fragile connections */
+  highlightFragile?: boolean;
 }
 
 // --- Confidence display helpers (shared with ProposalCards) ---
@@ -166,6 +172,8 @@ export function ReviewCard({
   onApprove,
   onReject,
   onEditAndApprove,
+  invarianceEvidence,
+  highlightFragile = false,
 }: ReviewCardProps) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -210,9 +218,13 @@ export function ReviewCard({
 
   return (
     <div
-      className={`border border-athena-border rounded-lg p-3 transition-all duration-200 ${
+      className={`border rounded-lg p-3 transition-all duration-200 ${
         isAnimatingOut ? 'opacity-0 translate-x-4' : 'opacity-100'
-      } ${isSelected ? 'ring-1 ring-blue-500/50' : ''}`}
+      } ${isSelected ? 'ring-1 ring-blue-500/50' : ''} ${
+        highlightFragile && invarianceEvidence?.robustnessLabel === 'fragile'
+          ? 'border-red-500/40'
+          : 'border-athena-border'
+      }`}
     >
       {/* Top row: checkbox, icon, title, confidence, provenance id */}
       <div className="flex items-start gap-2">
@@ -249,6 +261,13 @@ export function ReviewCard({
             >
               {Math.round(provenance.confidence * 100)}%
             </span>
+
+            {/* WP 9B.5: Invariance badge */}
+            <InvarianceBadge
+              evidence={invarianceEvidence ?? null}
+              showFailureModes={true}
+              compact
+            />
           </div>
 
           {/* Queue reason and timestamp */}

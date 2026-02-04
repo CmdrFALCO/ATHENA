@@ -5,10 +5,17 @@ import { useConnectionAdapter } from '@/adapters';
 import { connectionActions, useNote } from '@/store';
 import type { Connection, ConnectionColor } from '@/shared/types';
 import { formatDate } from '@/shared/utils';
+import { devSettings$ } from '@/config/devSettings';
+import { TestRobustnessButton } from '@/modules/axiom/components/TestRobustnessButton';
+import type { InvarianceEvidence } from '@/modules/axiom/autonomous/invariance/types';
 
 interface ConnectionInspectorProps {
   connection: Connection;
   onClose: () => void;
+  /** WP 9B.5: Callback to run invariance test */
+  onTestRobustness?: (connectionId: string) => Promise<InvarianceEvidence>;
+  /** WP 9B.5: Pre-loaded invariance evidence */
+  invarianceEvidence?: InvarianceEvidence | null;
 }
 
 // Map connection color to theme key
@@ -27,7 +34,12 @@ const colorToLabel: Record<ConnectionColor, string> = {
   amber: 'Validation Warning',
 };
 
-export function ConnectionInspector({ connection, onClose }: ConnectionInspectorProps) {
+export function ConnectionInspector({
+  connection,
+  onClose,
+  onTestRobustness,
+  invarianceEvidence,
+}: ConnectionInspectorProps) {
   const connectionAdapter = useConnectionAdapter();
   const sourceNote = useNote(connection.source_id);
   const targetNote = useNote(connection.target_id);
@@ -203,6 +215,23 @@ export function ConnectionInspector({ connection, onClose }: ConnectionInspector
             )}
           </div>
         </div>
+
+        {/* WP 9B.5: Test Robustness */}
+        {devSettings$.axiom.invariance.enabled.get() && onTestRobustness && (
+          <div className="space-y-2">
+            <div
+              className="text-xs font-medium uppercase tracking-wide"
+              style={{ color: ATHENA_COLORS.text.muted }}
+            >
+              Structural Invariance
+            </div>
+            <TestRobustnessButton
+              onTest={() => onTestRobustness(connection.id)}
+              existingEvidence={invarianceEvidence}
+              showFailureModes={true}
+            />
+          </div>
+        )}
 
         {/* Delete Button */}
         <button

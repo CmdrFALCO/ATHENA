@@ -24,3 +24,7 @@ export {
   ReviewBatchActions,
   AutoCommitCard,
 } from './ReviewQueue';
+
+// WP 9B.5: Structural Invariance
+export { InvarianceBadge } from './InvarianceBadge';
+export { TestRobustnessButton } from './TestRobustnessButton';
