@@ -125,6 +125,33 @@ export type { WorkflowPhase } from './hooks';
 // Hooks (WP 9B.1)
 export { useCritiqueResult } from './hooks';
 
+// Hooks (WP 9B.2)
+export { useAutonomous } from './hooks';
+
+// Autonomous Mode (WP 9B.2)
+export {
+  AUTONOMOUS_PRESETS,
+  getPresetConfig,
+  ProvenanceAdapter,
+  RateLimiter,
+  SimpleConfidenceCalculator,
+  AutonomousCommitService,
+  autonomousState$,
+  autonomousActions,
+  AutoCommitToastContainer,
+} from './autonomous';
+export type {
+  AutonomousConfig,
+  AutonomousPreset,
+  AutoCommitProvenance,
+  AutonomousDecision,
+  ConfidenceSnapshot,
+  ReviewStatus,
+  RevertSnapshot,
+  IProvenanceAdapter,
+  AutonomousState,
+} from './autonomous';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -280,6 +307,46 @@ export function createDefaultEngine(): AXIOMEngine {
         selectedPlaceId: axiomState$.selectedPlaceId.peek(),
         interventionPending: axiomState$.interventionPending.peek(),
       }),
+    };
+
+    // Autonomous mode debug globals (WP 9B.2)
+    (window as Record<string, unknown>).__ATHENA_AUTONOMOUS__ = {
+      getConfig: () => devSettings$.axiom.autonomous.peek(),
+      getStats: () => {
+        const { autonomousState$ } = require('./autonomous/autonomousState');
+        return autonomousState$.peek();
+      },
+      getRecent: (n?: number) => {
+        const { autonomousState$ } = require('./autonomous/autonomousState');
+        const decisions = autonomousState$.recentDecisions.peek();
+        return decisions.slice(0, n || 10);
+      },
+      evaluate: async (proposal: PROPOSAL, result: { success: boolean; finalPlace: string }) => {
+        const { axiomValidationService } = await import('./services/AXIOMValidationService');
+        const config = devSettings$.axiom.autonomous.peek();
+        const fullResult = {
+          success: result.success,
+          finalPlace: result.finalPlace,
+          totalSteps: 0,
+          totalRetries: 0,
+          feedbackHistory: [],
+          transitionHistory: [],
+        };
+        return axiomValidationService.processProposalWithAutonomy(proposal, config);
+      },
+      revert: async (provenanceId: string) => {
+        const { axiomValidationService } = await import('./services/AXIOMValidationService');
+        // Access via the service's autonomous service
+        console.log('[AXIOM/Debug] Revert requested for', provenanceId);
+      },
+      pause: () => {
+        const { autonomousActions } = require('./autonomous/autonomousState');
+        autonomousActions.pause('Manually paused via debug console');
+      },
+      resume: () => {
+        const { autonomousActions } = require('./autonomous/autonomousState');
+        autonomousActions.resume();
+      },
     };
   }
 

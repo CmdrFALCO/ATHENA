@@ -1,5 +1,51 @@
 # ATHENA Changelog
 
+## [9B.2.0] - 2026-02-04
+
+### Added
+- **Autonomous Mode (WP 9B.2)**: AI auto-commit with deferred human oversight — high-confidence proposals auto-commit while maintaining full provenance, revert capability, and rate limiting
+  - **AutonomousCommitService**: Core decision logic — evaluates proposals against confidence gates, scope rules, and rate limits. Auto-commits, queues for review, or auto-rejects based on configurable thresholds
+  - **ProvenanceAdapter**: SQLite persistence for auto-commit audit trail — every autonomous commit creates an `AutoCommitProvenance` record with revert snapshot
+  - **RateLimiter**: Enforces hourly/daily/queue-depth limits — in-memory ring buffer for fast checks, DB fallback for daily totals
+  - **SimpleConfidenceCalculator**: Weighted aggregate scoring (proposal 35%, validation 25%, critique 25%, novelty 15%). Modular design for WP 9B.3 replacement
+  - **Autonomous Presets**: Three preset configs (strict/balanced/permissive) with different thresholds and limits — users can customize from any preset
+  - **autonomousState$**: Legend-State observable slice for runtime stats (auto-commit counts, pause state, recent decisions)
+  - **useAutonomous**: React hook exposing config, runtime stats, and pause/resume actions
+  - **AutoCommitToastContainer**: Floating notification toasts for auto-commits with undo button, auto-dismiss after 5s
+  - **Cyan connection color**: `ConnectionColor` union extended with `'cyan'`, `ATHENA_COLORS.connection.autoApproved` (#06b6d4) for auto-approved connections
+  - **`ai_auto_approved` creator**: `ConnectionCreator` union extended with `'ai_auto_approved'`
+  - **processProposalWithAutonomy()**: New wrapper on `AXIOMValidationService` that evaluates for autonomous commit after workflow completes
+  - **Database migration 014**: `auto_commit_provenance` table with status, confidence, date, and correlation indexes
+  - `src/modules/axiom/autonomous/` — 9 new files (types, presets, adapter, limiter, calculator, service, state, toast, barrel)
+  - `src/modules/axiom/hooks/useAutonomous.ts` — Autonomous mode React hook
+
+### Changed
+- `src/config/devSettings.ts` — Added `autonomous` section to `AXIOMConfig` (enabled, preset, thresholds, limits, scope, ui) + 10 setter actions
+- `src/shared/types/connections.ts` — Extended `ConnectionColor` with `'cyan'`, `ConnectionCreator` with `'ai_auto_approved'`
+- `src/shared/theme/colors.ts` — Added `connection.autoApproved` (#06b6d4)
+- `src/modules/canvas/components/ConnectionEdge.tsx` — Added `cyan: 'autoApproved'` to color mapping
+- `src/modules/axiom/services/AXIOMValidationService.ts` — Added `processProposalWithAutonomy()`, `setAutonomousService()`, `executeCommitForAutonomy()`
+- `src/modules/axiom/components/AXIOMIndicator.tsx` — Added autonomous mode badge with Zap icon, commit counter, pause state indication
+- `src/modules/chat/components/ProposalCards.tsx` — Extended with autonomous states (auto-committed badge, queued-for-review badge, auto-rejected with override, confidence details expandable)
+- `src/modules/axiom/hooks/index.ts` — Exported `useAutonomous`
+- `src/modules/axiom/index.ts` — Exported autonomous module, extended `__ATHENA_AUTONOMOUS__` debug globals
+- `src/database/init.ts` — Added `setupAutoCommitProvenance()` migration call
+- `src/database/migrations/index.ts` — Exported new migration
+- `CODEBASE_MAP.md` — Documented autonomous module (10 new pattern entries, 7 type entries, 2 debug globals)
+
+### Technical
+- **Post-workflow decision layer**: Autonomous mode intercepts AFTER the AXIOM CPN workflow completes — the CPN workflow itself is unchanged
+- **Non-negotiable rules enforced**: (1) CPN validation always runs, (2) full provenance trail, (3) revert capability, (4) rate limiting exists, (5) disabled by default, (6) human override always available
+- **Backward compatible**: When `autonomous.enabled === false` (default), system behaves identically to WP 9B.1
+- **Confidence scoring**: Weighted aggregate of proposal confidence, validation score, critique survival, and novelty score
+- **Three-tier routing**: Above auto-accept → auto-commit with cyan indicator; between thresholds → queue for review; below auto-reject → auto-reject with override option
+
+## [9B.1.0] - 2026-02-03
+
+### Added
+- **Devil's Advocate Critique Layer (WP 9B.1)**: Adversarial proposal validation — every proposal can be challenged before commitment
+  - Full critique implementation (see git history for details)
+
 ## [9A.4.0] - 2026-02-02
 
 ### Added

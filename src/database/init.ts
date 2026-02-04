@@ -15,6 +15,7 @@ import {
   setupKnowledgeSchemas,
   setupBackgroundJobs,
   setupSmartViews,
+  setupAutoCommitProvenance,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -134,6 +135,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up smart views table for canned queries (WP 8.9, idempotent)
   await setupSmartViews(connection);
+
+  // Set up auto-commit provenance table for autonomous mode (WP 9B.2, idempotent)
+  await setupAutoCommitProvenance(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

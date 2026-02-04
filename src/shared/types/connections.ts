@@ -1,6 +1,6 @@
 export type ConnectionType = 'explicit' | 'semantic' | 'validation';
-export type ConnectionColor = 'blue' | 'green' | 'red' | 'amber';
-export type ConnectionCreator = 'user' | 'ai' | 'system';
+export type ConnectionColor = 'blue' | 'green' | 'red' | 'amber' | 'cyan';
+export type ConnectionCreator = 'user' | 'ai' | 'ai_auto_approved' | 'system';
 export type NodeType = 'entity' | 'resource';
 
 export interface Connection {

@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9A.4 (AXIOM Integration) |
+| **Last WP Completed** | 9B.2 (Autonomous Mode) |
 | **Last Updated** | February 2026 |
-| **Phase** | 9A (AXIOM — Neuro-Symbolic Validation) |
-| **Milestone** | Phase 9A - AXIOM Integration |
+| **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
+| **Milestone** | Phase 9B - Autonomous Mode |
 
 ---
 
@@ -142,7 +142,7 @@ athena/
 | N-way relationships | Clusters | Junction pattern for multi-entity relationships |
 | Secure storage | `src/services/secureStorage/` | Web Crypto API + IndexedDB for API keys |
 | AI abstraction | `src/modules/ai/` | Backend interface + service orchestrator |
-| Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation) |
+| Tri-color connections | `src/modules/canvas/` | Blue (explicit), Green (AI-suggested), Red (validation), Cyan (auto-approved WP 9B.2) |
 | FTS5 full-text search | `src/database/migrations/` | Sync triggers + content_text extraction + bm25() ranking |
 | Semantic search | `src/adapters/sqlite/` | Embed query → find similar → map to SearchResult |
 | Hybrid search (RRF) | `src/modules/search/services/` | Reciprocal Rank Fusion to combine keyword + semantic results |
@@ -326,6 +326,15 @@ athena/
 | Critique Places | `src/modules/axiom/workflows/critiquePlaces.ts` | WP 9B.1: P_critiqued (intermediate), P_escalated (sink) |
 | Critique Net | `src/modules/axiom/workflows/critiqueNet.ts` | WP 9B.1: extendWithCritique() — replaces T_commit with critique path |
 | CritiqueSection | `src/modules/axiom/components/CritiqueSection.tsx` | WP 9B.1: Survival bar, counter-arguments, risk factors, human override buttons |
+| Autonomous Types | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: AutonomousConfig, AutoCommitProvenance, AutonomousDecision, ConfidenceSnapshot |
+| Autonomous Presets | `src/modules/axiom/autonomous/presets.ts` | WP 9B.2: strict/balanced/permissive preset configs with different thresholds |
+| ProvenanceAdapter | `src/modules/axiom/autonomous/ProvenanceAdapter.ts` | WP 9B.2: SQLite persistence for auto-commit audit trail with revert snapshots |
+| RateLimiter | `src/modules/axiom/autonomous/RateLimiter.ts` | WP 9B.2: Hourly/daily/queue rate limits with in-memory ring buffer + DB fallback |
+| ConfidenceCalculator | `src/modules/axiom/autonomous/ConfidenceCalculator.ts` | WP 9B.2: Simple weighted confidence scoring (replaced by multi-factor in WP 9B.3) |
+| AutonomousCommitService | `src/modules/axiom/autonomous/AutonomousCommitService.ts` | WP 9B.2: Core decision logic — evaluate, commitWithProvenance, revert |
+| autonomousState | `src/modules/axiom/autonomous/autonomousState.ts` | WP 9B.2: Legend-State slice for runtime stats (auto-commit counts, pause state) |
+| AutoCommitToast | `src/modules/axiom/autonomous/AutoCommitToast.tsx` | WP 9B.2: Notification toast for auto-commits with undo button |
+| useAutonomous | `src/modules/axiom/hooks/useAutonomous.ts` | WP 9B.2: React hook for autonomous config, stats, pause/resume |
 | getValidationService | `src/modules/validation/services/index.ts` | Factory: returns axiomValidationService or validationService based on devSettings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -451,6 +460,12 @@ athena/
 | CRITIQUE_RESULT | `src/modules/axiom/types/critique.ts` | WP 9B.1: Critique output with survivalScore, counterArguments, blindSpots, riskFactors |
 | CritiqueConfig | `src/modules/axiom/types/critique.ts` | WP 9B.1: Full critique config (triggers, behavior, UI) |
 | CritiqueNetOptions | `src/modules/axiom/workflows/critiqueNet.ts` | WP 9B.1: Options for critique net extension (aiBackend, configs) |
+| AutonomousConfig | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: Config with thresholds, limits, scope, UI settings |
+| AutoCommitProvenance | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: Full audit record for auto-commits with revert snapshot |
+| AutonomousDecision | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: Decision result (auto_commit/queue_for_review/auto_reject/disabled/rate_limited) |
+| ConfidenceSnapshot | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: Confidence factors (proposal, validation, critique, novelty) |
+| ReviewStatus | `src/modules/axiom/autonomous/types.ts` | WP 9B.2: auto_approved/pending_review/human_confirmed/human_reverted/auto_rejected |
+| AutonomousState | `src/modules/axiom/autonomous/autonomousState.ts` | WP 9B.2: Runtime state (commit counts, pause state, recent decisions) |
 
 ---
 
@@ -488,9 +503,16 @@ athena/
 
 | Phase | What's Added |
 |-------|--------------|
-| **Phase 9A** | AXIOM — Neuro-Symbolic Validation |
+| **Phase 9B** | AXIOM — Adversarial & Autonomous |
 
-### Phase 9A Progress
+### Phase 9B Progress
+
+| WP | Feature | Status |
+|----|---------|--------|
+| 9B.1 | Devil's Advocate Critique Layer | ✅ |
+| 9B.2 | Autonomous Mode (auto-commit with deferred oversight) | ✅ |
+
+### Phase 9A Complete
 
 | WP | Feature | Status |
 |----|---------|--------|
@@ -559,6 +581,8 @@ window.__ATHENA_VIEWS__           // View actions for testing (WP 8.9)
 window.__ATHENA_EXPORT_STATE__    // Export state (dialog, progress, error) (WP 8.10)
 window.__ATHENA_EXPORT__          // Export actions for testing (WP 8.10)
 window.__ATHENA_EXPORT_SERVICE__() // Export service instance (WP 8.10)
+window.__ATHENA_AUTONOMOUS__     // Autonomous mode debug (WP 9B.2)
+window.__ATHENA_AUTONOMOUS_STATE__ // Autonomous runtime state (WP 9B.2)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

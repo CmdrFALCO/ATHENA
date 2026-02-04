@@ -1,6 +1,7 @@
 /**
  * AXIOMIndicator — Status bar indicator in the app header
  * WP 9A.3: AXIOM Visualization
+ * WP 9B.2: Autonomous mode badge + counter
  *
  * Shows workflow status ("AXIOM: Validating..." / "AXIOM: Idle"),
  * token count summary, and pulsing dot when active.
@@ -8,10 +9,12 @@
  */
 
 import { useSelector } from '@legendapp/state/react';
-import { Activity, AlertCircle, Swords } from 'lucide-react';
+import { Activity, AlertCircle, Swords, Zap } from 'lucide-react';
 import { axiomState$ } from '../store/axiomState';
 import { axiomActions } from '../store/axiomActions';
 import { PLACE_IDS } from '../workflows/types';
+import { devSettings$ } from '@/config/devSettings';
+import { autonomousState$ } from '../autonomous/autonomousState';
 
 interface AXIOMIndicatorProps {
   className?: string;
@@ -23,6 +26,12 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
   const totalTokens = useSelector(() => axiomState$.totalTokens.get());
   const lastError = useSelector(() => axiomState$.lastError.get());
   const tokensByPlace = useSelector(() => axiomState$.tokensByPlace.get());
+
+  // WP 9B.2: Autonomous mode state
+  const autonomousEnabled = useSelector(() => devSettings$.axiom.autonomous.enabled.get());
+  const autonomousPaused = useSelector(() => autonomousState$.isPaused.get());
+  const autonomousPauseReason = useSelector(() => autonomousState$.pauseReason.get());
+  const autoCommitsToday = useSelector(() => autonomousState$.autoCommitsToday.get());
 
   // Compute pending count (tokens not in sink places)
   const sinkPlaces = new Set(['P_committed', 'P_rejected', 'P_escalated']);
@@ -88,6 +97,25 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
         <span className="text-athena-muted ml-1">
           {totalTokens} token{totalTokens !== 1 ? 's' : ''}
           {pendingCount > 0 && ` | ${pendingCount} pending`}
+        </span>
+      )}
+
+      {/* WP 9B.2: Autonomous mode badge */}
+      {autonomousEnabled && (
+        <span
+          className={`ml-1 flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold ${
+            autonomousPaused
+              ? 'bg-amber-500/20 text-amber-400'
+              : 'bg-cyan-500/20 text-cyan-400'
+          }`}
+          title={
+            autonomousPaused
+              ? `Autonomous paused: ${autonomousPauseReason}`
+              : `Autonomous mode active (${autoCommitsToday} today)`
+          }
+        >
+          <Zap className="w-2.5 h-2.5" />
+          {autoCommitsToday > 0 && autoCommitsToday}
         </span>
       )}
 

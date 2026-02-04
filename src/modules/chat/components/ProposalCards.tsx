@@ -1,13 +1,14 @@
 /**
  * ProposalCards - Container for all proposals in a message
  * WP 7.5 - Proposal Cards UI
+ * WP 9B.2 - Autonomous mode support (auto-committed / queued / auto-rejected states)
  *
  * Renders node proposals first (green cards), then edge proposals (blue cards).
  * Manages shared state for tracking accepted node IDs used by edge dependency resolution.
  */
 
 import { useCallback, useState, useMemo } from 'react';
-import { Lightbulb, Swords, Loader2 } from 'lucide-react';
+import { Lightbulb, Swords, Loader2, Check, AlertTriangle, Undo2, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import type { KnowledgeProposals } from '../types';
 import { NodeProposalCard } from './NodeProposalCard';
 import { EdgeProposalCard } from './EdgeProposalCard';
@@ -15,16 +16,30 @@ import { useSelector } from '@legendapp/state/react';
 import { devSettings$ } from '@/config/devSettings';
 import { useCritiqueResult } from '@/modules/axiom/hooks/useCritiqueResult';
 import { CritiqueSection } from '@/modules/axiom/components/CritiqueSection';
+import type { AutonomousDecision } from '@/modules/axiom/autonomous/types';
 
 interface ProposalCardsProps {
   messageId: string;
   proposals: KnowledgeProposals;
+  /** WP 9B.2: Autonomous decision for this proposal batch */
+  autonomousDecision?: AutonomousDecision;
+  /** WP 9B.2: Callback to revert an auto-committed proposal */
+  onRevert?: (provenanceId: string) => void;
+  /** WP 9B.2: Callback to manually accept an auto-rejected proposal */
+  onOverrideAccept?: () => void;
 }
 
-export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
+export function ProposalCards({
+  messageId,
+  proposals,
+  autonomousDecision,
+  onRevert,
+  onOverrideAccept,
+}: ProposalCardsProps) {
   // Track accepted node IDs as state so edge cards re-render when nodes are accepted
   // Uses Record<title, noteId> format for efficient lookup
   const [acceptedNodeIds, setAcceptedNodeIds] = useState<Record<string, string>>({});
+  const [showConfidenceDetails, setShowConfidenceDetails] = useState(false);
 
   // Convert to Map for EdgeProposalCard compatibility
   const acceptedNodeIdsMap = useMemo(() => new Map(Object.entries(acceptedNodeIds)), [acceptedNodeIds]);
@@ -40,6 +55,12 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
 
   // WP 9B.1: Get critique result for this proposal batch (uses messageId as correlationId)
   const { critiqueResult, critiqueSkipped, isBeingCritiqued } = useCritiqueResult(messageId);
+
+  // WP 9B.2: Autonomous mode state
+  const isAutoCommitted = autonomousDecision?.action === 'auto_commit';
+  const isQueuedForReview = autonomousDecision?.action === 'queue_for_review';
+  const isAutoRejected = autonomousDecision?.action === 'auto_reject';
+  const isRateLimited = autonomousDecision?.action === 'rate_limited';
 
   // Filter proposals by confidence and status
   const pendingNodes = proposals.nodes.filter(
@@ -64,14 +85,70 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
     critiqueUIConfig.allowManualCritique &&
     !critiqueResult &&
     !critiqueSkipped &&
-    !isBeingCritiqued;
+    !isBeingCritiqued &&
+    !isAutoCommitted; // Don't show challenge on already-committed proposals
 
   return (
     <div className="mt-3 space-y-2">
+      {/* Header with autonomous status badges */}
       <div className="text-xs text-athena-muted font-medium flex items-center gap-1">
         <Lightbulb className="w-3 h-3 text-amber-500" />
         <span>Suggested additions to your knowledge graph:</span>
-        {/* WP 9B.1: Challenge button */}
+
+        {/* WP 9B.2: Auto-committed badge */}
+        {isAutoCommitted && (
+          <span className="ml-auto flex items-center gap-1">
+            <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+              text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 rounded">
+              <Check className="w-3 h-3" />
+              Auto-committed ({(autonomousDecision.confidence * 100).toFixed(0)}%)
+            </span>
+            {onRevert && autonomousDecision.provenance_id && (
+              <button
+                onClick={() => onRevert(autonomousDecision.provenance_id!)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+                  text-athena-muted hover:text-red-400 border border-athena-border rounded
+                  hover:border-red-500/30 transition-colors"
+                title="Revert this auto-commit"
+              >
+                <Undo2 className="w-3 h-3" />
+                Revert
+              </button>
+            )}
+          </span>
+        )}
+
+        {/* WP 9B.2: Queued for review badge */}
+        {(isQueuedForReview || isRateLimited) && (
+          <span className="ml-auto flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+            text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded">
+            <AlertTriangle className="w-3 h-3" />
+            {isRateLimited ? 'Rate limited' : 'Queued for review'}
+          </span>
+        )}
+
+        {/* WP 9B.2: Auto-rejected badge */}
+        {isAutoRejected && (
+          <span className="ml-auto flex items-center gap-1">
+            <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+              text-athena-muted bg-athena-border/30 border border-athena-border rounded">
+              Auto-rejected
+            </span>
+            {onOverrideAccept && (
+              <button
+                onClick={onOverrideAccept}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
+                  text-blue-400 border border-blue-500/30 rounded
+                  hover:bg-blue-500/10 transition-colors"
+                title="Override: Accept this proposal anyway"
+              >
+                Override: Accept
+              </button>
+            )}
+          </span>
+        )}
+
+        {/* WP 9B.1: Challenge button (not shown for auto-committed) */}
         {showChallengeButton && (
           <button
             className="ml-auto flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium
@@ -91,25 +168,76 @@ export function ProposalCards({ messageId, proposals }: ProposalCardsProps) {
         )}
       </div>
 
-      {/* Render node proposals first */}
-      {pendingNodes.map((node) => (
-        <NodeProposalCard
-          key={node.id}
-          messageId={messageId}
-          proposal={node}
-          onAccepted={(noteId) => handleNodeAccepted(node.title, noteId)}
-        />
-      ))}
+      {/* WP 9B.2: Confidence details (expandable) */}
+      {autonomousDecision && autonomousDecision.action !== 'disabled' && (
+        <button
+          onClick={() => setShowConfidenceDetails(!showConfidenceDetails)}
+          className="flex items-center gap-1 text-[10px] text-athena-muted hover:text-athena-text transition-colors"
+        >
+          <Zap className="w-3 h-3" />
+          <span>{autonomousDecision.reason}</span>
+          {showConfidenceDetails ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
+        </button>
+      )}
 
-      {/* Render edge proposals after nodes */}
-      {pendingEdges.map((edge) => (
-        <EdgeProposalCard
-          key={edge.id}
-          messageId={messageId}
-          proposal={edge}
-          acceptedNodeIds={acceptedNodeIdsMap}
-        />
-      ))}
+      {showConfidenceDetails && autonomousDecision && (
+        <div className="bg-athena-bg/50 border border-athena-border rounded p-2 text-[10px] text-athena-muted space-y-1">
+          <div className="flex justify-between">
+            <span>Proposal confidence:</span>
+            <span>{(autonomousDecision.factors.proposalConfidence * 100).toFixed(0)}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Validation score:</span>
+            <span>{(autonomousDecision.factors.validationScore * 100).toFixed(0)}%</span>
+          </div>
+          {autonomousDecision.factors.critiqueSurvival !== null && (
+            <div className="flex justify-between">
+              <span>Critique survival:</span>
+              <span>{(autonomousDecision.factors.critiqueSurvival * 100).toFixed(0)}%</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span>Novelty score:</span>
+            <span>{(autonomousDecision.factors.noveltyScore * 100).toFixed(0)}%</span>
+          </div>
+          <div className="flex justify-between font-medium text-athena-text">
+            <span>Aggregate:</span>
+            <span>{(autonomousDecision.confidence * 100).toFixed(0)}%</span>
+          </div>
+          {autonomousDecision.provenance_id && (
+            <div className="flex justify-between text-athena-muted/60">
+              <span>Provenance:</span>
+              <span className="font-mono">{autonomousDecision.provenance_id}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Render node proposals (auto-rejected = collapsed/grayed) */}
+      <div className={isAutoRejected ? 'opacity-40' : ''}>
+        {pendingNodes.map((node) => (
+          <NodeProposalCard
+            key={node.id}
+            messageId={messageId}
+            proposal={node}
+            onAccepted={(noteId) => handleNodeAccepted(node.title, noteId)}
+          />
+        ))}
+
+        {/* Render edge proposals after nodes */}
+        {pendingEdges.map((edge) => (
+          <EdgeProposalCard
+            key={edge.id}
+            messageId={messageId}
+            proposal={edge}
+            acceptedNodeIds={acceptedNodeIdsMap}
+          />
+        ))}
+      </div>
 
       {/* WP 9B.1: Devil's Advocate critique section */}
       {showCritiqueSection && (

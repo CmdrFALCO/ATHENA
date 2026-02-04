@@ -35,11 +35,14 @@ import { regenerateWithFeedback } from '../integration/chatIntegration';
 import { commitToGraph } from '../integration/graphIntegration';
 import { getAIService } from '@/modules/ai/AIService';
 import type { CritiqueNetOptions } from '../workflows/critiqueNet';
+import type { AutonomousConfig, AutonomousDecision } from '../autonomous/types';
+import type { AutonomousCommitService } from '../autonomous/AutonomousCommitService';
 
 export class AXIOMValidationService implements IValidationService {
   private engine: AXIOMEngine | null = null;
   private isInitialized = false;
   private connectionAdapter: IConnectionAdapter | null = null;
+  private autonomousService: AutonomousCommitService | null = null;
 
   /**
    * Set the connection adapter for auto-fix operations.
@@ -267,6 +270,71 @@ export class AXIOMValidationService implements IValidationService {
       totalRetries: token.retryCount,
       feedbackHistory: token.feedbackHistory,
       transitionHistory: token._meta.transitionHistory,
+    };
+  }
+
+  // === WP 9B.2: Autonomous Mode ===
+
+  /**
+   * Set the autonomous commit service for auto-commit evaluation.
+   */
+  setAutonomousService(service: AutonomousCommitService): void {
+    this.autonomousService = service;
+  }
+
+  /**
+   * Process a proposal through AXIOM workflow, then evaluate for autonomous commit.
+   *
+   * When autonomous mode is enabled and confidence gates are met,
+   * proposals auto-commit instead of waiting for human approval.
+   *
+   * The existing processProposal() method remains unchanged and functional
+   * without autonomous mode.
+   */
+  async processProposalWithAutonomy(
+    proposal: PROPOSAL,
+    config: AutonomousConfig,
+  ): Promise<{ workflowResult: WorkflowResult; autonomousDecision?: AutonomousDecision }> {
+    // 1. Run existing AXIOM workflow (unchanged)
+    const workflowResult = await this.processProposal(proposal);
+
+    // 2. If workflow succeeded AND autonomous mode enabled, evaluate
+    if (workflowResult.success && config.enabled && this.autonomousService) {
+      const decision = await this.autonomousService.evaluate(
+        proposal,
+        workflowResult,
+        config,
+      );
+
+      if (decision.action === 'auto_commit') {
+        const provenance = await this.autonomousService.commitWithProvenance(
+          proposal,
+          decision,
+          () => this.executeCommitForAutonomy(proposal),
+          config,
+        );
+        decision.provenance_id = provenance.id;
+      }
+
+      return { workflowResult, autonomousDecision: decision };
+    }
+
+    // 3. Not autonomous → return result for manual review as before
+    return { workflowResult };
+  }
+
+  /**
+   * Execute commit and return created IDs for provenance tracking.
+   */
+  private async executeCommitForAutonomy(
+    proposal: PROPOSAL,
+  ): Promise<{ entityIds: string[]; connectionIds: string[] }> {
+    await commitToGraph(proposal);
+
+    // Return proposal IDs — commitToGraph creates them internally
+    return {
+      entityIds: proposal.nodes.map((n) => n.id),
+      connectionIds: proposal.edges.map((e) => e.id),
     };
   }
 

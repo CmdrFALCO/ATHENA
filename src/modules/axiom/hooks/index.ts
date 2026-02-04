@@ -15,3 +15,6 @@ export type { WorkflowPhase } from './useWorkflowState';
 
 // WP 9B.1
 export { useCritiqueResult } from './useCritiqueResult';
+
+// WP 9B.2
+export { useAutonomous } from './useAutonomous';

@@ -1,11 +1,12 @@
 // src/shared/theme/colors.ts
 export const ATHENA_COLORS = {
-  // Tri-color connection system
+  // Connection color system (tri-color + cyan for autonomous)
   connection: {
     explicit: '#3b82f6',    // Blue - user-created connections
     semantic: '#22c55e',    // Green - AI-suggested connections
     error: '#ef4444',       // Red - validation errors
     warning: '#f59e0b',     // Amber - validation warnings
+    autoApproved: '#06b6d4', // Cyan - AI auto-approved (WP 9B.2)
   },
 
   // Validation visual effects

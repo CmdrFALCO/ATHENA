@@ -6,6 +6,7 @@ import type { SynthesisConfig } from '@/modules/synthesis/types';
 import type { ViewsConfig } from '@/modules/views/types';
 import type { ExportConfig } from '@/modules/export/types';
 import type { CritiqueConfig } from '@/modules/axiom/types/critique';
+import type { AutonomousPreset } from '@/modules/axiom/autonomous/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -508,6 +509,36 @@ export interface AXIOMConfig {
 
   /** Devil's Advocate critique settings (WP 9B.1) */
   critique: CritiqueConfig;
+
+  /** Autonomous commit settings (WP 9B.2) */
+  autonomous: {
+    /** Master toggle — default: false */
+    enabled: boolean;
+    /** Active preset. When not 'custom', preset values override thresholds/limits/scope */
+    preset: AutonomousPreset;
+    thresholds: {
+      autoAcceptEntity: number;
+      autoAcceptConnection: number;
+      autoRejectBelow: number;
+    };
+    limits: {
+      maxAutoCommitsPerHour: number;
+      maxAutoCommitsPerDay: number;
+      maxPendingReview: number;
+      cooldownMinutes: number;
+    };
+    scope: {
+      allowedEntityTypes: string[];
+      blockedEntityTypes: string[];
+      requireValidation: boolean;
+      requireCritique: boolean;
+    };
+    ui: {
+      showNotifications: boolean;
+      showAutoCommitsInChat: boolean;
+      highlightCyan: boolean;
+    };
+  };
 }
 
 const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
@@ -575,6 +606,34 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
       collapseWhenSurvived: true,
       allowManualCritique: true,
       allowHumanOverride: true,
+    },
+  },
+
+  // WP 9B.2: Autonomous commit mode
+  autonomous: {
+    enabled: false,
+    preset: 'balanced' as AutonomousPreset,
+    thresholds: {
+      autoAcceptEntity: 0.90,
+      autoAcceptConnection: 0.85,
+      autoRejectBelow: 0.30,
+    },
+    limits: {
+      maxAutoCommitsPerHour: 100,
+      maxAutoCommitsPerDay: 500,
+      maxPendingReview: 50,
+      cooldownMinutes: 15,
+    },
+    scope: {
+      allowedEntityTypes: ['*'],
+      blockedEntityTypes: [],
+      requireValidation: true,
+      requireCritique: false,
+    },
+    ui: {
+      showNotifications: true,
+      showAutoCommitsInChat: true,
+      highlightCyan: true,
     },
   },
 };
@@ -1199,6 +1258,78 @@ export const devSettingsActions = {
     devSettings$.axiom.critique.behavior.rejectThreshold.set(
       Math.max(0, Math.min(1, threshold)),
     );
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Autonomous commit actions (WP 9B.2)
+  setAutonomousEnabled(enabled: boolean) {
+    devSettings$.axiom.autonomous.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousPreset(preset: AutonomousPreset) {
+    // Import presets lazily to avoid circular deps
+    const { AUTONOMOUS_PRESETS } = require('@/modules/axiom/autonomous/presets');
+    if (preset !== 'custom' && AUTONOMOUS_PRESETS[preset]) {
+      const presetConfig = AUTONOMOUS_PRESETS[preset];
+      devSettings$.axiom.autonomous.thresholds.set({ ...presetConfig.thresholds });
+      devSettings$.axiom.autonomous.limits.set({ ...presetConfig.limits });
+      devSettings$.axiom.autonomous.scope.set({ ...presetConfig.scope });
+      devSettings$.axiom.autonomous.ui.set({ ...presetConfig.ui });
+    }
+    devSettings$.axiom.autonomous.preset.set(preset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousAutoAcceptEntity(threshold: number) {
+    devSettings$.axiom.autonomous.thresholds.autoAcceptEntity.set(
+      Math.max(0, Math.min(1, threshold)),
+    );
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousAutoAcceptConnection(threshold: number) {
+    devSettings$.axiom.autonomous.thresholds.autoAcceptConnection.set(
+      Math.max(0, Math.min(1, threshold)),
+    );
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousAutoRejectBelow(threshold: number) {
+    devSettings$.axiom.autonomous.thresholds.autoRejectBelow.set(
+      Math.max(0, Math.min(1, threshold)),
+    );
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousMaxAutoCommitsPerHour(max: number) {
+    devSettings$.axiom.autonomous.limits.maxAutoCommitsPerHour.set(Math.max(1, max));
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousMaxAutoCommitsPerDay(max: number) {
+    devSettings$.axiom.autonomous.limits.maxAutoCommitsPerDay.set(Math.max(1, max));
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousRequireCritique(require: boolean) {
+    devSettings$.axiom.autonomous.scope.requireCritique.set(require);
+    devSettings$.axiom.autonomous.preset.set('custom' as AutonomousPreset);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousShowNotifications(show: boolean) {
+    devSettings$.axiom.autonomous.ui.showNotifications.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setAutonomousHighlightCyan(highlight: boolean) {
+    devSettings$.axiom.autonomous.ui.highlightCyan.set(highlight);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

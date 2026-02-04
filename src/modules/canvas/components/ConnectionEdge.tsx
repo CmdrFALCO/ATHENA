@@ -17,6 +17,7 @@ const colorToThemeKey: Record<ConnectionColor, keyof typeof ATHENA_COLORS.connec
   green: 'semantic',
   red: 'error',
   amber: 'warning',
+  cyan: 'autoApproved',   // WP 9B.2: Autonomous auto-approved
 };
 
 export interface ConnectionEdgeData extends Record<string, unknown> {
