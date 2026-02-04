@@ -5,6 +5,7 @@ import type { IEmbeddingAdapter } from './IEmbeddingAdapter';
 import type { IClusterAdapter } from './IClusterAdapter';
 import type { ISearchAdapter } from './ISearchAdapter';
 import type { IResourceAdapter } from './IResourceAdapter';
+import type { ICommunityAdapter } from './ICommunityAdapter';
 
 export interface Adapters {
   notes: INoteAdapter;
@@ -13,6 +14,7 @@ export interface Adapters {
   clusters: IClusterAdapter;
   search: ISearchAdapter;
   resources: IResourceAdapter;
+  communities: ICommunityAdapter;
 }
 
 export const AdapterContext = createContext<Adapters | null>(null);

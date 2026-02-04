@@ -18,6 +18,7 @@ export interface ContextItem {
     | 'similarity'
     | 'traversal'
     | 'document-tree'
+    | 'community' // WP 9B.7: global query community context
     | `traversal_depth_${number}`; // WP 8.8: granular depth tracking
 }
 

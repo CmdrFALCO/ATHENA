@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9B.5 (Structural Invariance) |
+| **Last WP Completed** | 9B.7 (Community Detection) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
-| **Milestone** | Phase 9B - Structural Invariance |
+| **Milestone** | Phase 9B - Community Detection |
 
 ---
 
@@ -62,7 +62,8 @@ athena/
 │   │   ├── synthesis/           # ✅ Synthesis reports from subgraphs + resource support (WP 8.7, 8.7.1)
 │   │   ├── views/              # ✅ Smart Views: saved queries for knowledge graph exploration (WP 8.9)
 │   │   ├── export/             # ✅ Export renderers: Markdown, JSON, CSV, HTML with plugin architecture (WP 8.10)
-│   │   └── axiom/              # ✅ AXIOM CPN engine + workflow + visualization + integration (WP 9A.1-9A.4)
+│   │   ├── axiom/              # ✅ AXIOM CPN engine + workflow + visualization + integration (WP 9A.1-9A.4)
+│   │   └── community/          # ✅ Hierarchical Louvain community detection + LLM summaries + global queries + canvas tinting (WP 9B.7)
 │   ├── app/                      # App shell
 │   │   ├── layout/               # Layout components
 │   │   └── routes/               # TanStack Router
@@ -115,6 +116,7 @@ athena/
 | Views | `src/modules/views/` | — | ✅ |
 | Export | `src/modules/export/` | — | ✅ |
 | AXIOM | `src/modules/axiom/` | — | ✅ |
+| Community | `src/modules/community/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
 ---
@@ -538,6 +540,8 @@ athena/
 | mammoth | 1.x | DOCX to text extraction |
 | xlsx | 0.18.x | Excel file parsing (SheetJS) |
 | zod | 3.x | Schema validation |
+| graphology | 0.x | Graph data structure for community detection (WP 9B.7) |
+| graphology-communities-louvain | 0.x | Louvain clustering algorithm (WP 9B.7) |
 
 ### Development
 
@@ -641,6 +645,7 @@ window.__ATHENA_CONFIDENCE__     // Multi-factor confidence config/weights/floor
 window.__ATHENA_REVIEW_QUEUE__   // Review queue debug (getState, getItems, getStats, setActiveTab, refresh) (WP 9B.4)
 window.__ATHENA_REVIEW_STATE__   // Review queue Legend-State observable (WP 9B.4)
 window.__ATHENA_INVARIANCE__     // Invariance config debug (getConfig) (WP 9B.5)
+window.__ATHENA_COMMUNITY_SERVICE__ // Community detection service instance (WP 9B.7)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

@@ -2,6 +2,17 @@ import { useSelector } from '@legendapp/state/react';
 import { appState$, type SuggestedConnection } from './state';
 import { devSettings$, type FeatureFlags, type CanvasConfig } from '@/config';
 import type { Note, Connection, Cluster } from '@/shared/types';
+import { getCommunityDetectionService } from '@/modules/community/CommunityDetectionService';
+
+// WP 9B.7: Lightweight community invalidation helper
+function notifyCommunityInvalidation(reason: 'entity_change' | 'connection_change'): void {
+  const service = getCommunityDetectionService();
+  if (service) {
+    service.invalidate(reason).catch((err) => {
+      console.warn('[CommunityInvalidation]', err);
+    });
+  }
+}
 
 // UI State hooks
 export function useSidebarOpen(): boolean {
@@ -152,6 +163,7 @@ export const entityActions = {
   addNote(note: Note) {
     const notes = appState$.entities.notes.get();
     appState$.entities.notes.set({ ...notes, [note.id]: note });
+    notifyCommunityInvalidation('entity_change');
   },
 
   updateNote(id: string, updates: Partial<Note>) {
@@ -166,6 +178,7 @@ export const entityActions = {
     const newNotes = { ...appState$.entities.notes.get() };
     delete newNotes[id];
     appState$.entities.notes.set(newNotes);
+    notifyCommunityInvalidation('entity_change');
   },
 
   setLoading(loading: boolean) {
@@ -186,6 +199,7 @@ export const connectionActions = {
   addConnection(connection: Connection) {
     const items = appState$.connections.items.get();
     appState$.connections.items.set({ ...items, [connection.id]: connection });
+    notifyCommunityInvalidation('connection_change');
   },
 
   updateConnection(id: string, updates: Partial<Connection>) {
@@ -200,6 +214,7 @@ export const connectionActions = {
     const newItems = { ...appState$.connections.items.get() };
     delete newItems[id];
     appState$.connections.items.set(newItems);
+    notifyCommunityInvalidation('connection_change');
   },
 };
 

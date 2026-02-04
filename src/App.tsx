@@ -9,6 +9,7 @@ import {
   SQLiteClusterAdapter,
   SQLiteSearchAdapter,
   SQLiteResourceAdapter,
+  SQLiteCommunityAdapter,
   type Adapters,
 } from './adapters';
 import { router } from './app/routes';
@@ -48,6 +49,7 @@ function App() {
           clusters: new SQLiteClusterAdapter(db),
           search: new SQLiteSearchAdapter(db, embeddingAdapter, noteAdapter),
           resources: new SQLiteResourceAdapter(db),
+          communities: new SQLiteCommunityAdapter(db),
         });
 
         // WP 7.1: Load chat threads from IndexedDB

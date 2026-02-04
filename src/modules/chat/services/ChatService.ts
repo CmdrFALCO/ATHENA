@@ -26,6 +26,9 @@ import type { IAIService } from '@/modules/ai';
 import type { AIChatMessage } from '@/modules/ai/types';
 import type { INoteAdapter } from '@/adapters/INoteAdapter';
 import type { IResourceAdapter } from '@/adapters/IResourceAdapter';
+import { getCommunityDetectionService } from '@/modules/community/CommunityDetectionService';
+import { getGlobalQueryService } from '@/modules/community/GlobalQueryService';
+import type { ContextItem } from './contextStrategies/types';
 
 export class ChatService {
   private aiService: IAIService;
@@ -101,6 +104,35 @@ export class ChatService {
         includeTraversal: contextConfig?.includeTraversal ?? true,
         traversalDepth: contextConfig?.traversalDepth ?? 1,
       });
+
+      // 3b. WP 9B.7: Global query — inject community context if applicable
+      const communityConfig = devSettings$.community?.peek();
+      if (communityConfig?.enabled && communityConfig?.globalQuery?.enabled) {
+        try {
+          const globalQueryService = getGlobalQueryService();
+          if (globalQueryService?.isGlobalQuery(userMessage)) {
+            const communityService = getCommunityDetectionService();
+            const stats = communityService ? await communityService.getStats() : null;
+            if (stats && stats.totalCommunities > 0) {
+              const globalAnswer = await globalQueryService.answer(userMessage);
+              if (globalAnswer) {
+                const globalContextItem: ContextItem = {
+                  id: 'global-community-answer',
+                  type: 'entity',
+                  title: 'Knowledge Base Themes Overview',
+                  content: globalAnswer,
+                  relevanceScore: 0.95,
+                  source: 'community',
+                };
+                contextResult.items.unshift(globalContextItem);
+                console.log('[ChatService] Global query answer injected as context item');
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('[ChatService] Global query integration failed:', err);
+        }
+      }
 
       // Log context for debugging
       console.log('[ChatService] Context built:', ContextFormatter.formatSummary(contextResult));

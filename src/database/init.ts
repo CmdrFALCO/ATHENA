@@ -17,6 +17,7 @@ import {
   setupSmartViews,
   setupAutoCommitProvenance,
   setupConnectionInvariance,
+  setupCommunities,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -142,6 +143,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up connection invariance table for structural invariance (WP 9B.5, idempotent)
   await setupConnectionInvariance(connection);
+
+  // Set up communities tables for community detection (WP 9B.7, idempotent)
+  await setupCommunities(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

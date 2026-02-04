@@ -6,6 +6,7 @@ import type { IEmbeddingAdapter } from './IEmbeddingAdapter';
 import type { IClusterAdapter } from './IClusterAdapter';
 import type { ISearchAdapter } from './ISearchAdapter';
 import type { IResourceAdapter } from './IResourceAdapter';
+import type { ICommunityAdapter } from './ICommunityAdapter';
 
 export function useAdapters(): Adapters {
   const ctx = useContext(AdapterContext);
@@ -37,4 +38,8 @@ export function useSearchAdapter(): ISearchAdapter {
 
 export function useResourceAdapter(): IResourceAdapter {
   return useAdapters().resources;
+}
+
+export function useCommunityAdapter(): ICommunityAdapter {
+  return useAdapters().communities;
 }

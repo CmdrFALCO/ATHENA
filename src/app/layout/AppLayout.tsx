@@ -13,6 +13,8 @@ import { SynthesisPanel } from '@/modules/synthesis';
 import { ViewResultsPanel } from '@/modules/views';
 import { AXIOMPanel, InterventionModal } from '@/modules/axiom/components';
 import { useAXIOMPanel } from '@/modules/axiom/hooks';
+import { CommunityPanel } from '@/modules/community/components/CommunityPanel';
+import { useCommunityPanel } from '@/modules/community/hooks/useCommunityPanel';
 
 /**
  * Hook to connect idle detection with the background indexer.
@@ -51,6 +53,9 @@ export function AppLayout() {
 
   // WP 9A.3: AXIOM Panel state (Ctrl+Shift+A)
   useAXIOMPanel();
+
+  // WP 9B.7: Community Panel state (Ctrl+Shift+G)
+  const { isOpen: isCommunityPanelOpen, close: closeCommunityPanel } = useCommunityPanel();
 
   return (
     <div className="h-screen flex flex-col bg-athena-bg text-athena-text">
@@ -94,6 +99,9 @@ export function AppLayout() {
       {/* AXIOM Panel - workflow visualization (WP 9A.3) - Ctrl+Shift+A */}
       <AXIOMPanel />
       <InterventionModal />
+
+      {/* Community Panel - community detection (WP 9B.7) - Ctrl+Shift+G */}
+      <CommunityPanel isOpen={isCommunityPanelOpen} onClose={closeCommunityPanel} />
     </div>
   );
 }

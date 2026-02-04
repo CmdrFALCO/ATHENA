@@ -8,6 +8,8 @@ import type { EntityType } from '@/shared/types';
 import { useNodeViolations } from '../hooks/useNodeViolations';
 import { ViolationBadge } from './ViolationBadge';
 import { ViolationTooltip } from './ViolationTooltip';
+import { useCommunityColorForEntity, communityState$ } from '@/modules/community/hooks/useCommunities';
+import { useSelector } from '@legendapp/state/react';
 
 export interface EntityNodeData extends Record<string, unknown> {
   entityId: string;
@@ -42,6 +44,14 @@ export const EntityNode = memo(function EntityNode({
     useNodeViolations(entityId);
   const { applyFix } = useViolations();
 
+  // WP 9B.7: Community color tinting
+  const communityColor = useCommunityColorForEntity(entityId);
+  const highlightedMemberIds = useSelector(
+    () => communityState$.highlightedMemberIds.get(),
+  );
+  const hasCommunityHighlight = highlightedMemberIds.length > 0;
+  const isCommunityMember = hasCommunityHighlight && highlightedMemberIds.includes(entityId);
+
   const borderColor = ATHENA_COLORS.node[type];
   const isHighlighted = selected || isStoreSelected;
 
@@ -56,8 +66,18 @@ export const EntityNode = memo(function EntityNode({
     return {};
   };
 
+  // Community highlight dimming: dim non-members when a community is highlighted
+  const communityDimStyle: React.CSSProperties = hasCommunityHighlight && !isCommunityMember
+    ? { opacity: 0.2, transition: 'opacity 150ms' }
+    : {};
+
+  // Community color tint background
+  const communityBgStyle: React.CSSProperties = communityColor
+    ? { background: `linear-gradient(135deg, ${communityColor}18, transparent)` }
+    : {};
+
   return (
-    <div className="relative">
+    <div className="relative" style={communityDimStyle}>
       {/* Input handle (top) */}
       <Handle
         type="target"
@@ -78,6 +98,7 @@ export const EntityNode = memo(function EntityNode({
           backgroundColor: ATHENA_COLORS.surface.node,
           borderLeft: `3px solid ${borderColor}`,
           ...getGlowStyle(),
+          ...communityBgStyle,
         }}
       >
         {/* Header with type badge */}

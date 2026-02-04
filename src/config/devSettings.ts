@@ -758,6 +758,54 @@ const DEFAULT_FLAGS: FeatureFlags = {
   logAdapterCalls: false,
 };
 
+// Community Detection configuration (WP 9B.7)
+export interface CommunityDetectionConfig {
+  /** Master toggle */
+  enabled: boolean;
+  /** Clustering algorithm (Louvain now, Leiden interface-ready) */
+  algorithm: 'louvain' | 'leiden';
+  /** Louvain resolution parameter (default: 1.0) */
+  resolution: number;
+  /** Split communities larger than this (default: 12) */
+  maxClusterSize: number;
+  /** Merge communities smaller than this (default: 2) */
+  minClusterSize: number;
+  /** Maximum hierarchy depth (default: 3) */
+  hierarchicalLevels: number;
+  /** Mark stale on graph changes (default: true) */
+  autoInvalidate: boolean;
+  /** Global query map-reduce settings */
+  globalQuery: {
+    enabled: boolean;
+    signalWords: string[];
+  };
+  /** UI display settings */
+  ui: {
+    showCommunityColors: boolean;
+    showStaleIndicator: boolean;
+    communityPanelDefaultOpen: boolean;
+  };
+}
+
+const DEFAULT_COMMUNITY_CONFIG: CommunityDetectionConfig = {
+  enabled: false,
+  algorithm: 'louvain' as const,
+  resolution: 1.0,
+  maxClusterSize: 12,
+  minClusterSize: 2,
+  hierarchicalLevels: 3,
+  autoInvalidate: true,
+  globalQuery: {
+    enabled: true,
+    signalWords: ['themes', 'main topics', 'overview', 'summarize my knowledge', 'what do i know'],
+  },
+  ui: {
+    showCommunityColors: true,
+    showStaleIndicator: true,
+    communityPanelDefaultOpen: false,
+  },
+} satisfies CommunityDetectionConfig;
+
 // DevSettings store
 export const devSettings$ = observable({
   flags: { ...DEFAULT_FLAGS } as FeatureFlags,
@@ -774,6 +822,7 @@ export const devSettings$ = observable({
   views: { ...DEFAULT_VIEWS_CONFIG } as ViewsConfig,
   export: { ...DEFAULT_EXPORT_CONFIG } as ExportConfig,
   axiom: { ...DEFAULT_AXIOM_CONFIG } as AXIOMConfig,
+  community: { ...DEFAULT_COMMUNITY_CONFIG } as CommunityDetectionConfig,
 
   // Metadata
   lastModified: null as string | null,
@@ -1498,6 +1547,52 @@ export const devSettingsActions = {
 
   setInvarianceHighlightFragile(highlight: boolean) {
     devSettings$.axiom.invariance.ui.highlightFragile.set(highlight);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Community Detection actions (WP 9B.7)
+  setCommunityEnabled(enabled: boolean) {
+    devSettings$.community.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityResolution(resolution: number) {
+    devSettings$.community.resolution.set(Math.max(0.1, Math.min(5, resolution)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityMaxClusterSize(size: number) {
+    devSettings$.community.maxClusterSize.set(Math.max(3, Math.min(50, size)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityMinClusterSize(size: number) {
+    devSettings$.community.minClusterSize.set(Math.max(1, Math.min(10, size)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityHierarchicalLevels(levels: number) {
+    devSettings$.community.hierarchicalLevels.set(Math.max(1, Math.min(5, levels)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityAutoInvalidate(enabled: boolean) {
+    devSettings$.community.autoInvalidate.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityGlobalQueryEnabled(enabled: boolean) {
+    devSettings$.community.globalQuery.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityShowColors(show: boolean) {
+    devSettings$.community.ui.showCommunityColors.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCommunityShowStaleIndicator(show: boolean) {
+    devSettings$.community.ui.showStaleIndicator.set(show);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

@@ -1,5 +1,57 @@
 # ATHENA Changelog
 
+## [9B.7.0] - 2026-02-04
+
+### Added
+- **Community Detection (WP 9B.7)**: Hierarchical Louvain clustering of the knowledge graph into thematic communities with LLM summaries, global query answering, and canvas visualization
+  - **Types**: `Community`, `CommunityHierarchy`, `CommunitySearchResult`, `CommunityDetectionConfig`, `CommunityStats`, `IClusteringAlgorithm` interfaces
+  - **LouvainAlgorithm**: Wraps `graphology-communities-louvain` behind `IClusteringAlgorithm` interface for future Leiden swap
+  - **GraphConverter**: Converts ATHENA entities + connections to undirected graphology `Graph`, tracking orphan nodes (degree 0)
+  - **CommunitySummaryService**: Bottom-up LLM summary generation — level 0 from entity content, level 1+ from child summaries; JSON-only prompts with markdown fence parsing fallback; embedding generation per community
+  - **CommunityDetectionService**: Main orchestrator — full pipeline: clear old communities, build graphology graph, run hierarchical Louvain (level 0 on full graph, meta-graph for higher levels), enforce `maxClusterSize`/`minClusterSize`, assign HSL colors, persist, summarize, embed; supports `invalidate()` for staleness tracking
+  - **CommunitySearchService**: Ranks communities by cosine similarity between query embedding and community summary embeddings
+  - **GlobalQueryService**: Map-reduce answering — maps query against each top-level community summary (parallel LLM calls), filters NOT_RELEVANT responses, synthesizes relevant partial answers into coherent response
+  - **CommunityPanel**: Slide-over panel (Ctrl+Shift+G) with "Detect" button, stats bar, stale indicator, and expandable community tree
+  - **CommunityTree**: Recursive expandable hierarchy tree with `CommunityCard` components per node
+  - **CommunityCard**: Color swatch, keyword tags, truncated summary, member count, stale badge
+  - **useCommunities**: React hook for hierarchy loading, detection trigger, community highlight/clear actions, stats
+  - **useCommunityPanel**: Panel open/close state with keyboard shortcut
+  - **useCommunityColorForEntity**: Returns community color for canvas tinting per entity
+  - **Database migration 016**: `communities` table (id, level, parent, summary, keywords, embedding, algorithm, modularity, color, stale) + `community_members` join table, indexed on level/stale/parent/entity
+  - **ICommunityAdapter + SQLiteCommunityAdapter**: Full adapter with CRUD, hierarchy queries, stale management, summary updates, change counter; JSON serialization for keywords, Float32Array-BLOB for embeddings
+  - `src/modules/community/` — 14 new files (types, algorithms, services, hooks, components, barrel)
+  - `src/database/migrations/016_communities.ts` — Migration
+  - `src/adapters/ICommunityAdapter.ts` + `src/adapters/sqlite/SQLiteCommunityAdapter.ts` — Adapter
+
+### Changed
+- `src/config/devSettings.ts` — Added `CommunityDetectionConfig` interface + `DEFAULT_COMMUNITY_CONFIG` (enabled: false, resolution: 1.0, maxClusterSize: 12, minClusterSize: 2, hierarchicalLevels: 3, globalQuery with signal words) + 10 setter actions
+- `src/adapters/context.ts` — Added `communities: ICommunityAdapter` to `Adapters` interface
+- `src/adapters/hooks.ts` — Added `useCommunityAdapter()` hook
+- `src/adapters/index.ts` — Exported `ICommunityAdapter`, `SQLiteCommunityAdapter`, `useCommunityAdapter`
+- `src/App.tsx` — Instantiates `SQLiteCommunityAdapter(db)` in adapters object
+- `src/database/init.ts` — Added `setupCommunities(connection)` migration call
+- `src/database/migrations/index.ts` — Exported `setupCommunities`
+- `src/store/hooks.ts` — Added `notifyCommunityInvalidation()` calls in `entityActions.addNote/removeNote` and `connectionActions.addConnection/removeConnection`
+- `src/modules/chat/services/ChatService.ts` — Global query integration: detects global queries via signal words, runs map-reduce via `GlobalQueryService`, injects result as high-priority `ContextItem` (source: 'community')
+- `src/modules/chat/services/contextStrategies/types.ts` — Added `'community'` to `ContextItem.source` union
+- `src/modules/canvas/components/EntityNode.tsx` — Added community color tinting (subtle gradient background) and community highlight dimming (opacity 0.2 for non-members)
+- `src/app/layout/AppLayout.tsx` — Added `CommunityPanel` with `useCommunityPanel` hook
+- `CODEBASE_MAP.md` — Documented community module, dependencies, debug global
+
+### Deferred
+- **Leiden algorithm** — `IClusteringAlgorithm` interface ready for swap
+- **Convex hull overlays / super-nodes** — future canvas enhancement
+- **Diversity-aware retrieval** — future search enhancement
+- **Auto-redetection on threshold** — manual + invalidation flags sufficient for v1
+- **Background consolidation** — future ConsolidationService
+
+### Technical
+- **Hierarchical detection**: Level 0 via Louvain on full graph, level 1+ via meta-graph (community nodes, inter-community edge weight sums); resolution decreases 20% per level for coarser clustering
+- **Size constraints**: `maxClusterSize` (12) enforced via re-clustering subgraph at 1.5x resolution; `minClusterSize` (2) enforced via merging into nearest neighbor by edge count
+- **Color assignment**: Top-level communities get evenly spaced HSL hues (S=60%, L=70%); children inherit parent hue with decreasing lightness
+- **Global query as context item**: Global answer injected into `contextResult.items` as `ContextItem` with source `'community'` and score 0.95 — the chat LLM weaves it with local context in one voice
+- **Invalidation**: Lightweight — store actions call `service.invalidate()` which sets `stale=true` and increments change counter; no recomputation until user clicks "Detect"
+
 ## [9B.5.0] - 2026-02-04
 
 ### Added
