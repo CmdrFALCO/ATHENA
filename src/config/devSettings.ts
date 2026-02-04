@@ -8,6 +8,7 @@ import type { ExportConfig } from '@/modules/export/types';
 import type { CritiqueConfig } from '@/modules/axiom/types/critique';
 import type { AutonomousPreset } from '@/modules/axiom/autonomous/types';
 import type { ConfidenceConfig } from '@/modules/axiom/autonomous/confidence/types';
+import type { ReviewQueueConfig, ReviewSortField } from '@/modules/axiom/autonomous/review/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -514,6 +515,9 @@ export interface AXIOMConfig {
   /** Multi-factor confidence scoring (WP 9B.3) */
   confidence: ConfidenceConfig;
 
+  /** Review queue settings (WP 9B.4) */
+  reviewQueue: ReviewQueueConfig;
+
   /** Autonomous commit settings (WP 9B.2) */
   autonomous: {
     /** Master toggle — default: false */
@@ -654,6 +658,14 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
       allowManualCritique: true,
       allowHumanOverride: true,
     },
+  },
+
+  // WP 9B.4: Review queue
+  reviewQueue: {
+    defaultSort: 'confidence_asc' as ReviewSortField,
+    showAutoApprovedSection: true,
+    autoApprovedLimit: 20,
+    highlightThreshold: 5,
   },
 
   // WP 9B.2: Autonomous commit mode
@@ -1377,6 +1389,27 @@ export const devSettingsActions = {
 
   setAutonomousHighlightCyan(highlight: boolean) {
     devSettings$.axiom.autonomous.ui.highlightCyan.set(highlight);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Review queue config actions (WP 9B.4)
+  setReviewQueueDefaultSort(sort: ReviewSortField) {
+    devSettings$.axiom.reviewQueue.defaultSort.set(sort);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setReviewQueueShowAutoApproved(show: boolean) {
+    devSettings$.axiom.reviewQueue.showAutoApprovedSection.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setReviewQueueAutoApprovedLimit(limit: number) {
+    devSettings$.axiom.reviewQueue.autoApprovedLimit.set(Math.max(1, limit));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setReviewQueueHighlightThreshold(threshold: number) {
+    devSettings$.axiom.reviewQueue.highlightThreshold.set(Math.max(1, threshold));
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

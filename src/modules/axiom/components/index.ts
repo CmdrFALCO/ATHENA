@@ -14,3 +14,13 @@ export { TransitionLog } from './TransitionLog';
 export { FeedbackDisplay } from './FeedbackDisplay';
 export { InterventionModal } from './InterventionModal';
 export { CritiqueSection } from './CritiqueSection';
+
+// WP 9B.4: Review Queue
+export {
+  ReviewQueueTab,
+  ReviewStatsBar,
+  ReviewCard,
+  ReviewFilters,
+  ReviewBatchActions,
+  AutoCommitCard,
+} from './ReviewQueue';

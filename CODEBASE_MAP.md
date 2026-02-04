@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9B.3 (Multi-Factor Confidence Scoring) |
+| **Last WP Completed** | 9B.4 (Human Review Queue) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
-| **Milestone** | Phase 9B - Multi-Factor Confidence |
+| **Milestone** | Phase 9B - Human Review Queue |
 
 ---
 
@@ -345,6 +345,17 @@ athena/
 | autonomousState | `src/modules/axiom/autonomous/autonomousState.ts` | WP 9B.2: Legend-State slice for runtime stats (auto-commit counts, pause state) |
 | AutoCommitToast | `src/modules/axiom/autonomous/AutoCommitToast.tsx` | WP 9B.2: Notification toast for auto-commits with undo button |
 | useAutonomous | `src/modules/axiom/hooks/useAutonomous.ts` | WP 9B.2: React hook for autonomous config, stats, pause/resume |
+| Review Queue Types | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: ReviewQueueItem, ReviewStats, ReviewSortField, ReviewFilterReason, ReviewQueueConfig |
+| ReviewActions | `src/modules/axiom/autonomous/review/ReviewActions.ts` | WP 9B.4: Business logic for approve, reject, editAndApprove, bulk operations |
+| Review Queue State | `src/modules/axiom/autonomous/review/reviewState.ts` | WP 9B.4: Legend-State slice for queue items, stats, sort/filter, active tab |
+| useReviewQueue | `src/modules/axiom/hooks/useReviewQueue.ts` | WP 9B.4: React hook for review queue with optimistic updates, event-driven refresh |
+| ReviewQueueTab | `src/modules/axiom/components/ReviewQueue/ReviewQueueTab.tsx` | WP 9B.4: Main container composing stats, filters, cards, and auto-approved section |
+| ReviewStatsBar | `src/modules/axiom/components/ReviewQueue/ReviewStatsBar.tsx` | WP 9B.4: Compact stats bar (pending, auto-approved 24h, avg confidence, refresh) |
+| ReviewFilters | `src/modules/axiom/components/ReviewQueue/ReviewFilters.tsx` | WP 9B.4: Sort buttons + filter dropdown for queue reason |
+| ReviewBatchActions | `src/modules/axiom/components/ReviewQueue/ReviewBatchActions.tsx` | WP 9B.4: Bulk approve/reject for selected items |
+| ReviewCard | `src/modules/axiom/components/ReviewQueue/ReviewCard.tsx` | WP 9B.4: Review card with confidence breakdown, inline edit, accept/reject actions |
+| AutoCommitCard | `src/modules/axiom/components/ReviewQueue/AutoCommitCard.tsx` | WP 9B.4: Spot-check card for auto-approved items with revert button |
+| Review Queue Config | `src/config/devSettings.ts` | WP 9B.4: `reviewQueue.*` settings (defaultSort, showAutoApproved, highlightThreshold) |
 | getValidationService | `src/modules/validation/services/index.ts` | Factory: returns axiomValidationService or validationService based on devSettings |
 
 **See [docs/PATTERNS.md](docs/PATTERNS.md) for detailed examples and usage.**
@@ -483,6 +494,14 @@ athena/
 | ThresholdAdjustment | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Recorded threshold adjustment with rejection rate and reason |
 | AdjustedThresholds | `src/modules/axiom/autonomous/confidence/types.ts` | WP 9B.3: Adjusted thresholds with wasAdjusted flag and reason |
 | NoveltyResult | `src/modules/axiom/autonomous/confidence/NoveltyDetector.ts` | WP 9B.3: Novelty score with optional nearest match info |
+| ReviewQueueItem | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: Queue item with provenance, confidence result, queue reason, timestamp |
+| ReviewStats | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: Aggregate stats (pending, auto-approved/rejected 24h, avg confidence, rejection rate) |
+| ReviewSortField | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: Sort options (confidence_asc/desc, date_asc/desc, reason) |
+| ReviewFilterReason | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: Filter by queue reason ('all' or specific ReviewQueueReason) |
+| ReviewQueueConfig | `src/modules/axiom/autonomous/review/types.ts` | WP 9B.4: Queue config (defaultSort, showAutoApproved, autoApprovedLimit, highlightThreshold) |
+| ReviewQueueState | `src/modules/axiom/autonomous/review/reviewState.ts` | WP 9B.4: Full state slice (items, stats, sort, filter, selectedIds, activeTab) |
+| ReviewActiveTab | `src/modules/axiom/autonomous/review/reviewState.ts` | WP 9B.4: 'workflow' \| 'review' top-level tab |
+| ReviewQueueReason | `src/modules/axiom/events/types.ts` | WP 9B.4: Queue reason (low_confidence, floor_veto, validation_failed, rate_limited, scope_restricted) |
 
 ---
 
@@ -529,6 +548,7 @@ athena/
 | 9B.1 | Devil's Advocate Critique Layer | ✅ |
 | 9B.2 | Autonomous Mode (auto-commit with deferred oversight) | ✅ |
 | 9B.3 | Multi-Factor Confidence Scoring | ✅ |
+| 9B.4 | Human Review Queue | ✅ |
 
 ### Phase 9A Complete
 
@@ -602,6 +622,8 @@ window.__ATHENA_EXPORT_SERVICE__() // Export service instance (WP 8.10)
 window.__ATHENA_AUTONOMOUS__     // Autonomous mode debug (WP 9B.2)
 window.__ATHENA_AUTONOMOUS_STATE__ // Autonomous runtime state (WP 9B.2)
 window.__ATHENA_CONFIDENCE__     // Multi-factor confidence config/weights/floors (WP 9B.3)
+window.__ATHENA_REVIEW_QUEUE__   // Review queue debug (getState, getItems, getStats, setActiveTab, refresh) (WP 9B.4)
+window.__ATHENA_REVIEW_STATE__   // Review queue Legend-State observable (WP 9B.4)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

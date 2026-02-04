@@ -2,19 +2,21 @@
  * AXIOMIndicator — Status bar indicator in the app header
  * WP 9A.3: AXIOM Visualization
  * WP 9B.2: Autonomous mode badge + counter
+ * WP 9B.4: Pending review count badge
  *
  * Shows workflow status ("AXIOM: Validating..." / "AXIOM: Idle"),
  * token count summary, and pulsing dot when active.
- * Click opens AXIOMPanel.
+ * Click opens AXIOMPanel (switches to Review tab if pending items).
  */
 
 import { useSelector } from '@legendapp/state/react';
-import { Activity, AlertCircle, Swords, Zap } from 'lucide-react';
+import { Activity, AlertCircle, Swords, Zap, ClipboardList } from 'lucide-react';
 import { axiomState$ } from '../store/axiomState';
 import { axiomActions } from '../store/axiomActions';
 import { PLACE_IDS } from '../workflows/types';
 import { devSettings$ } from '@/config/devSettings';
 import { autonomousState$ } from '../autonomous/autonomousState';
+import { reviewState$, reviewActions } from '../autonomous/review/reviewState';
 
 interface AXIOMIndicatorProps {
   className?: string;
@@ -32,6 +34,10 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
   const autonomousPaused = useSelector(() => autonomousState$.isPaused.get());
   const autonomousPauseReason = useSelector(() => autonomousState$.pauseReason.get());
   const autoCommitsToday = useSelector(() => autonomousState$.autoCommitsToday.get());
+
+  // WP 9B.4: Pending review count
+  const pendingReviewCount = useSelector(() => reviewState$.stats.pendingCount.get());
+  const highlightThreshold = useSelector(() => devSettings$.axiom.reviewQueue.highlightThreshold.get());
 
   // Compute pending count (tokens not in sink places)
   const sinkPlaces = new Set(['P_committed', 'P_rejected', 'P_escalated']);
@@ -57,9 +63,17 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
 
   const statusText = getStatusText();
 
+  const handleClick = () => {
+    // If there are pending review items, switch to review tab when opening
+    if (!axiomState$.panelOpen.peek() && pendingReviewCount > 0) {
+      reviewActions.setActiveTab('review');
+    }
+    axiomActions.togglePanel();
+  };
+
   return (
     <button
-      onClick={() => axiomActions.togglePanel()}
+      onClick={handleClick}
       className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md transition-colors
         hover:bg-athena-border ${className ?? ''}`}
       title="Toggle AXIOM Panel (Ctrl+Shift+A)"
@@ -116,6 +130,21 @@ export function AXIOMIndicator({ className }: AXIOMIndicatorProps) {
         >
           <Zap className="w-2.5 h-2.5" />
           {autoCommitsToday > 0 && autoCommitsToday}
+        </span>
+      )}
+
+      {/* WP 9B.4: Pending review badge */}
+      {pendingReviewCount > 0 && (
+        <span
+          className={`ml-0.5 flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold ${
+            pendingReviewCount > highlightThreshold
+              ? 'bg-amber-500/20 text-amber-400'
+              : 'bg-blue-500/20 text-blue-400'
+          }`}
+          title={`${pendingReviewCount} item${pendingReviewCount !== 1 ? 's' : ''} pending review`}
+        >
+          <ClipboardList className="w-2.5 h-2.5" />
+          {pendingReviewCount}
         </span>
       )}
 

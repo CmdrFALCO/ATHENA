@@ -31,6 +31,10 @@ const MINIMAL_EVENTS: AXIOMEventType[] = [
   // WP 9B.1: Critique results are always important
   'critique:completed',
   'critique:rejected',
+  // WP 9B.4: Review queue events are always important
+  'review:queued',
+  'review:decided',
+  'review:batch_decided',
 ];
 
 /** Events logged in normal mode (minimal + these) */

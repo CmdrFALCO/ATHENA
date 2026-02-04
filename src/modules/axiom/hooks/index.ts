@@ -18,3 +18,6 @@ export { useCritiqueResult } from './useCritiqueResult';
 
 // WP 9B.2
 export { useAutonomous } from './useAutonomous';
+
+// WP 9B.4
+export { useReviewQueue } from './useReviewQueue';

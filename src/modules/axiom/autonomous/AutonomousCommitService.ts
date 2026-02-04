@@ -40,6 +40,8 @@ import type { EmbeddingSimilarityEvaluator } from './confidence/EmbeddingSimilar
 import type { NoveltyDetector } from './confidence/NoveltyDetector';
 import type { IThresholdAdjuster } from './confidence/IThresholdAdjuster';
 import type { ConfidenceFactors, ConfidenceResult, AdjustedThresholds } from './confidence/types';
+import type { AXIOMEventBridge } from '../events/AXIOMEventBridge';
+import type { ReviewQueueReason } from '../events/types';
 
 let idCounter = 0;
 function generateId(): string {
@@ -76,6 +78,9 @@ export class AutonomousCommitService {
   /** WP 9B.3: Multi-factor confidence stack (null = use simple calculator) */
   private multiFactorStack: MultiFactorStack | null = null;
 
+  /** WP 9B.4: Event bridge for review queue notifications */
+  private eventBridge: AXIOMEventBridge | null = null;
+
   constructor(
     private provenanceAdapter: IProvenanceAdapter,
     private rateLimiter: RateLimiter,
@@ -97,6 +102,13 @@ export class AutonomousCommitService {
    */
   setMultiFactorStack(stack: MultiFactorStack): void {
     this.multiFactorStack = stack;
+  }
+
+  /**
+   * WP 9B.4: Set the event bridge for review queue notifications.
+   */
+  setEventBridge(bridge: AXIOMEventBridge): void {
+    this.eventBridge = bridge;
   }
 
   /**
@@ -406,6 +418,71 @@ export class AutonomousCommitService {
       console.error('[AXIOM/Autonomous] Revert failed:', err);
       return false;
     }
+  }
+
+  /**
+   * WP 9B.4: Record a provenance entry for a queued-for-review decision.
+   * The entity is NOT committed to the graph — it awaits human approval.
+   */
+  async recordPendingReview(
+    proposal: PROPOSAL,
+    decision: AutonomousDecision,
+    config: AutonomousConfig,
+  ): Promise<AutoCommitProvenance> {
+    const provenance: AutoCommitProvenance = {
+      id: generateId(),
+      target_type: (proposal.nodes?.length ?? 0) > 0 ? 'entity' : 'connection',
+      target_id: proposal.nodes?.[0]?.id || proposal.edges?.[0]?.id || '',
+      source: 'chat_proposal',
+      correlation_id: proposal.correlationId || generateId(),
+      confidence: decision.confidence,
+      confidence_factors: decision.factors,
+      validations_passed: [],
+      critique_survival: decision.factors.critiqueSurvival ?? undefined,
+      created_at: new Date().toISOString(),
+      config_snapshot: { thresholds: config.thresholds },
+      review_status: 'pending_review',
+      can_revert: false,
+      confidence_result: decision.confidenceResult,
+    };
+
+    await this.provenanceAdapter.record(provenance);
+
+    // Emit review:queued event
+    this.emitReviewQueued(provenance.id, decision);
+
+    return provenance;
+  }
+
+  /**
+   * WP 9B.4: Emit a review:queued event via event bridge.
+   */
+  private emitReviewQueued(provenanceId: string, decision: AutonomousDecision): void {
+    if (!this.eventBridge) return;
+
+    const reason = this.classifyQueueReason(decision);
+
+    this.eventBridge.emit({
+      type: 'review:queued',
+      timestamp: new Date().toISOString(),
+      data: {
+        provenanceId,
+        reason,
+        confidence: decision.confidence,
+      },
+    });
+  }
+
+  /**
+   * WP 9B.4: Classify the queue reason from the decision's reason string.
+   */
+  private classifyQueueReason(decision: AutonomousDecision): ReviewQueueReason {
+    const r = decision.reason.toLowerCase();
+    if (r.includes('floor veto')) return 'floor_veto';
+    if (r.includes('rate limit')) return 'rate_limited';
+    if (r.includes('validation')) return 'validation_failed';
+    if (r.includes('blocked') || r.includes('not in allowed')) return 'scope_restricted';
+    return 'low_confidence';
   }
 
   // --- Private helpers ---

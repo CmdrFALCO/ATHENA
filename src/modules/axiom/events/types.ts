@@ -28,7 +28,11 @@ export type AXIOMEventType =
   | 'critique:completed'
   | 'critique:skipped'
   | 'critique:escalated'
-  | 'critique:rejected';
+  | 'critique:rejected'
+  // WP 9B.4: Review queue events
+  | 'review:queued'
+  | 'review:decided'
+  | 'review:batch_decided';
 
 /**
  * AXIOMEvent — A typed event emitted by the engine
@@ -138,4 +142,29 @@ export interface CritiqueEscalatedEventData {
 export interface CritiqueRejectedEventData {
   correlationId: string;
   survivalScore: number;
+}
+
+// WP 9B.4: Review queue event data types
+
+export type ReviewQueueReason =
+  | 'low_confidence'
+  | 'floor_veto'
+  | 'validation_failed'
+  | 'rate_limited'
+  | 'scope_restricted';
+
+export interface ReviewQueuedEventData {
+  provenanceId: string;
+  reason: ReviewQueueReason;
+  confidence: number;
+}
+
+export interface ReviewDecidedEventData {
+  provenanceId: string;
+  decision: 'human_confirmed' | 'human_reverted';
+}
+
+export interface ReviewBatchDecidedEventData {
+  count: number;
+  decision: 'human_confirmed' | 'human_reverted';
 }

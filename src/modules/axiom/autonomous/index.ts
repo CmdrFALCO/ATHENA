@@ -1,9 +1,10 @@
 /**
- * Autonomous Mode — Barrel Export (WP 9B.2 + 9B.3)
+ * Autonomous Mode — Barrel Export (WP 9B.2 + 9B.3 + 9B.4)
  *
  * AI auto-commit with deferred human oversight:
  * confidence gates, provenance tracking, rate limiting, and revert capability.
  * WP 9B.3: Multi-factor confidence scoring with weighted factors, floor veto, and dynamic thresholds.
+ * WP 9B.4: Human review queue for deferred oversight.
  */
 
 // Types
@@ -64,3 +65,22 @@ export {
   StaticThresholds,
   GlobalRatioAdjuster,
 } from './confidence';
+
+// WP 9B.4: Review Queue
+export type {
+  ReviewQueueItem,
+  ReviewStats,
+  ReviewSortField,
+  ReviewFilterReason,
+  ReviewQueueConfig,
+} from './review';
+
+export {
+  ReviewActions,
+  reviewState$,
+  reviewActions,
+} from './review';
+export type {
+  ReviewQueueState,
+  ReviewActiveTab,
+} from './review';

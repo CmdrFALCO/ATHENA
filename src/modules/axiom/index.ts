@@ -128,6 +128,9 @@ export { useCritiqueResult } from './hooks';
 // Hooks (WP 9B.2)
 export { useAutonomous } from './hooks';
 
+// Hooks (WP 9B.4)
+export { useReviewQueue } from './hooks';
+
 // Autonomous Mode (WP 9B.2)
 export {
   AUTONOMOUS_PRESETS,
@@ -174,6 +177,22 @@ export type {
   NoveltyResult,
 } from './autonomous';
 
+// Review Queue (WP 9B.4)
+export {
+  ReviewActions,
+  reviewState$,
+  reviewActions,
+} from './autonomous';
+export type {
+  ReviewQueueItem,
+  ReviewStats,
+  ReviewSortField,
+  ReviewFilterReason,
+  ReviewQueueConfig,
+  ReviewQueueState,
+  ReviewActiveTab,
+} from './autonomous';
+
 // Components (WP 9A.3)
 export {
   AXIOMIndicator,
@@ -185,6 +204,13 @@ export {
   FeedbackDisplay,
   InterventionModal,
   CritiqueSection, // WP 9B.1
+  // WP 9B.4: Review Queue
+  ReviewQueueTab,
+  ReviewStatsBar,
+  ReviewCard,
+  ReviewFilters,
+  ReviewBatchActions,
+  AutoCommitCard,
 } from './components';
 
 // Workflows
@@ -342,6 +368,29 @@ export function createDefaultEngine(): AXIOMEngine {
         coherence: devSettings$.axiom.confidence.coherenceStrategy.peek(),
         threshold: devSettings$.axiom.confidence.thresholdStrategy.peek(),
       }),
+    };
+
+    // Review queue debug globals (WP 9B.4)
+    (window as Record<string, unknown>).__ATHENA_REVIEW_QUEUE__ = {
+      getState: () => {
+        const { reviewState$ } = require('./autonomous/review/reviewState');
+        return reviewState$.peek();
+      },
+      getItems: () => {
+        const { reviewState$ } = require('./autonomous/review/reviewState');
+        return reviewState$.items.peek();
+      },
+      getStats: () => {
+        const { reviewState$ } = require('./autonomous/review/reviewState');
+        return reviewState$.stats.peek();
+      },
+      setActiveTab: (tab: 'workflow' | 'review') => {
+        const { reviewActions } = require('./autonomous/review/reviewState');
+        reviewActions.setActiveTab(tab);
+      },
+      refresh: () => {
+        console.log('[AXIOM/Review] Manual refresh triggered via debug console');
+      },
     };
 
     // Autonomous mode debug globals (WP 9B.2)

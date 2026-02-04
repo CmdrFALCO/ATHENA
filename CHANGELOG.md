@@ -1,5 +1,47 @@
 # ATHENA Changelog
 
+## [9B.4.0] - 2026-02-04
+
+### Added
+- **Human Review Queue (WP 9B.4)**: Deferred human oversight for autonomous commits — items below confidence thresholds are queued for review with approve, reject, edit-and-approve, and bulk actions
+  - **ReviewActions**: Business logic service for approve, reject, editAndApprove, bulkApprove, bulkReject — uses ProvenanceAdapter for status updates and AXIOMEventBridge for event emission
+  - **reviewState$**: Legend-State observable slice for review queue (items, stats, sort, filter, selectedIds, activeTab) with debug globals
+  - **useReviewQueue**: React hook with optimistic UI updates, event-driven auto-refresh, client-side sorting/filtering, bulk operations
+  - **ReviewQueueTab**: Main container composing stats bar, filters, batch actions, review cards, and collapsible auto-approved section
+  - **ReviewStatsBar**: Compact stats bar showing pending count, auto-approved (24h), avg confidence, and refresh button
+  - **ReviewFilters**: Sort buttons (confidence, date, reason) and filter dropdown for queue reason
+  - **ReviewBatchActions**: Bulk approve/reject when items are selected with selection count
+  - **ReviewCard**: Full review card with checkbox, entity/connection icon, confidence badge (color-coded), queue reason pill, expandable confidence breakdown, inline edit fields, accept/reject/edit-and-accept actions
+  - **AutoCommitCard**: Spot-check card for auto-approved items with revert button
+  - **Review event types**: `review:queued`, `review:decided`, `review:batch_decided` events with typed payloads
+  - **ReviewQueueReason**: `low_confidence | floor_veto | validation_failed | rate_limited | scope_restricted` classification
+  - **recordPendingReview()**: New method on AutonomousCommitService — creates provenance record with `pending_review` status without committing entity
+  - `src/modules/axiom/autonomous/review/` — 4 new files (types, ReviewActions, reviewState, barrel)
+  - `src/modules/axiom/components/ReviewQueue/` — 6 new UI components (ReviewQueueTab, ReviewStatsBar, ReviewFilters, ReviewBatchActions, ReviewCard, AutoCommitCard)
+  - `src/modules/axiom/hooks/useReviewQueue.ts` — Review queue React hook
+
+### Changed
+- `src/modules/axiom/events/types.ts` — Added 3 review event types to union, ReviewQueueReason type, ReviewQueuedEventData, ReviewDecidedEventData, ReviewBatchDecidedEventData payloads
+- `src/modules/axiom/events/AXIOMEventBridge.ts` — Added review events to MINIMAL_EVENTS array
+- `src/modules/axiom/events/index.ts` — Exported review event types
+- `src/modules/axiom/autonomous/AutonomousCommitService.ts` — Added event bridge integration, `recordPendingReview()`, `emitReviewQueued()`, `classifyQueueReason()`, `setEventBridge()`
+- `src/modules/axiom/components/AXIOMPanel.tsx` — Added top-level tab bar (Workflow | Review) with pending count badge and amber highlight threshold
+- `src/modules/axiom/components/AXIOMIndicator.tsx` — Added pending review count badge with ClipboardList icon, click-to-review-tab behavior
+- `src/config/devSettings.ts` — Added `reviewQueue` section to AXIOMConfig (defaultSort, showAutoApprovedSection, autoApprovedLimit, highlightThreshold) + 4 setter actions
+- `src/modules/axiom/autonomous/index.ts` — Exported review module types, services, and state
+- `src/modules/axiom/hooks/index.ts` — Exported useReviewQueue
+- `src/modules/axiom/components/index.ts` — Exported ReviewQueue UI components
+- `src/modules/axiom/index.ts` — Exported review module, added `__ATHENA_REVIEW_QUEUE__` debug global
+- `CODEBASE_MAP.md` — Documented review queue module (12 new pattern entries, 9 type entries, 2 debug globals)
+
+### Technical
+- **Pending review items are NOT committed to the graph**: They exist only as provenance records — approve flips status to `human_confirmed`, reject flips to `human_reverted`
+- **Optimistic UI updates**: Cards removed immediately on action, re-fetched on failure
+- **Event-driven refresh**: Review queue auto-refreshes when `review:queued`, `review:decided`, or `review:batch_decided` events fire
+- **Top-level tab architecture**: AXIOMPanel now has Workflow | Review tabs, with existing Graph/Tokens/History as sub-tabs under Workflow
+- **Confidence breakdown reuse**: ReviewCard replicates the ConfidenceBreakdown pattern from ProposalCards.tsx without modifying the original component
+- **Backward compatible**: Review queue is a read-only consumer of provenance records — no changes to the autonomous decision flow
+
 ## [9B.2.0] - 2026-02-04
 
 ### Added

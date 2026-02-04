@@ -24,6 +24,11 @@ export type {
   CritiqueSkippedEventData,
   CritiqueEscalatedEventData,
   CritiqueRejectedEventData,
+  // WP 9B.4: Review queue events
+  ReviewQueueReason,
+  ReviewQueuedEventData,
+  ReviewDecidedEventData,
+  ReviewBatchDecidedEventData,
 } from './types';
 
 export { AXIOMEventBridge } from './AXIOMEventBridge';
