@@ -69,7 +69,13 @@ export type TokenColor =
   | 'critiqued'     // WP 9B.1: Post-critique, awaiting routing
   | 'committed'
   | 'rejected'
-  | 'escalated';
+  | 'escalated'
+  // WP 9B.8: Council pipeline colors
+  | 'council_query'
+  | 'council_generated'
+  | 'council_critiqued'
+  | 'council_synthesized'
+  | 'council_output';
 
 /** Colors that represent terminal (sink) states */
 export const SINK_COLORS: readonly TokenColor[] = ['committed', 'rejected'] as const;

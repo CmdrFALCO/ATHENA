@@ -2,9 +2,10 @@
  * AXIOMPanel — Main sidebar panel for AXIOM workflow visualization
  * WP 9A.3: AXIOM Visualization
  * WP 9B.4: Review Queue tab
+ * WP 9B.8: Council tab
  *
  * Slide-over panel from right (480px, like SynthesisPanel).
- * Top-level tabs: Workflow | Review (N).
+ * Top-level tabs: Workflow | Review (N) | Council.
  * Workflow sub-tabs: Graph | Tokens | History.
  * Footer with AXIOMControls.
  * Keyboard shortcut: Ctrl+Shift+A to toggle.
@@ -18,11 +19,13 @@ import { axiomActions } from '../store/axiomActions';
 import { devSettings$ } from '@/config/devSettings';
 import { reviewState$ } from '../autonomous/review/reviewState';
 import { reviewActions } from '../autonomous/review/reviewState';
+import { councilState$ } from '../council/councilState';
 import { WorkflowGraph } from './WorkflowGraph';
 import { TokenInspector } from './TokenInspector';
 import { TransitionLog } from './TransitionLog';
 import { AXIOMControls } from './AXIOMControls';
 import { ReviewQueueTab } from './ReviewQueue/ReviewQueueTab';
+import { CouncilTab } from './Council/CouncilTab';
 import type { ReviewActiveTab } from '../autonomous/review/reviewState';
 
 type WorkflowTabId = 'graph' | 'tokens' | 'history';
@@ -44,6 +47,10 @@ export function AXIOMPanel() {
   const activeTopTab = useSelector(() => reviewState$.activeTab.get()) as ReviewActiveTab;
   const pendingCount = useSelector(() => reviewState$.stats.pendingCount.get());
   const highlightThreshold = useSelector(() => devSettings$.axiom.reviewQueue.highlightThreshold.get());
+
+  // WP 9B.8: Council state
+  const councilEnabled = useSelector(() => devSettings$.axiom.council?.enabled?.get() ?? false);
+  const councilRunning = useSelector(() => councilState$.activeSession.running.get());
 
   // Auto-open panel on error if configured
   useEffect(() => {
@@ -137,6 +144,22 @@ export function AXIOMPanel() {
             </span>
           )}
         </button>
+        {/* WP 9B.8: Council tab */}
+        {councilEnabled && (
+          <button
+            onClick={() => reviewActions.setActiveTab('council')}
+            className={`flex-1 px-3 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1.5
+              ${activeTopTab === 'council'
+                ? 'text-purple-400 border-b-2 border-purple-400 bg-purple-500/5'
+                : 'text-athena-muted hover:text-athena-text hover:bg-athena-surface/50'
+              }`}
+          >
+            Council
+            {councilRunning && (
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Workflow tab content */}
@@ -189,6 +212,13 @@ export function AXIOMPanel() {
       {activeTopTab === 'review' && (
         <div className="flex-1 overflow-hidden">
           <ReviewQueueTab />
+        </div>
+      )}
+
+      {/* WP 9B.8: Council tab content */}
+      {activeTopTab === 'council' && (
+        <div className="flex-1 overflow-hidden">
+          <CouncilTab />
         </div>
       )}
 

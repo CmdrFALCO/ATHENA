@@ -10,6 +10,7 @@ import type { AutonomousPreset } from '@/modules/axiom/autonomous/types';
 import type { ConfidenceConfig } from '@/modules/axiom/autonomous/confidence/types';
 import type { ReviewQueueConfig, ReviewSortField } from '@/modules/axiom/autonomous/review/types';
 import type { InvarianceConfig } from '@/modules/axiom/autonomous/invariance/types';
+import type { CouncilConfig } from '@/modules/axiom/council/types';
 
 // Feature flag definitions
 export interface FeatureFlags {
@@ -522,6 +523,9 @@ export interface AXIOMConfig {
   /** Review queue settings (WP 9B.4) */
   reviewQueue: ReviewQueueConfig;
 
+  /** Multi-Agent Council settings (WP 9B.8) */
+  council: CouncilConfig;
+
   /** Autonomous commit settings (WP 9B.2) */
   autonomous: {
     /** Master toggle — default: false */
@@ -704,6 +708,29 @@ const DEFAULT_AXIOM_CONFIG: AXIOMConfig = {
     autoApprovedLimit: 20,
     highlightThreshold: 5,
   },
+
+  // WP 9B.8: Multi-Agent Council
+  council: {
+    enabled: false,
+    agents: {
+      generator: { systemPrompt: '' },
+      critic: { systemPrompt: '' },
+      synthesizer: { systemPrompt: '' },
+    },
+    suggestions: {
+      enabled: true,
+      minContextNodes: 3,
+      crossCommunityThreshold: 2,
+    },
+    confidence: {
+      councilVettedWeight: 0.05,
+    },
+    ui: {
+      showAgentTimings: true,
+      maxPastSessions: 10,
+    },
+    perBackendEnabled: {},
+  } satisfies CouncilConfig,
 
   // WP 9B.2: Autonomous commit mode
   autonomous: {
@@ -1593,6 +1620,42 @@ export const devSettingsActions = {
 
   setCommunityShowStaleIndicator(show: boolean) {
     devSettings$.community.ui.showStaleIndicator.set(show);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  // Council actions (WP 9B.8)
+  setCouncilEnabled(enabled: boolean) {
+    devSettings$.axiom.council.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilSuggestionsEnabled(enabled: boolean) {
+    devSettings$.axiom.council.suggestions.enabled.set(enabled);
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilMinContextNodes(count: number) {
+    devSettings$.axiom.council.suggestions.minContextNodes.set(Math.max(1, Math.min(10, count)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilCrossCommThreshold(threshold: number) {
+    devSettings$.axiom.council.suggestions.crossCommunityThreshold.set(Math.max(1, Math.min(5, threshold)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilVettedWeight(weight: number) {
+    devSettings$.axiom.council.confidence.councilVettedWeight.set(Math.max(0, Math.min(1, weight)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilMaxPastSessions(max: number) {
+    devSettings$.axiom.council.ui.maxPastSessions.set(Math.max(1, Math.min(50, max)));
+    devSettings$.lastModified.set(new Date().toISOString());
+  },
+
+  setCouncilShowAgentTimings(show: boolean) {
+    devSettings$.axiom.council.ui.showAgentTimings.set(show);
     devSettings$.lastModified.set(new Date().toISOString());
   },
 };

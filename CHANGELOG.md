@@ -1,5 +1,57 @@
 # ATHENA Changelog
 
+## [9B.8.0] - 2026-02-04
+
+### Added
+- **Multi-Agent Council** (WP 9B.8): Three-agent council (Generator, Critic, Synthesizer) orchestrated by a CPN net
+  - **`src/modules/axiom/council/types.ts`**: `AgentRole`, `CritiqueAnnotation`, `CouncilEvent`, `CouncilSession`, `CouncilConfig`, `CouncilState`
+  - **`src/modules/axiom/council/agents/types.ts`**: `ICouncilAgent`, `AgentInput`, `AgentOutput` interfaces
+  - **`src/modules/axiom/council/agents/GeneratorAgent.ts`**: Takes query + GraphRAG context + community summaries, returns raw proposals
+  - **`src/modules/axiom/council/agents/CriticAgent.ts`**: Reviews proposals, returns `CritiqueAnnotation[]` with fail-safe JSON parsing
+  - **`src/modules/axiom/council/agents/SynthesizerAgent.ts`**: Refines proposals based on critique, extracts `KnowledgeProposals`
+  - **`src/modules/axiom/council/CouncilNet.ts`**: CPN net (5 places, 4 transitions, `has_proposals` guard on T_emit)
+  - **`src/modules/axiom/council/CouncilService.ts`**: Main orchestrator singleton with `runSession()`, `computeCouncilVettedScore()`, community enrichment
+  - **`src/modules/axiom/council/CouncilSuggestion.ts`**: Pure heuristic `shouldSuggestCouncil()` (context size, community span, keywords)
+  - **`src/modules/axiom/council/councilState.ts`**: Legend-State observable for council UI
+  - **`src/modules/axiom/council/councilActions.ts`**: State mutations (startCouncil, onCouncilEvent, cancelCouncil, etc.)
+  - **`src/modules/axiom/council/index.ts`**: Barrel exports
+  - **`src/database/migrations/017_council_sessions.ts`**: SQLite `council_sessions` table
+  - **`src/adapters/sqlite/SQLiteCouncilAdapter.ts`**: CRUD adapter with JSON serialization
+- **Council Tab UI**:
+  - **`src/modules/axiom/components/Council/CouncilTab.tsx`**: Main tab with active/past session views
+  - **`src/modules/axiom/components/Council/AgentCard.tsx`**: Collapsible agent cards (pending/running/complete states)
+  - **`src/modules/axiom/components/Council/CouncilResultBar.tsx`**: Summary bar with proposal counts and council notes
+  - **`src/modules/axiom/components/Council/PastSessionsList.tsx`**: Browsable past sessions list
+  - **`src/modules/axiom/hooks/useCouncil.ts`**: React hook for council state
+
+### Changed
+- **`src/modules/axiom/autonomous/confidence/types.ts`**: Added `councilVetted: number | null` to `ConfidenceFactors`
+- **`src/modules/axiom/autonomous/confidence/MultiFactorConfidenceCalculator.ts`**: Added council labels/explanations to factor maps
+- **`src/modules/chat/services/ChatService.ts`**: Added `sendMessageWithCouncil()` and `buildContextText()` helper
+- **`src/modules/chat/types/index.ts`**: Added optional `metadata` field to `KnowledgeProposals`
+- **`src/modules/chat/components/ChatInput.tsx`**: Added "Consult Council" button + suggestion banner
+- **`src/modules/axiom/components/AXIOMPanel.tsx`**: Added Council tab (purple color scheme)
+- **`src/modules/axiom/autonomous/review/reviewState.ts`**: Extended `ReviewActiveTab` with `'council'`
+- **`src/config/devSettings.ts`**: Added `CouncilConfig` to `AXIOMConfig`, default config, setter actions
+- **`src/database/migrations/index.ts`**: Exported `setupCouncilSessions`
+- **`src/database/init.ts`**: Added council sessions migration call
+- **`src/modules/axiom/types/colorSets.ts`**: Added council token colors
+- **`src/modules/axiom/hooks/index.ts`**: Exported `useCouncil`
+- **`src/modules/axiom/components/index.ts`**: Exported council UI components
+- **`src/modules/axiom/index.ts`**: Exported council module + added debug globals
+
+### Deferred
+- Mid-agent cancellation (requires `AbortController` integration in `IAIService`)
+- Per-proposal council notes (requires `NodeProposal`/`EdgeProposal` type changes)
+- Council retry loops (v1 is single-pass only)
+
+### Technical
+- Council proposals use the exact same pipeline as normal chat: `chatActions.addMessage({ proposals })` → ProposalCards → AXIOM validation
+- `councilVetted` follows `invarianceScore` null-pattern: null = not tested, auto-excluded from confidence weighting
+- `computeCouncilVettedScore()` maps critic verdicts: 1.0 (all accept) → 0.7 (some challenge) → 0.5 (minority reject) → 0.3 (majority reject)
+- Council disabled by default in DevSettings (`enabled: false`)
+- Cancellation works between agent transitions only (checks `councilState$.activeSession.running` flag)
+
 ## [9B.7.0] - 2026-02-04
 
 ### Added

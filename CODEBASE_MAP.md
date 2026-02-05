@@ -17,10 +17,10 @@
 
 | Item | Value |
 |------|-------|
-| **Last WP Completed** | 9B.7 (Community Detection) |
+| **Last WP Completed** | 9B.8 (Multi-Agent Council) |
 | **Last Updated** | February 2026 |
 | **Phase** | 9B (AXIOM — Adversarial & Autonomous) |
-| **Milestone** | Phase 9B - Community Detection |
+| **Milestone** | Phase 9B - Multi-Agent Council |
 
 ---
 
@@ -116,6 +116,7 @@ athena/
 | Views | `src/modules/views/` | — | ✅ |
 | Export | `src/modules/export/` | — | ✅ |
 | AXIOM | `src/modules/axiom/` | — | ✅ |
+| Council | `src/modules/axiom/council/` | — | ✅ |
 | Community | `src/modules/community/` | — | ✅ |
 | Vendor | `src/vendor/` | — | ✅ |
 
@@ -519,6 +520,14 @@ athena/
 | InvarianceConfig | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Config (enabled, trigger, paraphrase, compression, weights, fragileFloorVeto, ui) |
 | RobustnessLabel | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: 'robust' \| 'moderate' \| 'fragile' \| 'untested' |
 | IInvarianceAdapter | `src/modules/axiom/autonomous/invariance/types.ts` | WP 9B.5: Adapter interface for invariance evidence persistence |
+| AgentRole | `src/modules/axiom/council/types.ts` | WP 9B.8: 'generator' \| 'critic' \| 'synthesizer' |
+| CritiqueAnnotation | `src/modules/axiom/council/types.ts` | WP 9B.8: Critic verdict per proposal (accept/challenge/reject + objections) |
+| CouncilEvent | `src/modules/axiom/council/types.ts` | WP 9B.8: Discriminated union for council lifecycle events |
+| CouncilSession | `src/modules/axiom/council/types.ts` | WP 9B.8: Persisted session with agent responses, timings, notes |
+| CouncilConfig | `src/modules/axiom/council/types.ts` | WP 9B.8: DevSettings config (agents, suggestions, confidence, UI) |
+| CouncilState | `src/modules/axiom/council/types.ts` | WP 9B.8: Legend-State observable (activeSession, pastSessions) |
+| ICouncilAgent | `src/modules/axiom/council/agents/types.ts` | WP 9B.8: Agent interface (role, execute) |
+| CouncilTokenPayload | `src/modules/axiom/council/CouncilNet.ts` | WP 9B.8: CPN token payload for council pipeline |
 
 ---
 
@@ -569,6 +578,8 @@ athena/
 | 9B.3 | Multi-Factor Confidence Scoring | ✅ |
 | 9B.4 | Human Review Queue | ✅ |
 | 9B.5 | Structural Invariance (paraphrase + compression) | ✅ |
+| 9B.7 | Community Detection (hierarchical, global queries) | ✅ |
+| 9B.8 | Multi-Agent Council (Generator/Critic/Synthesizer) | ✅ |
 
 ### Phase 9A Complete
 
@@ -646,6 +657,8 @@ window.__ATHENA_REVIEW_QUEUE__   // Review queue debug (getState, getItems, getS
 window.__ATHENA_REVIEW_STATE__   // Review queue Legend-State observable (WP 9B.4)
 window.__ATHENA_INVARIANCE__     // Invariance config debug (getConfig) (WP 9B.5)
 window.__ATHENA_COMMUNITY_SERVICE__ // Community detection service instance (WP 9B.7)
+window.__ATHENA_COUNCIL__          // Council debug (getConfig, getState, getService, getPastSessions) (WP 9B.8)
+window.__ATHENA_COUNCIL_STATE__    // Council Legend-State observable (WP 9B.8)
 window.__ATHENA_DB__()            // Database connection (function)
 await __ATHENA_FTS_DEBUG__()      // FTS index status (resource count, FTS count, samples)
 ```

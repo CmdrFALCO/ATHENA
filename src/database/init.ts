@@ -18,6 +18,7 @@ import {
   setupAutoCommitProvenance,
   setupConnectionInvariance,
   setupCommunities,
+  setupCouncilSessions,
 } from './migrations';
 import { extractTextFromTiptap } from '@/shared/utils/extractTextFromTiptap';
 
@@ -146,6 +147,9 @@ async function createDatabase(): Promise<DatabaseConnection> {
 
   // Set up communities tables for community detection (WP 9B.7, idempotent)
   await setupCommunities(connection);
+
+  // Set up council sessions table for multi-agent council (WP 9B.8, idempotent)
+  await setupCouncilSessions(connection);
 
   // One-time migration: populate content_text for existing entities
   const populated = await populateContentText(connection, extractTextFromTiptap);

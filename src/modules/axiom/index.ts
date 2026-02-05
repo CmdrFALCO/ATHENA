@@ -131,6 +131,9 @@ export { useAutonomous } from './hooks';
 // Hooks (WP 9B.4)
 export { useReviewQueue } from './hooks';
 
+// Hooks (WP 9B.8)
+export { useCouncil } from './hooks';
+
 // Autonomous Mode (WP 9B.2)
 export {
   AUTONOMOUS_PRESETS,
@@ -232,6 +235,11 @@ export {
   // WP 9B.5: Invariance UI
   InvarianceBadge,
   TestRobustnessButton,
+  // WP 9B.8: Council UI
+  CouncilTab,
+  AgentCard,
+  CouncilResultBar,
+  PastSessionsList,
 } from './components';
 
 // Workflows
@@ -279,6 +287,35 @@ export {
 
 // Services (WP 9A.4)
 export { AXIOMValidationService, axiomValidationService } from './services/AXIOMValidationService';
+
+// Multi-Agent Council (WP 9B.8)
+export {
+  GeneratorAgent,
+  CriticAgent,
+  SynthesizerAgent,
+  CouncilService,
+  initCouncilService,
+  getCouncilService,
+  isCouncilServiceReady,
+  councilState$,
+  councilActions,
+  shouldSuggestCouncil,
+  COUNCIL_PLACE_IDS,
+  COUNCIL_TRANSITION_IDS,
+  createCouncilNet,
+  wireCouncilNet,
+  createCouncilToken,
+} from './council';
+export type {
+  AgentRole,
+  CritiqueAnnotation as CouncilCritiqueAnnotation,
+  CouncilEvent,
+  CouncilSession,
+  CouncilConfig,
+  CouncilState,
+  ICouncilAgent,
+  CouncilTokenPayload,
+} from './council';
 
 // --- Debug Globals ---
 
@@ -457,6 +494,23 @@ export function createDefaultEngine(): AXIOMEngine {
     // Invariance debug globals (WP 9B.5)
     (window as Record<string, unknown>).__ATHENA_INVARIANCE__ = {
       getConfig: () => devSettings$.axiom.invariance.peek(),
+    };
+
+    // Council debug globals (WP 9B.8)
+    (window as Record<string, unknown>).__ATHENA_COUNCIL__ = {
+      getConfig: () => devSettings$.axiom.council?.peek(),
+      getState: () => {
+        const { councilState$ } = require('./council/councilState');
+        return councilState$.peek();
+      },
+      getService: () => {
+        const { getCouncilService } = require('./council/CouncilService');
+        return getCouncilService();
+      },
+      getPastSessions: () => {
+        const { councilState$ } = require('./council/councilState');
+        return councilState$.pastSessions.peek();
+      },
     };
   }
 

@@ -27,6 +27,8 @@ export interface ConfidenceFactors {
   critiqueSurvival: number;
   /** Structural invariance: stub for WP 9B.5 (null = not tested yet) */
   invarianceScore: number | null;
+  /** Council vetting: multi-agent consensus score (null = not council-generated) */
+  councilVetted: number | null;
 }
 
 /** Human-readable explanation for a confidence factor */

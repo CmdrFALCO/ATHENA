@@ -293,6 +293,171 @@ export class ChatService {
   }
 
   /**
+   * Send a message via the Multi-Agent Council (WP 9B.8).
+   *
+   * Replaces the single-shot AI call with a Generator → Critic → Synthesizer
+   * pipeline. The output proposals enter the exact same handling path as
+   * normal chat proposals (ProposalCards → AXIOM validation).
+   */
+  async sendMessageWithCouncil(userMessage: string): Promise<void> {
+    // Ensure we have an active thread
+    let threadId = chatState$.activeThreadId.peek();
+    if (!threadId) {
+      threadId = await chatActions.createThread();
+    }
+
+    const thread = chatState$.threads[threadId]?.peek();
+    if (!thread) {
+      throw new Error('Failed to get active thread');
+    }
+
+    // 1. Add user message to state
+    await chatActions.addMessage({
+      threadId,
+      role: 'user',
+      content: userMessage,
+    });
+
+    // 2. Set loading state
+    chatActions.setLoading(true);
+    chatActions.setStreaming('Consulting the council...');
+
+    try {
+      // 3. Build context (same as sendMessage)
+      const contextText = await this.buildContextText(userMessage, thread);
+      const contextNodeIds = thread.contextNodeIds || [];
+
+      // 4. Run council session
+      const { getCouncilService } = await import(
+        '@/modules/axiom/council/CouncilService'
+      );
+      const councilService = getCouncilService();
+      if (!councilService) {
+        throw new Error('CouncilService not initialized');
+      }
+
+      const result = await councilService.runSession(
+        userMessage,
+        contextText,
+        contextNodeIds,
+      );
+
+      // 5. Apply learned confidence adjustments (same pipeline as sendMessage)
+      let proposals = result.proposals;
+      if (proposals) {
+        proposals = await applyLearnedAdjustments(proposals);
+
+        // Attach council metadata
+        proposals = {
+          ...proposals,
+          metadata: {
+            source: 'council',
+            councilVetted: result.councilConfidence,
+          },
+        };
+      }
+
+      // 6. Filter low-confidence proposals
+      if (proposals) {
+        const extractionConfig = devSettings$.chat.extraction?.peek();
+        const minConfidence = extractionConfig?.minConfidenceThreshold ?? 0.5;
+
+        proposals = {
+          ...proposals,
+          nodes: proposals.nodes.filter((n) => n.confidence >= minConfidence),
+          edges: proposals.edges.filter((e) => e.confidence >= minConfidence),
+        };
+
+        if (proposals.nodes.length === 0 && proposals.edges.length === 0) {
+          proposals = null;
+        }
+      }
+
+      // 7. Add assistant message with proposals
+      await chatActions.addMessage({
+        threadId,
+        role: 'assistant',
+        content: result.displayContent,
+        proposals: proposals || undefined,
+      });
+    } catch (error) {
+      console.error('[ChatService] Council error:', error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+
+      await chatActions.addMessage({
+        threadId,
+        role: 'assistant',
+        content: `The council encountered an error: ${errorMessage}`,
+      });
+    } finally {
+      chatActions.setLoading(false);
+      chatActions.setStreaming(null);
+    }
+  }
+
+  /**
+   * Build formatted context text from the knowledge graph.
+   * Shared by sendMessage and sendMessageWithCouncil.
+   */
+  private async buildContextText(
+    userMessage: string,
+    thread: { contextNodeIds: string[] },
+  ): Promise<string> {
+    const contextConfig = devSettings$.chat.context?.peek();
+
+    const multiSelectedIds = appState$.ui.selectedResourceIds.peek();
+    const singleSelectedId = resourceState$.selectedResourceId.peek();
+    const selectedResourceIds =
+      singleSelectedId && !multiSelectedIds.includes(singleSelectedId)
+        ? [...multiSelectedIds, singleSelectedId]
+        : multiSelectedIds;
+
+    const contextResult = await this.contextBuilder.build({
+      selectedNodeIds: thread.contextNodeIds || [],
+      selectedResourceIds,
+      query: userMessage,
+      maxItems: contextConfig?.maxItems ?? 10,
+      similarityThreshold: contextConfig?.similarityThreshold ?? 0.7,
+      includeTraversal: contextConfig?.includeTraversal ?? true,
+      traversalDepth: contextConfig?.traversalDepth ?? 1,
+    });
+
+    // WP 9B.7: Global query injection
+    const communityConfig = devSettings$.community?.peek();
+    if (communityConfig?.enabled && communityConfig?.globalQuery?.enabled) {
+      try {
+        const globalQueryService = getGlobalQueryService();
+        if (globalQueryService?.isGlobalQuery(userMessage)) {
+          const communityService = getCommunityDetectionService();
+          const stats = communityService
+            ? await communityService.getStats()
+            : null;
+          if (stats && stats.totalCommunities > 0) {
+            const globalAnswer = await globalQueryService.answer(userMessage);
+            if (globalAnswer) {
+              const globalContextItem: ContextItem = {
+                id: 'global-community-answer',
+                type: 'entity',
+                title: 'Knowledge Base Themes Overview',
+                content: globalAnswer,
+                relevanceScore: 0.95,
+                source: 'community',
+              };
+              contextResult.items.unshift(globalContextItem);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[ChatService] Global query integration failed:', err);
+      }
+    }
+
+    return ContextFormatter.formatForPrompt(contextResult.items);
+  }
+
+  /**
    * Regenerate proposals with structured feedback from AXIOM.
    * WP 9A.4 - AXIOM Integration
    *

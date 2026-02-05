@@ -21,3 +21,6 @@ export { useAutonomous } from './useAutonomous';
 
 // WP 9B.4
 export { useReviewQueue } from './useReviewQueue';
+
+// WP 9B.8
+export { useCouncil } from './useCouncil';

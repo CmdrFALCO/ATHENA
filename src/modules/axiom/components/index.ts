@@ -28,3 +28,9 @@ export {
 // WP 9B.5: Structural Invariance
 export { InvarianceBadge } from './InvarianceBadge';
 export { TestRobustnessButton } from './TestRobustnessButton';
+
+// WP 9B.8: Multi-Agent Council
+export { CouncilTab } from './Council/CouncilTab';
+export { AgentCard } from './Council/AgentCard';
+export { CouncilResultBar } from './Council/CouncilResultBar';
+export { PastSessionsList } from './Council/PastSessionsList';

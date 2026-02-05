@@ -33,6 +33,12 @@ export interface ChatState {
 export interface KnowledgeProposals {
   nodes: NodeProposal[];
   edges: EdgeProposal[];
+  /** Optional metadata for tracking proposal source (WP 9B.8) */
+  metadata?: {
+    source?: 'chat' | 'council';
+    councilVetted?: number;
+    councilSessionId?: string;
+  };
 }
 
 export interface NodeProposal {

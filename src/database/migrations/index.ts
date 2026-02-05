@@ -12,3 +12,4 @@ export { setupSmartViews } from './013_smart_views';
 export { setupAutoCommitProvenance } from './014_auto_commit_provenance';
 export { setupConnectionInvariance } from './015_connection_invariance';
 export { setupCommunities } from './016_communities';
+export { setupCouncilSessions } from './017_council_sessions';

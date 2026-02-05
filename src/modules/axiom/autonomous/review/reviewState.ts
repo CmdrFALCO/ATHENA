@@ -9,7 +9,8 @@ import { observable } from '@legendapp/state';
 import type { AutoCommitProvenance } from '../types';
 import type { ReviewQueueItem, ReviewStats, ReviewSortField, ReviewFilterReason } from './types';
 
-export type ReviewActiveTab = 'workflow' | 'review';
+// Note: despite the name, this controls all top-level AXIOM panel tabs (WP 9B.8)
+export type ReviewActiveTab = 'workflow' | 'review' | 'council';
 
 export interface ReviewQueueState {
   items: ReviewQueueItem[];
